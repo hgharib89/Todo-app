@@ -2431,17 +2431,27 @@
     lockMsg.textContent = '';
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     unlockBtn.focus();
+    if (document.visibilityState === 'visible') setTimeout(function () { tryUnlock(true); }, 250);
   }
   function hideLock() {
     document.body.classList.remove('locked');
     lockScreen.hidden = true;
   }
-  unlockBtn.addEventListener('click', function () {
+  var unlocking = false;
+  function tryUnlock(auto) {
+    if (unlocking || lockScreen.hidden) return;
+    unlocking = true;
     lockMsg.textContent = '';
     verify().then(function (cred) {
+      unlocking = false;
       if (cred) hideLock();
-    }).catch(function () { lockMsg.textContent = T('lockFailed'); });
-  });
+    }).catch(function () {
+      unlocking = false;
+      // An automatic attempt can be blocked by the browser; the button stays as a fallback.
+      if (!auto) lockMsg.textContent = T('lockFailed');
+    });
+  }
+  unlockBtn.addEventListener('click', function () { tryUnlock(false); });
   lockBtn.addEventListener('click', function () {
     if (!lockSupported()) { window.alert(T('lockUnsupported')); return; }
     if (lockCfg && lockCfg.id) {
@@ -2472,6 +2482,7 @@
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'hidden') hiddenAt = Date.now();
     else if (lockCfg && lockCfg.id && hiddenAt && Date.now() - hiddenAt > 30000) showLock();
+    else if (!lockScreen.hidden) setTimeout(function () { tryUnlock(true); }, 250);
   });
   updateLockBtn();
   showLock();
