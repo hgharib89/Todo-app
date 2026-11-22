@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Diwaniya Kout app icon (original artwork). Full-bleed background so it also works as a maskable icon:
+       the cards stay inside the central safe zone. -->
+  <defs>
+    <radialGradient id="felt" cx="50%" cy="42%" r="70%">
+      <stop offset="0" stop-color="#1d6a5f"/>
+      <stop offset="0.6" stop-color="#11433d"/>
+      <stop offset="1" stop-color="#0b2226"/>
+    </radialGradient>
+    <linearGradient id="ivory" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffaf0"/>
+      <stop offset="1" stop-color="#efe4cc"/>
+    </linearGradient>
+    <linearGradient id="navy" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1b3f63"/>
+      <stop offset="1" stop-color="#0f2740"/>
+    </linearGradient>
+    <pattern id="lattice" width="18" height="18" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="18" height="18" fill="none"/>
+      <path d="M0 9H18M9 0V18" stroke="#e0b15a" stroke-opacity="0.55" stroke-width="2"/>
+    </pattern>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#000" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" fill="url(#felt)"/>
+  <circle cx="256" cy="256" r="214" fill="none" stroke="#e0b15a" stroke-opacity="0.35" stroke-width="4"/>
+  <!-- back card -->
+  <g transform="rotate(-14 256 270)" filter="url(#shadow)">
+    <rect x="150" y="128" width="164" height="232" rx="18" fill="url(#navy)" stroke="#e0b15a" stroke-width="6"/>
+    <rect x="166" y="144" width="132" height="200" rx="10" fill="url(#lattice)" stroke="#e0b15a" stroke-opacity="0.8" stroke-width="3"/>
+    <circle cx="232" cy="244" r="26" fill="#0f2740" stroke="#e0b15a" stroke-width="4"/>
+    <path d="M232 226l6 12 13 2-9 9 2 13-12-6-12 6 2-13-9-9 13-2z" fill="#e0b15a"/>
+  </g>
+  <!-- face card: red diamond -->
+  <g transform="rotate(10 256 270)" filter="url(#shadow)">
+    <rect x="200" y="140" width="164" height="232" rx="18" fill="url(#ivory)" stroke="#e0b15a" stroke-width="6"/>
+    <path d="M282 196 L328 256 L282 316 L236 256 Z" fill="#c8313a"/>
+    <path d="M282 214 L314 256 L282 298 L250 256 Z" fill="none" stroke="#fbf6ea" stroke-opacity="0.55" stroke-width="3"/>
+    <path d="M226 160 L236 173 L226 186 L216 173 Z" fill="#c8313a"/>
+    <path d="M338 326 L348 339 L338 352 L328 339 Z" fill="#c8313a"/>
+  </g>
+</svg>

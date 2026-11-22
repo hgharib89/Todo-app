@@ -5,6 +5,7 @@ import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
 import { describeFirstLead, describeJokerPlay, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
+import { useInstall } from '../pwa/install';
 
 export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules }: {
   settings: Settings;
@@ -44,6 +45,7 @@ export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules
           </button>
         </div>
       </div>
+      <InstallHint />
       <p className="home-meta muted small">
         الجوكر: {PRESET_NAMES[settings.preset]} · البوتات: {DIFFICULTY_LABELS[settings.difficulty]} · السرعة: {SPEED_LABELS[settings.speed]}
       </p>
@@ -181,4 +183,20 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
       </section>
     </div>
   );
+}
+
+/** "Install the game" button (Android/desktop), or the Add-to-Home-Screen hint on iPhone/iPad. */
+function InstallHint() {
+  const { mode, install } = useInstall();
+  if (mode === 'prompt') {
+    return (
+      <button className="btn ghost install-btn" onClick={install}>
+        📲 ثبّت اللعبة على جهازك
+      </button>
+    );
+  }
+  if (mode === 'ios') {
+    return <p className="install-hint muted small">للتثبيت على الآيفون: اضغط مشاركة ⬆︎ ثم «إضافة إلى الشاشة الرئيسية»</p>;
+  }
+  return null;
 }
