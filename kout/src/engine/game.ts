@@ -22,7 +22,8 @@ import type { ModeId, RulesConfig, Suit } from './rules.config';
 import { randomInt, shuffle } from './rng';
 
 export type Team = 0 | 1;
-export type Phase = 'bidding' | 'choosingTrump' | 'playing' | 'handOver' | 'gameOver';
+/** 'review' = all cards played; the table may still call a catch (صيد) before the hand is scored */
+export type Phase = 'bidding' | 'choosingTrump' | 'playing' | 'review' | 'handOver' | 'gameOver';
 
 export interface BidEntry {
   player: number;
@@ -60,6 +61,29 @@ export interface CompletedTrick extends Trick {
   winner: number;
 }
 
+/** A renege (قطع غلط): not following the led suit while holding a card of it (jokers excluded). */
+export interface Renege {
+  player: number;
+  team: Team;
+  /** index of the trick in this hand (0 = first) */
+  trick: number;
+  /** the off-suit card that was played */
+  card: CardId;
+  /** the suit that should have been followed */
+  ledSuit: Suit;
+}
+
+/** A catch (صيد) call and how it went. */
+export interface CatchResult {
+  catcher: number;
+  accused: number;
+  /** index of the trick in this hand (0 = first) */
+  trick: number;
+  success: boolean;
+  /** the suit that was not followed (successful catches) */
+  suit: Suit | null;
+}
+
 export interface HandResult {
   handNumber: number;
   dealer: number;
@@ -73,6 +97,8 @@ export interface HandResult {
   points: [number, number];
   totals: [number, number];
   endedEarly: boolean;
+  /** set when the hand was broken by a successful catch */
+  caught: CatchResult | null;
 }
 
 export interface GameState {
@@ -103,6 +129,13 @@ export interface GameState {
   lastResult: HandResult | null;
   /** number of all-pass redeals (only if forcing is disabled) */
   redeals: number;
+  /**
+   * Every renege this hand, recorded silently. HIDDEN information: not part of playerView,
+   * and bots never read it. Catches are judged only from the public cards (renegeEvidence).
+   */
+  reneges: Renege[];
+  /** the latest catch call this hand (for the UI) */
+  lastCatch: CatchResult | null;
 }
 
 export type Action =
@@ -110,7 +143,11 @@ export type Action =
   | { type: 'PASS'; player: number }
   | { type: 'CHOOSE_TRUMP'; player: number; suit: Suit }
   | { type: 'PLAY'; player: number; card: CardId }
-  | { type: 'NEXT_HAND' };
+  | { type: 'NEXT_HAND' }
+  /** صيد: `player` accuses `accused` of reneging in trick number `trick` (0 = first) of this hand */
+  | { type: 'CATCH'; player: number; accused: number; trick: number }
+  /** finish the end-of-hand review and score the hand */
+  | { type: 'END_REVIEW' };
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -174,6 +211,8 @@ function startHand(state: GameState, dealer: number, handNumber: number): GameSt
     tricksWon: [0, 0],
     tricksPlayed: 0,
     playedCards: [],
+    reneges: [],
+    lastCatch: null,
   };
 }
 
@@ -211,6 +250,8 @@ export function createGame(rules: RulesConfig, mode: ModeId, seed: number): Game
     winner: null,
     lastResult: null,
     redeals: 0,
+    reneges: [],
+    lastCatch: null,
   };
   return startHand(base, dealer, 1);
 }
@@ -417,11 +458,16 @@ export function trickWinner(rules: RulesConfig, trick: Trick, trump: Suit): numb
 // ---------------------------------------------------------------------------
 
 function applyPlay(state: GameState, player: number, card: CardId): GameState {
-  if (!legalPlays(state, player).includes(card)) throw new Error(`Illegal play ${card} by ${player}`);
+  if (!playableCards(state, player).includes(card)) throw new Error(`Illegal play ${card} by ${player}`);
   const c = state.contract as Contract;
   const trump = c.trump as Suit;
   const jr = state.rules.jokers;
   const trick = state.trick;
+  // a renege: not following the led suit while holding it (jokers can always be played)
+  const renege: Renege | null =
+    trick.ledSuit && !isJoker(card) && suitOf(card) !== trick.ledSuit && state.hands[player].some((x) => suitOf(x) === trick.ledSuit)
+      ? { player, team: teamOf(state, player), trick: state.tricksPlayed, card, ledSuit: trick.ledSuit }
+      : null;
   let cancelled = false;
   let ledSuit = trick.ledSuit;
 
@@ -447,7 +493,13 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
   const hands = state.hands.slice();
   hands[player] = hands[player].filter((x) => x !== card);
   const newTrick: Trick = { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled }] };
-  let s: GameState = { ...state, hands, trick: newTrick, playedCards: [...state.playedCards, card] };
+  let s: GameState = {
+    ...state,
+    hands,
+    trick: newTrick,
+    playedCards: [...state.playedCards, card],
+    reneges: renege ? [...(state.reneges ?? []), renege] : state.reneges ?? [],
+  };
 
   if (newTrick.plays.length < s.numPlayers) {
     return { ...s, currentPlayer: nextSeat(s, player) };
@@ -470,10 +522,116 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
   const bidTricks = tricksWon[c.team];
   const made = bidTricks >= c.value;
   const failed = bidTricks + (total - tricksPlayed) < c.value;
-  if (tricksPlayed >= total || (s.rules.endHandEarly && (made || failed))) {
-    return scoreHand(s, made, tricksPlayed < total);
+  if (tricksPlayed >= total) {
+    // every card is on the table: with reneging possible, the table reviews before scoring
+    return s.rules.renege.allowRenege ? { ...s, phase: 'review' } : scoreHand(s, made, false);
   }
+  if (!s.rules.playToLastCard && (made || failed)) return scoreHand(s, made, true);
   return s;
+}
+
+// ---------------------------------------------------------------------------
+// reneging & catching (القطع والصيد)
+// ---------------------------------------------------------------------------
+
+/**
+ * Cards `player` may physically put on the table now. With rules.renege.allowRenege this is
+ * every legal card plus any non-joker card that breaks follow-suit (a renege); joker rules
+ * still apply. Without it, exactly legalPlays.
+ */
+export function playableCards(state: GameState, player: number = state.currentPlayer): CardId[] {
+  const legal = legalPlays(state, player);
+  if (!state.rules.renege.allowRenege || legal.length === 0) return legal;
+  const extra = state.hands[player].filter((c) => !isJoker(c) && !legal.includes(c));
+  return [...legal, ...extra];
+}
+
+/** Index of the play that fixed a trick's led suit, or -1 (plays before it can't be reneges). */
+function suitFixedAt(rules: RulesConfig, trick: Trick): number {
+  for (let i = 0; i < trick.plays.length; i++) {
+    const p = trick.plays[i];
+    if (!isJoker(p.card)) return i;
+    if (i === 0 && !p.cancelled && rules.jokers.ledJokerCountsAsTrump) return 0; // a led joker made trump the suit
+  }
+  return -1;
+}
+
+export interface RenegeEvidence {
+  accused: number;
+  /** trick index in this hand (0 = first) */
+  trick: number;
+  /** the suit they showed out of */
+  suit: Suit;
+  /** the off-suit card they played in that trick */
+  card: CardId;
+  /** the later card of that suit that proves they still held it */
+  proof: CardId;
+  proofTrick: number;
+}
+
+/**
+ * Visible proof of reneges, from the cards on the table only (no hidden information):
+ * a player didn't follow suit S in one trick, then played a card of S later in the hand.
+ * Once a hand is played to the last card, every renege has such proof.
+ */
+export function renegeEvidence(state: GameState): RenegeEvidence[] {
+  const all: Trick[] = [...(state.tricks ?? []), ...(state.trick.plays.length ? [state.trick] : [])];
+  const out: RenegeEvidence[] = [];
+  all.forEach((t, i) => {
+    if (!t.ledSuit) return;
+    const from = suitFixedAt(state.rules, t);
+    if (from < 0) return;
+    for (let j = from + 1; j < t.plays.length; j++) {
+      const p = t.plays[j];
+      if (isJoker(p.card) || suitOf(p.card) === t.ledSuit) continue;
+      for (let k = i + 1; k < all.length; k++) {
+        const later = all[k].plays.find((x) => x.player === p.player && suitOf(x.card) === t.ledSuit);
+        if (later) {
+          out.push({ accused: p.player, trick: i, suit: t.ledSuit, card: p.card, proof: later.card, proofTrick: k });
+          break;
+        }
+      }
+    }
+  });
+  return out;
+}
+
+/** Catches `player` could correctly call right now (evidence against an opponent). */
+export function catchOptions(state: GameState, player: number): RenegeEvidence[] {
+  if (state.phase !== 'playing' && state.phase !== 'review') return [];
+  const team = teamOf(state, player);
+  return renegeEvidence(state).filter((e) => teamOf(state, e.accused) !== team);
+}
+
+/** Break the hand: `offender`'s team gets 0, the other team gets bid × renegePenaltyMultiplier. */
+function breakHand(state: GameState, offenderTeam: Team, caught: CatchResult): GameState {
+  const c = state.contract as Contract;
+  const other = (1 - offenderTeam) as Team;
+  const points: [number, number] = [0, 0];
+  points[other] = c.value * state.rules.renege.renegePenaltyMultiplier;
+  return finishHand(state, other === c.team, points, state.tricksPlayed < totalTricks(state), caught);
+}
+
+function applyCatch(state: GameState, player: number, accused: number, trick: number): GameState {
+  if (state.phase !== 'playing' && state.phase !== 'review') throw new Error('No catch now');
+  if (!state.rules.renege.allowRenege) throw new Error('Reneging is disabled');
+  if (teamOf(state, player) === teamOf(state, accused)) throw new Error('Catch an opponent');
+  const ev = renegeEvidence(state).find((e) => e.accused === accused && e.trick === trick);
+  if (ev) {
+    const caught: CatchResult = { catcher: player, accused, trick, success: true, suit: ev.suit };
+    return breakHand({ ...state, lastCatch: caught }, teamOf(state, accused), caught);
+  }
+  const wrong: CatchResult = { catcher: player, accused, trick, success: false, suit: null };
+  if (state.rules.renege.wrongCatchPenalty === 'brokenHand') {
+    return breakHand({ ...state, lastCatch: wrong }, teamOf(state, player), wrong);
+  }
+  return { ...state, lastCatch: wrong };
+}
+
+/** The points a hand would score as it stands (bid made or not), ignoring catches. */
+export function provisionalPoints(state: GameState): [number, number] {
+  const c = state.contract as Contract;
+  return handPoints(state.rules, c, state.tricksWon[c.team] >= c.value);
 }
 
 /** Points [team0, team1] for a hand result, from rules.scoring / rules.malzoomScoring. */
@@ -490,10 +648,10 @@ export function handPoints(rules: RulesConfig, contract: Pick<Contract, 'team' |
 export function checkGameEnd(
   rules: RulesConfig,
   scores: [number, number],
-  lastHand?: Pick<HandResult, 'handNumber' | 'made' | 'bid' | 'team'>,
+  lastHand?: Pick<HandResult, 'handNumber' | 'made' | 'bid' | 'team'> & { caught?: CatchResult | null },
 ): Team | null {
   const g = rules.gameEnd;
-  if (g.bawanFirstHandInstantWin && lastHand && lastHand.handNumber === 1 && lastHand.made && lastHand.bid === rules.bidding.bawan) {
+  if (g.bawanFirstHandInstantWin && lastHand && lastHand.handNumber === 1 && lastHand.made && !lastHand.caught && lastHand.bid === rules.bidding.bawan) {
     return lastHand.team;
   }
   const [a, b] = scores;
@@ -506,8 +664,11 @@ export function checkGameEnd(
 }
 
 function scoreHand(state: GameState, made: boolean, endedEarly: boolean): GameState {
+  return finishHand(state, made, handPoints(state.rules, state.contract as Contract, made), endedEarly, null);
+}
+
+function finishHand(state: GameState, made: boolean, points: [number, number], endedEarly: boolean, caught: CatchResult | null): GameState {
   const c = state.contract as Contract;
-  const points = handPoints(state.rules, c, made);
   const totals: [number, number] = [state.scores[0] + points[0], state.scores[1] + points[1]];
   const result: HandResult = {
     handNumber: state.handNumber,
@@ -522,6 +683,7 @@ function scoreHand(state: GameState, made: boolean, endedEarly: boolean): GameSt
     points,
     totals,
     endedEarly,
+    caught,
   };
   const winner = checkGameEnd(state.rules, totals, result);
   return {
@@ -553,6 +715,13 @@ export function applyAction(state: GameState, action: Action): GameState {
       if (action.player !== state.currentPlayer) throw new Error('Not your turn');
       return applyPlay(state, action.player, action.card);
     }
+    case 'CATCH':
+      return applyCatch(state, action.player, action.accused, action.trick);
+    case 'END_REVIEW': {
+      if (state.phase !== 'review') throw new Error('Not reviewing');
+      const c = state.contract as Contract;
+      return scoreHand(state, state.tricksWon[c.team] >= c.value, false);
+    }
     case 'NEXT_HAND': {
       if (state.phase !== 'handOver') throw new Error('Hand not over');
       const dealer = state.rules.rotateDealer ? nextSeat(state, state.dealer) : state.dealer;
@@ -574,7 +743,9 @@ export function legalActions(state: GameState): Action[] {
     case 'choosingTrump':
       return (['S', 'H', 'D', 'C'] as Suit[]).map((suit) => ({ type: 'CHOOSE_TRUMP', player: p, suit }));
     case 'playing':
-      return legalPlays(state, p).map((card) => ({ type: 'PLAY', player: p, card }));
+      return playableCards(state, p).map((card) => ({ type: 'PLAY', player: p, card }));
+    case 'review':
+      return [{ type: 'END_REVIEW' }];
     case 'handOver':
       return [{ type: 'NEXT_HAND' }];
     default:
@@ -591,5 +762,6 @@ export function playerView(state: GameState, seat: number) {
     ...state,
     seed: 0,
     hands: state.hands.map((h, i) => (i === seat ? h : h.map(() => '??'))),
+    reneges: [],
   };
 }

@@ -1,4 +1,6 @@
-import { BidOptions, GameState, HandResult, RulesConfig, SUIT_NAME_AR, SUIT_SYMBOL, Suit, isRedSuit } from '../engine';
+import { BidOptions, CatchResult, CompletedTrick, GameState, HandResult, RulesConfig, SUIT_NAME_AR, SUIT_SYMBOL, Suit, Trick, isRedSuit, teamOf } from '../engine';
+import { useState } from 'react';
+import { Card } from './Card';
 import { SEAT_NAMES, ar } from './layout';
 
 export function bidLabel(rules: RulesConfig, value: number, forced = false): string {
@@ -114,7 +116,13 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
                       {h.forced ? 'ملزوم' : bidLabel(game.rules, h.bid)} <SuitIcon suit={h.trump} />
                     </td>
                     <td>
-                      {ar(h.tricks[h.team])}/{ar(h.bid)} {h.made ? '✓' : '✗'}
+                      {h.caught ? (
+                        <span className="caught-tag">صيد</span>
+                      ) : (
+                        <>
+                          {ar(h.tricks[h.team])}/{ar(h.bid)} {h.made ? '✓' : '✗'}
+                        </>
+                      )}
                     </td>
                     <td>
                       {h.points[0] ? <span className="plus">+{ar(h.points[0])}</span> : null}
@@ -139,12 +147,14 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
   const r = game.lastResult!;
   const names = SEAT_NAMES[game.mode];
   const ours = r.team === 0;
-  const good = ours === r.made;
+  const good = r.caught ? r.points[0] > 0 : ours === r.made;
+  const caughtUs = r.caught ? teamOf(game, r.caught.accused) === 0 : false;
   return (
     <div className="modal-back">
       <div className={`modal result ${good ? 'good' : 'bad'}`}>
-        <div className="result-badge">{r.made ? '✓' : '✗'}</div>
-        <h2>{r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
+        <div className="result-badge">{r.caught ? '🎯' : r.made ? '✓' : '✗'}</div>
+        <h2>{r.caught ? (caughtUs ? 'انصدنا!' : 'صدناهم!') : r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
+        {r.caught && <p className="catch-line">{catchMessage(game, r.caught, r.points)}</p>}
         <p className="result-line">
           {names[r.bidder]} — {r.forced ? 'ملزوم' : `طلب ${bidLabel(game.rules, r.bid)}`} · الحكم <SuitIcon suit={r.trump} />
         </p>
@@ -162,7 +172,7 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
             <b className={r.points[0] ? 'us-txt' : 'them-txt'}>+{ar(r.points[0] || r.points[1])} {r.points[0] ? 'لنا' : 'لهم'}</b>
           </div>
         </div>
-        {r.endedEarly && <p className="muted small">انتهت اليد مبكراً — النتيجة محسومة</p>}
+        {r.endedEarly && !r.caught && <p className="muted small">انتهت اليد مبكراً — النتيجة محسومة</p>}
         <div className="score-big">
           <span className="us-txt">لنا {ar(game.scores[0])}</span>
           <span className="sep">—</span>
@@ -208,6 +218,90 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
             لعبة جديدة
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/** "خالد قطع في الأكلة ٣ (ما لحق الهاص) — صاده سالم: +١٢ لنا" */
+export function catchMessage(game: GameState, c: CatchResult, points?: [number, number]): string {
+  const names = SEAT_NAMES[game.mode];
+  if (!c.success) return `${names[c.catcher]} صاد غلط على ${names[c.accused]} — ما في شي`;
+  const suit = c.suit ? ` (ما لحق ${SUIT_NAME_AR[c.suit]})` : '';
+  let pts = '';
+  if (points) {
+    const team = points[0] > 0 ? 0 : 1;
+    pts = `: +${ar(points[team])} ${team === 0 ? 'لنا' : 'لهم'}`;
+  }
+  return `${names[c.accused]} قطع في الأكلة ${ar(c.trick + 1)}${suit} — صاده ${names[c.catcher]}${pts}`;
+}
+
+/** The human's صيد picker: choose an opponent, then the trick where they reneged. */
+export function CatchModal({ game, me, onCatch, onClose }: { game: GameState; me: number; onCatch: (accused: number, trick: number) => void; onClose: () => void }) {
+  const names = SEAT_NAMES[game.mode];
+  const myTeam = teamOf(game, me);
+  const opponents = Array.from({ length: game.numPlayers }, (_, i) => i).filter((i) => teamOf(game, i) !== myTeam);
+  const [accused, setAccused] = useState<number | null>(null);
+  const tricks: (Trick | CompletedTrick)[] = [...game.tricks, ...(game.trick.plays.length ? [game.trick] : [])];
+  return (
+    <div className="modal-back" onClick={onClose}>
+      <div className="modal catch-modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>صيد</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="إغلاق">
+            ✕
+          </button>
+        </div>
+        <p className="muted small center">{accused === null ? 'منو قطع؟' : `وين قطع ${names[accused]}؟ اختر الأكلة`}</p>
+        {accused === null ? (
+          <div className="catch-list">
+            {opponents.map((p) => (
+              <button key={p} className="preset" onClick={() => setAccused(p)}>
+                <b>{names[p]}</b>
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="catch-list">
+            {tricks.map((t, i) => {
+              const mine = t.plays.find((x) => x.player === accused);
+              if (!mine) return null;
+              return (
+                <button key={i} className="preset catch-trick" onClick={() => onCatch(accused, i)}>
+                  <b>الأكلة {ar(i + 1)}</b>
+                  <span className="catch-cards">
+                    {t.ledSuit ? (
+                      <>
+                        النقش <SuitIcon suit={t.ledSuit} /> ·
+                      </>
+                    ) : null}
+                    لعب <Card id={mine.card} className="mini-face" />
+                  </span>
+                </button>
+              );
+            })}
+            <button className="btn ghost" onClick={() => setAccused(null)}>
+              رجوع
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** End-of-hand review: the human may still call صيد before the hand is scored. */
+export function ReviewPanel({ onCatch, onDone }: { onCatch: () => void; onDone: () => void }) {
+  return (
+    <div className="panel review-panel">
+      <div className="panel-title">انتهت الأوراق — تبي تصيد قبل الحساب؟</div>
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={onCatch}>
+          🎯 صيد
+        </button>
+        <button className="btn primary" onClick={onDone}>
+          متابعة
+        </button>
       </div>
     </div>
   );

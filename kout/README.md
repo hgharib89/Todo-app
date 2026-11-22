@@ -47,7 +47,8 @@ The engine reads every rule value from this file, and each option has a comment 
 | `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6H', '6C']` (the 6♠ and 6♦ stay), giving 36 cards |
 | `firstDealer`, `rotateDealer` | who deals first, dealer rotation |
 | `jokerPresets` + `activeJokerPreset` | the four joker presets (see below) |
-| `endHandEarly` | stop the hand as soon as the bid is made or can no longer be made |
+| `playToLastCard` | `true` (default): every hand is played to the last card. `false`: stop as soon as the bid is made or can no longer be made |
+| `renege` | reneging and catching (القطع والصيد), see below: `allowRenege`, `renegePenaltyMultiplier`, `wrongCatchPenalty`, `botCatchChance`, `botRenegeChance` |
 | `scoring`, `malzoomScoring` | points table |
 | `gameEnd` | `targetScore` (54: first team to 54+ wins), `shutoutTarget` (36: 36+ while the other team has 0 wins; `null` disables it), Bawan-on-first-hand instant win |
 
@@ -74,12 +75,22 @@ The engine reads every rule value from this file, and each option has a comment 
 Players pick the preset in the in-game **Settings** screen. The preset descriptions in Settings and the joker text on the Rules screen are generated from the config (`src/ui/rulesText.ts`), so they always match what the engine does. To change what a preset does, edit `JOKER_PRESETS` in `rules.config.ts`. To try a one-off change in code or in a test, use `buildRules(preset, overrides)`:
 
 ```ts
-buildRules('default', { endHandEarly: false, jokers: { illegalForcedLead: 'asTrump' } });
+buildRules('default', { playToLastCard: false, jokers: { illegalForcedLead: 'asTrump' } });
 ```
+
+## Reneging and catching (القطع والصيد)
+
+Like a real table, the game doesn't stop you playing a wrong card.
+
+- **Reneging.** With `renege.allowRenege` (default `true`), any card in your hand can be played even when you hold the led suit. Only the joker rules still block cards. The engine silently records every renege in `state.reneges`, which is hidden: `playerView` strips it and bots never read it.
+- **Evidence.** A catch needs proof everyone can see: the player didn't follow suit S in one trick, then played an S card later in the same hand. `renegeEvidence(state)` finds this from the table alone. Because every hand is played to the last card (`playToLastCard`), every renege has proof by the end of the hand.
+- **Calling صيد.** During play, anyone can call صيد on an opponent (action `CATCH`, or the 🎯 صيد button: pick the opponent, then the trick). After the last card the hand goes to a short `review` phase where the table can still catch. `END_REVIEW` then scores the hand normally.
+- **Penalty.** A correct catch breaks the hand for the reneging team, whether it bid or defended. The catchers get bid × `renegePenaltyMultiplier` (2) and the renegers get 0. A wrong catch does nothing (`wrongCatchPenalty: 'none'`); `'brokenHand'` would break the hand for the caller instead.
+- **Bots.** Bots catch only from visible evidence, with chance `botCatchChance` (Hard 100%, Medium 60%, Easy 25%), deciding once per piece of evidence and once more at the review. Easy and Medium occasionally renege by mistake (`botRenegeChance`: Easy 6%, Medium 3% of the cards where they could; Hard 0%).
 
 ## Bots
 
-All bots choose only from `legalActions` / `legalPlays`, so they follow whatever `rules.config.ts` says. They read only their own hand plus public information.
+Bots play from `legalPlays`, so they follow whatever `rules.config.ts` says. The only exception is the configured chance of a mistaken renege for Easy and Medium. They read only their own hand plus public information.
 
 | Level | Bidding | Play |
 |---|---|---|

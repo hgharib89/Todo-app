@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, buildRules, legalPlays, trickWinner, GameState } from '../src/engine';
+import { applyAction, buildRules, legalPlays, trickWinner, GameState, RULES } from '../src/engine';
 import { playingState } from './helpers';
 
 function play(s: GameState, ...cards: string[]): GameState {
@@ -45,9 +45,15 @@ describe('legal moves (following suit)', () => {
     expect(legalPlays(base(), 1)).toEqual([]);
   });
 
-  it('rejects illegal plays', () => {
-    const s = play(base(), 'H10');
+  it('with allowRenege off, wrong cards are rejected', () => {
+    const rules = buildRules('default', { renege: { ...RULES.renege, allowRenege: false } });
+    const s = play(playingState({ ...setupOf(base()), rules }), 'H10');
     expect(() => applyAction(s, { type: 'PLAY', player: 1, card: 'D9' })).toThrow();
+  });
+
+  it('with allowRenege on (default), a wrong card can be played', () => {
+    const s = play(base(), 'H10');
+    expect(() => applyAction(s, { type: 'PLAY', player: 1, card: 'D9' })).not.toThrow();
   });
 });
 

@@ -8,13 +8,14 @@ import {
   buildRules,
   createGame,
   applyAction,
-  legalPlays,
+  catchOptions,
+  playableCards,
   teamOf,
 } from '../engine';
-import { chooseBotAction } from '../bots';
+import { chooseBotAction, chooseBotCatch } from '../bots';
 import { Card } from './Card';
 import { Hand } from './Hand';
-import { BidPanel, GameOverModal, HandResultModal, ScorePad, SuitIcon, TrumpPicker, bidLabel } from './panels';
+import { BidPanel, CatchModal, GameOverModal, HandResultModal, ReviewPanel, ScorePad, SuitIcon, TrumpPicker, bidLabel, catchMessage } from './panels';
 import { SEAT_NAMES, SEAT_POS, ar, trickOffset } from './layout';
 import { SPEED_MS, Settings, saveGame } from './settings';
 import { setSoundEnabled, sfx } from './sound';
@@ -41,6 +42,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   const [padOpen, setPadOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [catchOpen, setCatchOpen] = useState(false);
   const [dealing, setDealing] = useState(true);
   const speed = SPEED_MS[settings.speed];
   const n = game.numPlayers;
@@ -63,9 +65,9 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dealKey]);
 
-  const showToast = useCallback((msg: string) => {
+  const showToast = useCallback((msg: string, ms = 1800) => {
     setToast(msg);
-    setTimeout(() => setToast((t) => (t === msg ? null : t)), 1800);
+    setTimeout(() => setToast((t) => (t === msg ? null : t)), ms);
   }, []);
 
   const act = useCallback(
@@ -83,6 +85,10 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         if (next.lastTrick !== prev.lastTrick && next.lastTrick) setCollecting({ trick: next.lastTrick, stage: 'show' });
       } else if (a.type === 'BID' || a.type === 'PASS') {
         sfx.bid();
+      } else if (a.type === 'CATCH' && next.lastCatch) {
+        const c = next.lastCatch;
+        if (c.success) sfx.collect();
+        showToast(`${c.success ? '🎯 صيد! ' : ''}${catchMessage(next, c, c.success ? next.lastResult?.points : undefined)}`, 3200);
       } else if (a.type === 'CHOOSE_TRUMP' && next.contract) {
         const c = next.contract;
         showToast(`${names[c.bidder]}: ${c.forced ? 'ملزوم' : bidLabel(next.rules, c.value)} — الحكم ${'♠♥♦♣'['SHDC'.indexOf(a.suit)]}`);
@@ -110,8 +116,26 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
 
   // bots
   const busy = collecting !== null || dealing;
+  const humanCanCatch = game.phase === 'review' && catchOptions(game, HUMAN).length > 0;
   useEffect(() => {
     if (busy) return;
+    // صيد: any bot that has seen evidence against an opponent may call it (never peeking)
+    if (game.phase === 'playing' || game.phase === 'review') {
+      for (let seat = 0; seat < game.numPlayers; seat++) {
+        if (seat === HUMAN) continue;
+        const c = chooseBotCatch(game, seat, settings.difficulty);
+        if (c) {
+          const t = setTimeout(() => act(c), speed.bot);
+          return () => clearTimeout(t);
+        }
+      }
+    }
+    if (game.phase === 'review') {
+      // nothing left for the bots to catch: wait for the human only if they could catch someone
+      if (humanCanCatch) return;
+      const t = setTimeout(() => act({ type: 'END_REVIEW' }), speed.bot);
+      return () => clearTimeout(t);
+    }
     if (!['bidding', 'choosingTrump', 'playing'].includes(game.phase)) return;
     if (game.currentPlayer === HUMAN) {
       sfx.turn();
@@ -119,11 +143,11 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
     }
     const t = setTimeout(() => act(chooseBotAction(game, settings.difficulty)), speed.bot);
     return () => clearTimeout(t);
-  }, [game, busy, act, settings.difficulty, speed.bot]);
+  }, [game, busy, act, settings.difficulty, speed.bot, humanCanCatch]);
 
   const myTurn = !busy && game.currentPlayer === HUMAN;
   const legal = useMemo<CardId[] | null>(
-    () => (myTurn && game.phase === 'playing' ? legalPlays(game, HUMAN) : null),
+    () => (myTurn && game.phase === 'playing' ? playableCards(game, HUMAN) : null),
     [game, myTurn],
   );
 
@@ -183,9 +207,20 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         <button className="icon-btn" onClick={() => setMenuOpen(true)} aria-label="القائمة">
           ☰
         </button>
-        <button className="chip-btn" onClick={() => setPadOpen(true)}>
-          📜 النشرة
-        </button>
+        <div className="toolbar-mid">
+          <button className="chip-btn" onClick={() => setPadOpen(true)}>
+            📜 النشرة
+          </button>
+          {game.rules.renege.allowRenege && (
+            <button
+              className="chip-btn catch-btn"
+              disabled={!(game.phase === 'playing' || game.phase === 'review') || (game.tricks.length === 0 && game.trick.plays.length === 0)}
+              onClick={() => setCatchOpen(true)}
+            >
+              🎯 صيد
+            </button>
+          )}
+        </div>
         <button className="icon-btn" onClick={onToggleSound} aria-label="الصوت">
           {settings.sound ? '🔊' : '🔇'}
         </button>
@@ -244,7 +279,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
             );
           })}
         </div>
-        {toast && <div className="toast">{toast}</div>}
+        {toast && <div className={`toast ${toast.length > 24 ? 'wide' : ''}`}>{toast}</div>}
       </main>
 
       {/* ---------- MY AREA ---------- */}
@@ -260,6 +295,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         )}
         {myTurn && game.phase === 'choosingTrump' && <TrumpPicker onPick={(s) => act({ type: 'CHOOSE_TRUMP', player: HUMAN, suit: s })} />}
         {myTurn && game.phase === 'playing' && <div className="your-turn">دورك — اضغط الورقة مرتين للعب</div>}
+        {!busy && humanCanCatch && <ReviewPanel onCatch={() => setCatchOpen(true)} onDone={() => act({ type: 'END_REVIEW' })} />}
         <Hand
           cards={game.hands[HUMAN]}
           trump={c?.trump ?? null}
@@ -271,6 +307,17 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
       </section>
 
       {padOpen && <ScorePad game={game} onClose={() => setPadOpen(false)} />}
+      {catchOpen && (game.phase === 'playing' || game.phase === 'review') && (
+        <CatchModal
+          game={game}
+          me={HUMAN}
+          onClose={() => setCatchOpen(false)}
+          onCatch={(accused, trick) => {
+            setCatchOpen(false);
+            act({ type: 'CATCH', player: HUMAN, accused, trick });
+          }}
+        />
+      )}
       {showResult && !padOpen && <HandResultModal game={game} onPad={() => setPadOpen(true)} onNext={() => act({ type: 'NEXT_HAND' })} />}
       {showGameOver && !padOpen && <GameOverModal game={game} onPad={() => setPadOpen(true)} onAgain={restart} onHome={onExit} />}
       {menuOpen && (

@@ -33,7 +33,7 @@ describe('scoring table', () => {
   });
 });
 
-describe('early hand end', () => {
+describe('hand end: play to the last card (playToLastCard)', () => {
   // bidder team 0 bid 5; give it 5 sure tricks then more cards
   const hands = () => [
     ['S14', 'S13', 'S12', 'S11', 'S10', 'H7'],
@@ -49,31 +49,50 @@ describe('early hand end', () => {
     }
     return s;
   };
+  const early = buildRules('default', { playToLastCard: false });
 
-  it('ends as soon as the bid is made (when enabled)', () => {
+  it('config: every hand is played to the last card by default', () => {
+    expect(RULES.playToLastCard).toBe(true);
+  });
+
+  it('keeps playing after the bid is made, then reviews and scores', () => {
     let s = playingState({ trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
+    s = leadAll(s);
+    expect(s.phase).toBe('playing'); // bid already made, but the hand goes on
+    s = play(s, 'H7', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
+    expect(s.phase).toBe('review'); // all cards played: the table may still call صيد
+    expect(s.hands.every((h) => h.length === 0)).toBe(true);
+    s = applyAction(s, { type: 'END_REVIEW' });
+    expect(s.phase).toBe('handOver');
+    expect(s.lastResult).toMatchObject({ made: true, endedEarly: false, tricks: [5, 1], points: [5, 0], caught: null });
+  });
+
+  it('keeps playing after the bid is lost', () => {
+    let s = playingState({ trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
+    s = play(s, 'S14', 'H14', 'C7', 'D6');
+    expect(s.phase).toBe('playing');
+  });
+
+  it('playToLastCard: false ends the hand as soon as the bid is made', () => {
+    let s = playingState({ rules: early, trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
     s = leadAll(s);
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ made: true, endedEarly: true, points: [5, 0] });
-    expect(s.scores).toEqual([5, 0]);
   });
 
-  it('ends as soon as the bid can no longer be made', () => {
-    // bidder team 1 bid 9 (Bawan): losing the first trick ends the hand
-    let s = playingState({ trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
+  it('playToLastCard: false ends the hand as soon as the bid can no longer be made', () => {
+    let s = playingState({ rules: early, trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
     s = play(s, 'S14', 'H14', 'C7', 'D6');
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ made: false, endedEarly: true, points: [18, 0] });
   });
 
-  it('plays all tricks when endHandEarly is off', () => {
-    const rules = buildRules('default', { endHandEarly: false });
+  it('without reneging there is no review phase', () => {
+    const rules = buildRules('default', { renege: { ...RULES.renege, allowRenege: false } });
     let s = playingState({ rules, trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
     s = leadAll(s);
-    expect(s.phase).toBe('playing');
     s = play(s, 'H7', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
     expect(s.phase).toBe('handOver');
-    expect(s.lastResult).toMatchObject({ made: true, endedEarly: false, tricks: [5, 1] });
   });
 });
 
@@ -99,14 +118,14 @@ describe('game end', () => {
   });
   it('a hand that takes a team to 54 ends the game', () => {
     const base = playingState({ trump: 'S', bidder: 0, bid: 6, hands: [['S14'], ['H7'], ['H8'], ['H9']], tricksWon: [5, 3], tricksPlayed: 8 });
-    const s = play({ ...base, scores: [48, 20] }, 'S14', 'H7', 'H8', 'H9');
+    const s = applyAction(play({ ...base, scores: [48, 20] }, 'S14', 'H7', 'H8', 'H9'), { type: 'END_REVIEW' });
     expect(s.phase).toBe('gameOver');
     expect(s.scores).toEqual([54, 20]);
     expect(s.winner).toBe(0);
   });
   it('a hand that takes a team to 36 while the other has 0 ends the game', () => {
     const base = playingState({ trump: 'S', bidder: 1, bid: 6, leader: 1, hands: [['H7'], ['S14'], ['H8'], ['H9']], tricksWon: [3, 5], tricksPlayed: 8 });
-    const s = play({ ...base, scores: [0, 30] }, 'S14', 'H8', 'H9', 'H7');
+    const s = applyAction(play({ ...base, scores: [0, 30] }, 'S14', 'H8', 'H9', 'H7'), { type: 'END_REVIEW' });
     expect(s.phase).toBe('gameOver');
     expect(s.scores).toEqual([0, 36]);
     expect(s.winner).toBe(1);

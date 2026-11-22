@@ -3,7 +3,7 @@ import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
-import { describeFirstLead, describeJokerPlay, describeRemovedCards, presetDescription } from './rulesText';
+import { describeFirstLead, describeJokerPlay, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 
 export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules }: {
@@ -139,6 +139,12 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
           <b>البدء بالجوكر ({PRESET_NAMES[settings.preset]}):</b> {presetDescription(settings.preset, r)}.
         </p>
         {describeJokerPlay(r.jokerPresets[settings.preset]).map((t) => (
+          <p key={t}>{t}</p>
+        ))}
+      </section>
+      <section>
+        <h3>القطع والصيد</h3>
+        {describeRenege(r).map((t) => (
           <p key={t}>{t}</p>
         ))}
       </section>

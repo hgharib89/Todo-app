@@ -78,3 +78,21 @@ export function describeRemovedCards(rules: RulesConfig, mode: 'bo4' | 'bo6'): s
     })
     .join(' و');
 }
+
+/** The reneging & catching rules (القطع والصيد) as sentences, from rules.renege / rules.playToLastCard. */
+export function describeRenege(rules: RulesConfig): string[] {
+  const r = rules.renege;
+  const out: string[] = [];
+  out.push(rules.playToLastCard ? 'كل يد تنلعب لآخر ورقة.' : 'اليد تنتهي أول ما تنحسم النتيجة.');
+  if (!r.allowRenege) {
+    out.push('اللعبة تمنع القطع الغلط: لازم تلحق النقش إذا عندك.');
+    return out;
+  }
+  out.push('تقدر تلعب أي ورقة من يدك، بس إذا ما لحقت النقش وعندك منه هذا قطع غلط (الجوكر مو قطع).');
+  out.push('الصيد: إذا لاعب ما لحق نقش، وبعدين لعب من نفس النقش في نفس اليد، تقدر تصيده. وفي آخر اليد تنراجع كل الأوراق ويقدر أي أحد يصيد.');
+  out.push(`إذا انصاد القطع: تنكسر اليد على الفريق اللي قطع، والفريق اللي صاد ياخذ ${ar(r.renegePenaltyMultiplier)} أضعاف الطلب، واللي قطع ياخذ صفر.`);
+  out.push(r.wrongCatchPenalty === 'none' ? 'الصيد الغلط ما عليه شي.' : 'الصيد الغلط: تنكسر اليد على الفريق اللي صاد.');
+  const pct = (x: number) => `${ar(Math.round(x * 100))}٪`;
+  out.push(`البوتات تصيد بس من اللي شافته: صعب ${pct(r.botCatchChance.hard)}، متوسط ${pct(r.botCatchChance.medium)}، سهل ${pct(r.botCatchChance.easy)}.`);
+  return out;
+}
