@@ -39,11 +39,13 @@ The engine reads every rule value from this file, and each option has a comment 
 
 | Section | What it controls |
 |---|---|
-| `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
+| `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`, which accepts `'H6'` or `'6H'`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
 | `suitRankOrder` | rank order inside a suit (A K Q J 10 … 2) |
 | `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
 | `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / بوان), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
-| `firstLeader`, `firstDealer`, `rotateDealer` | who leads the first trick, who deals first, dealer rotation |
+| `firstLead` | who leads the first card of the hand: `'rightOfBidder'` (default: the player to the winning bidder's right; the bidder still chooses trump), `'bidder'` or `'rightOfDealer'`. After that the trick winner leads |
+| `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6H', '6C']` (the 6♠ and 6♦ stay), giving 36 cards |
+| `firstDealer`, `rotateDealer` | who deals first, dealer rotation |
 | `jokerPresets` + `activeJokerPreset` | the four joker presets (see below) |
 | `endHandEarly` | stop the hand as soon as the bid is made or can no longer be made |
 | `scoring`, `malzoomScoring` | points table |

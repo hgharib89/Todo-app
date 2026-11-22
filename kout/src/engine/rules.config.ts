@@ -34,7 +34,7 @@ export interface ModeRules {
   handSize: number;
   /** رتب تُحذف من كل النقوش / ranks removed from every suit */
   removeRanks: Rank[];
-  /** أوراق محددة تُحذف / specific cards removed (card ids) */
+  /** أوراق محددة تُحذف ('H6' أو '6H') / specific cards removed (card ids, 'H6' or '6H') */
   removeCards: string[];
   /** الجوكرات المضافة للورق / jokers added to the deck */
   jokers: JokerId[];
@@ -164,8 +164,24 @@ export interface RulesConfig {
    */
   trumpPowerOrder: (Rank | JokerId)[];
   bidding: BidRules;
-  /** من يبدأ أول أكلة: 'bidder' = صاحب أعلى مزايدة / who leads the first trick */
-  firstLeader: 'bidder' | 'rightOfDealer';
+  /**
+   * من يبدأ أول ورقة في اليد (صاحب أعلى مزايدة يختار الحكم دائماً):
+   *   - 'rightOfBidder' = اللاعب اللي على يمين المزايد (التالي عكس عقارب الساعة)
+   *   - 'bidder'        = المزايد نفسه
+   *   - 'rightOfDealer' = اللاعب اللي على يمين الموزع
+   * بعد أول أكلة، اللي يكسب الأكلة يبدأ اللي بعدها.
+   * Who leads the first card of the hand (the winning bidder always chooses trump):
+   *   - 'rightOfBidder' = the player to the bidder's right (next in counter-clockwise order)
+   *   - 'bidder'        = the bidder
+   *   - 'rightOfDealer' = the player to the dealer's right
+   * After that, each trick's winner leads the next.
+   */
+  firstLead: 'rightOfBidder' | 'bidder' | 'rightOfDealer';
+  /**
+   * الستات المحذوفة من ورق بو ٤ (تُضاف لـ modes.bo4.removeCards). تُكتب رقم + نقش: '6H' = ٦♥.
+   * The 6s removed from the Bo 4 deck (added to modes.bo4.removeCards), written rank + suit: '6H' = 6♥.
+   */
+  bo4Removed6s: string[];
   /**
    * أول موزع في اللعبة: 'random' أو رقم الكرسي (0 = أنت).
    * First dealer of the game: 'random' or a seat index (0 = you).
@@ -280,13 +296,17 @@ export const RULES: RulesConfig = {
       teamLayout: 'alternate',
       dealChunk: 3,
     },
-    /** كوت بو ٤: ٤ لاعبين، فريقين من ٢، بدون ٢-٥ وبدون الستات الحمر + جوكرين = ٣٦ ورقة */
-    /** Kout Bo 4: 4 players, 2 teams of 2, remove 2–5 and the red 6s, add both jokers = 36 cards */
+    /**
+     * كوت بو ٤: ٤ لاعبين، فريقين من ٢، بدون ٢-٥ وبدون ستة الهاص وستة الشريحة (bo4Removed6s) + جوكرين = ٣٦ ورقة.
+     * يبقى ستة السبيت وستة الديمن.
+     * Kout Bo 4: 4 players, 2 teams of 2, remove 2–5 and the 6♥ and 6♣ (bo4Removed6s), add both jokers = 36 cards.
+     * The 6♠ and 6♦ stay.
+     */
     bo4: {
       players: 4,
       handSize: 9,
       removeRanks: [2, 3, 4, 5],
-      removeCards: ['H6', 'D6'],
+      removeCards: [],
       jokers: ['XR', 'XB'],
       teamLayout: 'alternate',
       dealChunk: 3,
@@ -312,7 +332,8 @@ export const RULES: RulesConfig = {
     forcedDealerMayRaise: true,
   },
 
-  firstLeader: 'bidder',
+  firstLead: 'rightOfBidder',
+  bo4Removed6s: ['6H', '6C'],
   firstDealer: 'random',
   rotateDealer: true,
 

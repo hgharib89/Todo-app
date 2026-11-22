@@ -36,9 +36,9 @@ describe('scoring table', () => {
 describe('early hand end', () => {
   // bidder team 0 bid 5; give it 5 sure tricks then more cards
   const hands = () => [
-    ['S14', 'S13', 'S12', 'S11', 'S10', 'H6'],
+    ['S14', 'S13', 'S12', 'S11', 'S10', 'H7'],
     ['H14', 'H13', 'H12', 'H11', 'H10', 'H9'],
-    ['C6', 'C7', 'C8', 'C9', 'C10', 'C11'],
+    ['C7', 'C8', 'C9', 'C10', 'C11', 'C12'],
     ['D6', 'D7', 'D8', 'D9', 'D10', 'D11'],
   ];
   const leadAll = (s: GameState) => {
@@ -61,7 +61,7 @@ describe('early hand end', () => {
   it('ends as soon as the bid can no longer be made', () => {
     // bidder team 1 bid 9 (Bawan): losing the first trick ends the hand
     let s = playingState({ trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
-    s = play(s, 'S14', 'H14', 'C6', 'D6');
+    s = play(s, 'S14', 'H14', 'C7', 'D6');
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ made: false, endedEarly: true, points: [18, 0] });
   });
@@ -71,7 +71,7 @@ describe('early hand end', () => {
     let s = playingState({ rules, trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
     s = leadAll(s);
     expect(s.phase).toBe('playing');
-    s = play(s, 'H6', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
+    s = play(s, 'H7', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ made: true, endedEarly: false, tricks: [5, 1] });
   });

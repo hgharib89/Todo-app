@@ -3,7 +3,7 @@ import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
-import { describeJokerPlay, presetDescription } from './rulesText';
+import { describeFirstLead, describeJokerPlay, describeRemovedCards, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 
 export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules }: {
@@ -120,7 +120,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
       <section>
         <h3>الورق</h3>
         <p>
-          بو ٦: {ar(buildDeck(r, 'bo6').length)} ورقة (٥٢ + جوكرين) · بو ٤: {ar(buildDeck(r, 'bo4').length)} ورقة (بدون ٢–٥ والستات الحمر + جوكرين). كل لاعب {ar(r.modes.bo6.handSize)} أوراق.
+          بو ٦: {ar(buildDeck(r, 'bo6').length)} ورقة (٥٢ + جوكرين) · بو ٤: {ar(buildDeck(r, 'bo4').length)} ورقة (بدون {ar(Math.min(...r.modes.bo4.removeRanks))}–{ar(Math.max(...r.modes.bo4.removeRanks))} و{describeRemovedCards(r, 'bo4')} + جوكرين). كل لاعب {ar(r.modes.bo6.handSize)} أوراق.
         </p>
         <p>القوة: الجوكر الأحمر › إكَه الحكم › الجوكر الأسود › باقي الحكم › باقي النقوش.</p>
       </section>
@@ -129,7 +129,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
         <p>
           تبدأ من يمين الموزع، وكل لاعب يتكلم مرة: طاف أو يزايد أعلى ({voluntary.map((v) => bidLabel(r, v)).join('، ')}). أقل مزايدة {ar(r.bidding.minVoluntaryBid)}. إذا طاف الكل، الموزع ملزوم بـ{ar(r.bidding.malzoomBid)}
           {r.bidding.forcedDealerMayRaise && <> (أو يزايد أعلى)</>}.
-          صاحب أعلى طلب يختار الحكم ويبدأ أول أكلة.
+          {describeFirstLead(r)} بعدها اللي يكسب الأكلة يبدأ.
         </p>
       </section>
       <section>

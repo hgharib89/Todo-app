@@ -80,7 +80,7 @@ describe('illegal forced joker lead (cancel)', () => {
   });
 
   it('if the next player also plays a joker it is cancelled too; following card sets the suit', () => {
-    let s = forced([['XR'], ['XB', 'H6'], ['D7'], ['D14']]);
+    let s = forced([['XR'], ['XB', 'H7'], ['D7'], ['D14']]);
     s = play(s, 'XR', 'XB');
     expect(s.trick.plays.map((p) => p.cancelled)).toEqual([true, true]);
     s = play(s, 'D7');
@@ -90,7 +90,7 @@ describe('illegal forced joker lead (cancel)', () => {
   });
 
   it('both jokers forced-led: still only one is offered when one is legal', () => {
-    const s = playingState({ trump: 'S', bidder: 0, bid: 8, hands: [['XR', 'XB'], ['H6'], ['H7'], ['H8']] });
+    const s = playingState({ trump: 'S', bidder: 0, bid: 8, hands: [['XR', 'XB'], ['H7'], ['H8'], ['H9']] });
     expect(legalPlays(s)).toEqual(['XR']);
   });
 

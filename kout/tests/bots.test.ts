@@ -44,10 +44,10 @@ describe('bots', () => {
   it('medium bot wins cheaply when last to play', () => {
     const s0 = playingState({
       trump: 'S', bidder: 0, bid: 5, leader: 1,
-      hands: [['H14', 'H13', 'H7', 'XR'], ['H10'], ['H6'], ['H12']],
+      hands: [['H14', 'H13', 'H7', 'XR'], ['H10'], ['H8'], ['H12']],
     });
     let s = applyAction(s0, { type: 'PLAY', player: 1, card: 'H10' });
-    s = applyAction(s, { type: 'PLAY', player: 2, card: 'H6' });
+    s = applyAction(s, { type: 'PLAY', player: 2, card: 'H8' });
     s = applyAction(s, { type: 'PLAY', player: 3, card: 'H12' });
     expect(chooseBotAction(s, 'medium')).toEqual({ type: 'PLAY', player: 0, card: 'H13' });
   });
@@ -55,11 +55,11 @@ describe('bots', () => {
   it('medium bot plays low when partner is already winning as last player', () => {
     const s0 = playingState({
       trump: 'S', bidder: 0, bid: 5, leader: 1,
-      hands: [['H14', 'H13', 'H7'], ['H10'], ['H12'], ['H6']],
+      hands: [['H14', 'H13', 'H7'], ['H10'], ['H12'], ['H8']],
     });
     let s = applyAction(s0, { type: 'PLAY', player: 1, card: 'H10' });
     s = applyAction(s, { type: 'PLAY', player: 2, card: 'H12' });
-    s = applyAction(s, { type: 'PLAY', player: 3, card: 'H6' });
+    s = applyAction(s, { type: 'PLAY', player: 3, card: 'H8' });
     expect(chooseBotAction(s, 'medium')).toEqual({ type: 'PLAY', player: 0, card: 'H7' });
   });
 

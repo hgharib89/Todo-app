@@ -32,3 +32,16 @@ describe('bidding panel and settings', () => {
     expect(Object.keys(DIFFICULTY_LABELS)).toEqual(['easy', 'medium', 'hard']);
   });
 });
+
+describe('rules text for the first lead and the Bo 4 deck', () => {
+  it('describes the first lead from rules.firstLead', async () => {
+    const { describeFirstLead } = await import('../src/ui/rulesText');
+    expect(describeFirstLead(RULES)).toContain('على يمينه يبدأ أول ورقة');
+    expect(describeFirstLead(buildRules('default', { firstLead: 'bidder' }))).toContain('ويبدأ أول ورقة');
+  });
+  it('lists the removed Bo 4 sixes from rules.bo4Removed6s', async () => {
+    const { describeRemovedCards } = await import('../src/ui/rulesText');
+    expect(describeRemovedCards(RULES, 'bo4')).toBe('٦ هاص و٦ شريحة');
+    expect(describeRemovedCards(buildRules('default', { bo4Removed6s: ['6D'] }), 'bo4')).toBe('٦ ديمن');
+  });
+});
