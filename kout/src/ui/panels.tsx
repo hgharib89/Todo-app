@@ -11,6 +11,13 @@ export function SuitIcon({ suit }: { suit: Suit }) {
   return <span className={`suit-ic ${isRedSuit(suit) ? 'red' : 'black'}`}>{SUIT_SYMBOL[suit]}</span>;
 }
 
+/** Bid buttons to show: the voluntary bids, plus the Malzoom bid only when the dealer is forced. */
+export function bidButtons(rules: RulesConfig, forced: boolean): number[] {
+  const b = rules.bidding;
+  const voluntary = b.values.filter((v) => v >= b.minVoluntaryBid);
+  return forced && !voluntary.includes(b.malzoomBid) ? [b.malzoomBid, ...voluntary] : voluntary;
+}
+
 export function BidPanel({ rules, opts, highBid, onBid, onPass }: {
   rules: RulesConfig;
   opts: BidOptions;
@@ -24,13 +31,15 @@ export function BidPanel({ rules, opts, highBid, onBid, onPass }: {
         {opts.forced ? 'الكل طاف — أنت ملزوم' : highBid ? `أعلى طلب: ${ar(highBid)} — زايد أو طاف` : 'دورك — زايد أو طاف'}
       </div>
       <div className="bid-row">
-        <button className="bid-btn pass" disabled={!opts.canPass} onClick={onPass}>
-          <span className="bid-num">طاف</span>
-          <span className="bid-name">{'\u00a0'}</span>
-        </button>
-        {rules.bidding.values.map((v) => {
+        {!opts.forced && (
+          <button className="bid-btn pass" disabled={!opts.canPass} onClick={onPass}>
+            <span className="bid-num">طاف</span>
+            <span className="bid-name">{'\u00a0'}</span>
+          </button>
+        )}
+        {bidButtons(rules, opts.forced).map((v) => {
           const ok = opts.values.includes(v);
-          const isForced = opts.forced && v === rules.bidding.forcedBidValue;
+          const isForced = opts.forced && v === rules.bidding.malzoomBid;
           return (
             <button key={v} className={`bid-btn ${v === rules.bidding.bawan ? 'bawan' : ''}`} disabled={!ok} onClick={() => onBid(v)}>
               <span className="bid-num">{ar(v)}</span>

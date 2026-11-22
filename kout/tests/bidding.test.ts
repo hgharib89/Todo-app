@@ -14,7 +14,7 @@ describe('bidding', () => {
 
   it('bids must be higher; each player speaks once', () => {
     let g = game('bo4', 0);
-    expect(bidOptions(g).values).toEqual([5, 6, 7, 8, 9]);
+    expect(bidOptions(g).values).toEqual([6, 7, 8, 9]);
     g = applyAction(g, { type: 'BID', player: 1, value: 6 });
     expect(bidOptions(g).values).toEqual([7, 8, 9]);
     expect(() => applyAction(g, { type: 'BID', player: 2, value: 6 })).toThrow();
@@ -38,8 +38,46 @@ describe('bidding', () => {
     expect(o.canPass).toBe(false);
     expect(o.forced).toBe(true);
     expect(() => applyAction(g, { type: 'PASS', player: 0 })).toThrow();
+    expect(o.values).toEqual([5, 6, 7, 8, 9]);
     g = applyAction(g, { type: 'BID', player: 0, value: 5 });
     expect(g.contract).toMatchObject({ bidder: 0, value: 5, forced: true });
+  });
+
+  it('minimum voluntary bid is 6: bid 5 is only allowed as the forced Malzoom', () => {
+    expect(buildRules().bidding.minVoluntaryBid).toBe(6);
+    expect(buildRules().bidding.malzoomBid).toBe(5);
+    let g = game('bo4', 0);
+    expect(bidOptions(g).values).not.toContain(5);
+    expect(() => applyAction(g, { type: 'BID', player: 1, value: 5 })).toThrow();
+    // nobody else can bid 5 later in the round either
+    g = applyAction(g, { type: 'PASS', player: 1 });
+    expect(bidOptions(g).values).toEqual([6, 7, 8, 9]);
+    expect(() => applyAction(g, { type: 'BID', player: 2, value: 5 })).toThrow();
+    // the dealer can bid 5 only once forced
+    g = applyAction(g, { type: 'PASS', player: 2 });
+    g = applyAction(g, { type: 'PASS', player: 3 });
+    expect(bidOptions(g)).toMatchObject({ forced: true, values: [5, 6, 7, 8, 9] });
+  });
+
+  it('a dealer who is not forced cannot bid 5', () => {
+    let g = game('bo4', 0);
+    g = applyAction(g, { type: 'BID', player: 1, value: 6 });
+    g = applyAction(g, { type: 'PASS', player: 2 });
+    g = applyAction(g, { type: 'PASS', player: 3 });
+    expect(bidOptions(g, 0)).toMatchObject({ forced: false, values: [7, 8, 9] });
+    expect(() => applyAction(g, { type: 'BID', player: 0, value: 5 })).toThrow();
+  });
+
+  it('minVoluntaryBid and malzoomBid are configurable', () => {
+    const base = buildRules().bidding;
+    let g = createGame(buildRules('default', { firstDealer: 0, bidding: { ...base, minVoluntaryBid: 5 } }), 'bo4', 1);
+    expect(bidOptions(g).values).toEqual([5, 6, 7, 8, 9]);
+    g = createGame(buildRules('default', { firstDealer: 0, bidding: { ...base, minVoluntaryBid: 7, malzoomBid: 6 } }), 'bo4', 1);
+    expect(bidOptions(g).values).toEqual([7, 8, 9]);
+    for (const p of [1, 2, 3]) g = applyAction(g, { type: 'PASS', player: p });
+    expect(bidOptions(g).values).toEqual([6, 7, 8, 9]);
+    g = applyAction(g, { type: 'BID', player: 0, value: 6 });
+    expect(g.contract).toMatchObject({ value: 6, forced: true });
   });
 
   it('forced dealer raising is configurable', () => {
@@ -58,7 +96,7 @@ describe('bidding', () => {
   it('highest bidder chooses trump and leads the first trick', () => {
     let g = game('bo4', 0);
     g = applyAction(g, { type: 'PASS', player: 1 });
-    g = applyAction(g, { type: 'BID', player: 2, value: 5 });
+    g = applyAction(g, { type: 'BID', player: 2, value: 6 });
     g = applyAction(g, { type: 'PASS', player: 3 });
     g = applyAction(g, { type: 'PASS', player: 0 });
     expect(() => applyAction(g, { type: 'CHOOSE_TRUMP', player: 1, suit: 'S' })).toThrow();

@@ -90,7 +90,7 @@ export function SettingsScreen({ settings, onChange, onBack }: { settings: Setti
       </div>
       <div className="field">
         <label>مستوى البوتات</label>
-        <Seg<Difficulty> value={settings.difficulty} onChange={(v) => set('difficulty', v)} options={[['easy', 'سهل'], ['medium', 'متوسط']]} />
+        <Seg<Difficulty> value={settings.difficulty} onChange={(v) => set('difficulty', v)} options={(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => [d, DIFFICULTY_LABELS[d]])} />
       </div>
       <div className="field">
         <label>سرعة اللعب</label>
@@ -107,6 +107,7 @@ export function SettingsScreen({ settings, onChange, onBack }: { settings: Setti
 
 export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: () => void }) {
   const r = RULES;
+  const voluntary = r.bidding.values.filter((v) => v >= r.bidding.minVoluntaryBid);
   const g = r.gameEnd;
   return (
     <div className="page rules">
@@ -126,7 +127,8 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
       <section>
         <h3>المزايدة</h3>
         <p>
-          تبدأ من يمين الموزع، وكل لاعب يتكلم مرة: طاف أو يزايد أعلى ({r.bidding.values.map((v) => bidLabel(r, v)).join('، ')}). إذا طاف الكل، الموزع ملزوم بـ{ar(r.bidding.forcedBidValue)}.
+          تبدأ من يمين الموزع، وكل لاعب يتكلم مرة: طاف أو يزايد أعلى ({voluntary.map((v) => bidLabel(r, v)).join('، ')}). أقل مزايدة {ar(r.bidding.minVoluntaryBid)}. إذا طاف الكل، الموزع ملزوم بـ{ar(r.bidding.malzoomBid)}
+          {r.bidding.forcedDealerMayRaise && <> (أو يزايد أعلى)</>}.
           صاحب أعلى طلب يختار الحكم ويبدأ أول أكلة.
         </p>
       </section>
@@ -156,7 +158,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
               <td>{ar(r.malzoomScoring.made)}</td>
               <td>{ar(r.malzoomScoring.failed)}</td>
             </tr>
-            {r.bidding.values.map((v) => (
+            {voluntary.map((v) => (
               <tr key={v}>
                 <td>{bidLabel(r, v)}</td>
                 <td>{ar(r.scoring[v].made)}</td>
@@ -167,7 +169,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
         </table>
         <p>
           الفوز: الوصول لـ{ar(g.targetScore)}
-          {g.shutoutScore !== null && <>، أو {ar(g.shutoutScore)} والخصم صفر</>}
+          {g.shutoutTarget !== null && <>، أو {ar(g.shutoutTarget)} والخصم صفر</>}
           {g.bawanFirstHandInstantWin && <>، أو بوان من أول يد</>}.
         </p>
       </section>

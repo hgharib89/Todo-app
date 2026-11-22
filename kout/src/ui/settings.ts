@@ -14,18 +14,22 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = {
   mode: 'bo6',
   preset: 'default',
-  difficulty: 'medium',
+  difficulty: 'hard',
   speed: 'normal',
   sound: true,
 };
 
-const KEY = 'kout.settings.v1';
+const KEY = 'kout.settings.v2';
+/** v1 settings predate the Hard bots: keep them, but move everyone to the new default difficulty once. */
+const OLD_KEY = 'kout.settings.v1';
 const GAME_KEY = 'kout.game.v1';
 
 export function loadSettings(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     if (raw) return { ...DEFAULT_SETTINGS, ...JSON.parse(raw) };
+    const old = localStorage.getItem(OLD_KEY);
+    if (old) return { ...DEFAULT_SETTINGS, ...JSON.parse(old), difficulty: DEFAULT_SETTINGS.difficulty };
   } catch {
     /* storage unavailable */
   }
@@ -73,6 +77,6 @@ export const PRESET_NAMES: Record<JokerPresetId, string> = {
   relaxed: 'مرن',
 };
 
-export const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'سهل', medium: 'متوسط' };
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'سهل', medium: 'متوسط', hard: 'صعب' };
 export const SPEED_LABELS: Record<Speed, string> = { slow: 'بطيء', normal: 'عادي', fast: 'سريع' };
 export const MODE_LABELS: Record<ModeId, string> = { bo6: 'كوت بو ٦', bo4: 'كوت بو ٤' };
