@@ -1121,3 +1121,58 @@ button:disabled {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ------------------------------------------------------------ reneging & catching (صيد) */
+.card.mini-face {
+  --cw: 34px;
+  display: inline-block;
+  vertical-align: middle;
+}
+.catch-list {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+.catch-trick {
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+}
+.catch-cards {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.catch-btn {
+  border-color: var(--red);
+  color: #ffd7da;
+}
+.catch-btn:disabled {
+  opacity: 0.4;
+}
+.catch-line {
+  color: var(--gold);
+  font-weight: 700;
+  line-height: 1.6;
+}
+.caught-tag {
+  color: #ffd7da;
+  background: rgba(200, 49, 58, 0.35);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-weight: 800;
+}
+.toast.wide {
+  white-space: normal;
+  width: max-content;
+  max-width: 88%;
+  text-align: center;
+  line-height: 1.6;
+}
+.review-panel .modal-actions {
+  margin-top: 6px;
+}
+.toolbar-mid {
+  display: flex;
+  gap: 8px;
+}

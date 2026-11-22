@@ -1,6 +1,8 @@
 /**
- * Bots. They only ever pick from engine.legalActions(state), so they always obey
- * the active rules config. They read only public information + their own hand.
+ * Bots. They pick from the engine's legal moves, so they obey the active rules config,
+ * and they read only public information + their own hand (never state.reneges).
+ * Easy/Medium bots may renege by mistake (rules.renege.botRenegeChance); Hard never does.
+ * Catches (صيد) are decided from visible evidence only: see chooseBotCatch.
  */
 import {
   Action,
@@ -14,8 +16,10 @@ import {
   bidOptions,
   buildDeck,
   isJoker,
+  catchOptions,
   legalActions,
   legalPlays,
+  playableCards,
   rankOf,
   suitOf,
   teamOf,
@@ -32,6 +36,10 @@ export * from './hard';
 export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: Rng = Math.random, opts: HardOptions = {}): Action {
   const acts = legalActions(state);
   if (acts.length === 0) throw new Error('No legal action');
+  if (state.phase === 'playing') {
+    const mistake = renegeMistake(state, difficulty, rng);
+    if (mistake) return mistake;
+  }
   if (difficulty === 'easy') return easyAction(state, acts, rng);
   if (difficulty === 'hard') return hardAction(state, acts, rng, opts);
   switch (state.phase) {
@@ -61,6 +69,47 @@ function hardAction(state: GameState, acts: Action[], rng: Rng, opts: HardOption
 }
 
 // ---------------------------------------------------------------------------
+// Reneging by mistake, and catching (صيد)
+// ---------------------------------------------------------------------------
+
+/** With rules.renege.botRenegeChance[difficulty], play a wrong (off-suit) card while holding the led suit. */
+function renegeMistake(state: GameState, difficulty: Difficulty, rng: Rng): Action | null {
+  const chance = state.rules.renege.allowRenege ? state.rules.renege.botRenegeChance[difficulty] ?? 0 : 0;
+  if (chance <= 0) return null;
+  const me = state.currentPlayer;
+  const legal = legalPlays(state, me);
+  const wrong = playableCards(state, me).filter((c) => !legal.includes(c));
+  if (wrong.length === 0 || rng() >= chance) return null;
+  return { type: 'PLAY', player: me, card: wrong[Math.floor(rng() * wrong.length)] };
+}
+
+/** A stable pseudo-random number in [0, 1) from public facts, so each bot decides once per piece of evidence. */
+function stableRoll(key: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    h ^= key.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return ((h >>> 0) % 100000) / 100000;
+}
+
+/**
+ * Should bot `seat` call صيد now? Uses only visible evidence (an opponent showed out of a suit,
+ * then played it later). Each bot rolls rules.renege.botCatchChance[difficulty] once per piece of
+ * evidence during play, and once more in the end-of-hand review. Hard always catches.
+ */
+export function chooseBotCatch(state: GameState, seat: number, difficulty: Difficulty): Action | null {
+  if (!state.rules.renege.allowRenege) return null;
+  const chance = state.rules.renege.botCatchChance[difficulty] ?? 0;
+  const first = state.tricks[0]?.plays.map((p) => p.card).join('') ?? '';
+  for (const e of catchOptions(state, seat)) {
+    const key = `${state.handNumber}|${state.dealer}|${first}|${seat}|${e.accused}|${e.trick}|${state.phase === 'review' ? 'r' : 'p'}`;
+    if (chance >= 1 || stableRoll(key) < chance) return { type: 'CATCH', player: seat, accused: e.accused, trick: e.trick };
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
 // Easy: random legal moves (bidding biased toward passing so games feel sane)
 // ---------------------------------------------------------------------------
 function easyAction(state: GameState, acts: Action[], rng: Rng): Action {
@@ -71,6 +120,10 @@ function easyAction(state: GameState, acts: Action[], rng: Rng): Action {
     // prefer the lowest few bids
     const pool = bids.slice(0, Math.min(2, bids.length));
     return pool.length ? pool[Math.floor(rng() * pool.length)] : acts[0];
+  }
+  if (state.phase === 'playing') {
+    const legal = legalPlays(state, state.currentPlayer); // mistakes are handled by renegeMistake
+    return { type: 'PLAY', player: state.currentPlayer, card: legal[Math.floor(rng() * legal.length)] };
   }
   return acts[Math.floor(rng() * acts.length)];
 }

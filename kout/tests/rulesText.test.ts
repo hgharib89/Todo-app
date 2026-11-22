@@ -45,3 +45,22 @@ describe('rules text for the first lead and the Bo 4 deck', () => {
     expect(describeRemovedCards(buildRules('default', { bo4Removed6s: ['6D'] }), 'bo4')).toBe('٦ ديمن');
   });
 });
+
+describe('rules text for reneging and catching', () => {
+  it('is generated from rules.renege', async () => {
+    const { describeRenege } = await import('../src/ui/rulesText');
+    const t = describeRenege(RULES).join(' ');
+    expect(t).toContain('لآخر ورقة');
+    expect(t).toContain('٢ أضعاف الطلب');
+    expect(t).toContain('صعب ١٠٠٪، متوسط ٦٠٪، سهل ٢٥٪');
+    const off = describeRenege(buildRules('default', { renege: { ...RULES.renege, allowRenege: false } })).join(' ');
+    expect(off).toContain('تمنع القطع');
+  });
+  it('catch messages name the reneger, the trick and the points', async () => {
+    const { catchMessage } = await import('../src/ui/panels');
+    const { createGame } = await import('../src/engine');
+    const g = createGame(RULES, 'bo4', 1);
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خالد قطع في الأكلة ٣ (ما لحق هاص) — صاده أنت: +١٢ لنا');
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('صاد غلط');
+  });
+});

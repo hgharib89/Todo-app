@@ -145,6 +145,43 @@ export interface JokerRules {
   illegalForcedLead: 'cancel' | 'asTrump';
 }
 
+/** مستوى البوتات / bot difficulty */
+export type BotLevel = 'easy' | 'medium' | 'hard';
+
+export interface RenegeRules {
+  /**
+   * القطع الغلط مسموح فعلياً: أي لاعب يقدر يلعب أي ورقة من يده حتى لو عنده النقش المطلوب
+   * (مثل الطاولة الحقيقية). المحرك يسجل كل قطع بصمت. قوانين الجوكر تبقى كما هي.
+   * false = اللعبة تمنع الأوراق الغلط.
+   * Reneging is physically possible: any player may play any card from their hand even when
+   * holding the led suit (like a real table). The engine silently records every renege.
+   * Joker rules still apply. false = the game blocks wrong cards.
+   */
+  allowRenege: boolean;
+  /**
+   * إذا انصاد القطع: اليد تنكسر على الفريق اللي قطع، والفريق اللي صاد ياخذ (قيمة الطلب × هذا الرقم)،
+   * والفريق اللي قطع ياخذ صفر. ينطبق سواء كان القاطع من فريق المزايد أو من الخصم.
+   * When a renege is caught the hand is broken for the reneging team: the catching team gets
+   * (bid value × this number) and the reneging team gets 0, whichever side reneged.
+   */
+  renegePenaltyMultiplier: number;
+  /**
+   * صيد غلط: 'none' = ما يصير شي. 'brokenHand' = تنكسر اليد على الفريق اللي صاد غلط.
+   * A wrong catch: 'none' = nothing happens. 'brokenHand' = the hand is broken for the team that called it.
+   */
+  wrongCatchPenalty: 'none' | 'brokenHand';
+  /**
+   * احتمال أن البوت يصيد إذا شاف دليل (البوت ما يشوف أوراق مخفية أبداً).
+   * Chance a bot calls a catch when it has seen the evidence (bots never peek at hidden cards).
+   */
+  botCatchChance: Record<BotLevel, number>;
+  /**
+   * احتمال أن البوت يقطع غلط بالخطأ في كل ورقة يقدر يقطع فيها.
+   * Chance a bot reneges by mistake on each card where it could.
+   */
+  botRenegeChance: Record<BotLevel, number>;
+}
+
 export interface ScoreRow {
   /** نقاط الفريق المزايد إذا جاب / points for the bidding team if made */
   made: number;
@@ -196,10 +233,14 @@ export interface RulesConfig {
   /** الإعدادات الجاهزة للجوكر / joker rule presets */
   jokerPresets: Record<JokerPresetId, JokerRules>;
   /**
-   * إنهاء اليد مبكراً إذا جاب المزايد طلبه أو صار مستحيل يجيبه.
-   * End the hand early once the bidding team has made, or can no longer make, its bid.
+   * تُلعب كل يد لآخر ورقة (حتى لو انحسمت النتيجة)، عشان تنكشف كل الأوراق وينراجع القطع.
+   * false = تنتهي اليد أول ما يجيب المزايد طلبه أو يصير مستحيل يجيبه.
+   * Every hand is played to the last card (even once the result is decided), so every card
+   * is seen and reneges can be reviewed. false = end the hand as soon as the bid is made or lost.
    */
-  endHandEarly: boolean;
+  playToLastCard: boolean;
+  /** القطع الغلط والصيد / reneging and catching */
+  renege: RenegeRules;
   /** جدول النقاط لكل مزايدة / scoring table per bid value */
   scoring: Record<number, ScoreRow>;
   /** نقاط الملزوم / scoring for the forced (Malzoom) bid */
@@ -341,7 +382,15 @@ export const RULES: RulesConfig = {
   jokerPresets: JOKER_PRESETS,
   jokers: JOKER_PRESETS.default,
 
-  endHandEarly: true,
+  playToLastCard: true,
+
+  renege: {
+    allowRenege: true,
+    renegePenaltyMultiplier: 2,
+    wrongCatchPenalty: 'none',
+    botCatchChance: { easy: 0.25, medium: 0.6, hard: 1 },
+    botRenegeChance: { easy: 0.06, medium: 0.03, hard: 0 },
+  },
 
   // | Bid | made | failed (to opponents) |
   // صف ٥ يُستخدم فقط إذا minVoluntaryBid ≤ ٥ (الملزوم يستخدم malzoomScoring).

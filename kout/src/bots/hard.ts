@@ -26,6 +26,7 @@ import {
   bidOptions,
   buildDeck,
   handPoints,
+  provisionalPoints,
   isJoker,
   legalPlays,
   nextSeat,
@@ -151,6 +152,8 @@ export function inferVoids(state: GameState): Set<Suit>[] {
   const trump = state.contract?.trump ?? null;
   const jr = state.rules.jokers;
   for (const t of [...(state.tricks ?? []), state.trick]) {
+    // a card of a suit proves its player held that suit (an earlier "void" was a renege)
+    for (const p of t.plays) if (!isJoker(p.card)) voids[p.player].delete(suitOf(p.card)!);
     if (!t.ledSuit) continue;
     const from = suitSetAt(t, state.rules);
     if (from < 0) continue;
@@ -304,10 +307,10 @@ function rollout(s: GameState): GameState {
 
 /** Score of a finished hand from `team`'s point of view: points difference, plus a little for tricks. */
 function handValue(s: GameState, team: number): number {
-  const r = s.lastResult;
-  if (!r) return 0;
   const other = 1 - team;
-  return r.points[team] - r.points[other] + 0.05 * (r.tricks[team] - r.tricks[other]);
+  // a finished simulation is either in review (all cards played) or scored (handOver/gameOver)
+  const points = s.phase === 'review' || s.phase === 'playing' ? provisionalPoints(s) : s.lastResult!.points;
+  return points[team] - points[other] + 0.05 * (s.tricksWon[team] - s.tricksWon[other]);
 }
 
 // ---------------------------------------------------------------------------
@@ -356,8 +359,10 @@ export function monteCarloScores(state: GameState, rng: Rng, samples = HARD_DEFA
   const cands = distinctCandidates(state, me, legal);
   const voids = inferVoids(state);
   const totals = new Map<CardId, number>(cands.map((c) => [c, 0]));
+  const simRules = { ...state.rules, playToLastCard: false };
   for (let k = 0; k < samples; k++) {
-    const world: GameState = { ...state, hands: sampleHands(state, me, voids, rng) };
+    // simulations may stop once the result is decided (later tricks can't change the points)
+    const world: GameState = { ...state, rules: simRules, hands: sampleHands(state, me, voids, rng) };
     for (const card of cands) {
       const end = rollout(applyAction(world, { type: 'PLAY', player: me, card }));
       totals.set(card, totals.get(card)! + handValue(end, myTeam));

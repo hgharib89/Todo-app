@@ -31,7 +31,7 @@ export function Card({ id, faceDown, className = '', style, onClick, disabled, s
   if (c.joker) {
     const red = c.jokerColor === 'red';
     return (
-      <div className={`${cls} joker ${red ? 'red' : 'black'}`} style={style} onClick={disabled ? undefined : onClick} role="button" aria-label={red ? 'الجوكر الأحمر' : 'الجوكر الأسود'}>
+      <div className={`${cls} joker ${red ? 'red' : 'black'}`} data-card={id} style={style} onClick={disabled ? undefined : onClick} role="button" aria-label={red ? 'الجوكر الأحمر' : 'الجوكر الأسود'}>
         <div className="corner tl">
           <span className="rk">★</span>
         </div>
@@ -71,7 +71,7 @@ export function Card({ id, faceDown, className = '', style, onClick, disabled, s
     center = <div className="pip">{sym}</div>;
   }
   return (
-    <div className={`${cls} ${color}`} style={style} onClick={disabled ? undefined : onClick} role="button" aria-label={`${label} ${sym}`}>
+    <div className={`${cls} ${color}`} data-card={id} style={style} onClick={disabled ? undefined : onClick} role="button" aria-label={`${label} ${sym}`}>
       <div className="corner tl">
         <span className="rk">{label}</span>
         <span className="st">{sym}</span>
