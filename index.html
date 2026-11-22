@@ -151,6 +151,33 @@
   .add-btn:not([aria-disabled="true"]):hover { background: var(--accent-hover); }
   .add-btn:not([aria-disabled="true"]):active { transform: scale(0.98); }
   .add-btn[aria-disabled="true"] { opacity: 0.5; cursor: not-allowed; }
+  .mic-btn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text-muted);
+    cursor: pointer;
+  }
+  .mic-btn:hover { border-color: var(--border-strong); color: var(--text); }
+  .mic-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mic-btn.listening {
+    background: var(--danger);
+    border-color: var(--danger);
+    color: #FFFFFF;
+    animation: mic-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes mic-pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(198,40,40,.45); }
+    50% { box-shadow: 0 0 0 6px rgba(198,40,40,0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .mic-btn.listening { animation: none; } }
 
   /* Empty states */
   .empty {
@@ -339,7 +366,10 @@
   <section class="card">
     <form class="new-form" id="new-form" autocomplete="off">
       <label for="new-input" class="visually-hidden">New task</label>
-      <input class="field" id="new-input" type="text" maxlength="200" placeholder="What needs to be done?">
+      <input class="field" id="new-input" type="text" maxlength="200" placeholder="What needs to be done?" dir="auto">
+      <button class="mic-btn" id="mic-btn" type="button" aria-label="Dictate task" aria-pressed="false" hidden>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
+      </button>
       <button class="add-btn" id="add-btn" type="submit" aria-disabled="true">Add</button>
     </form>
 
@@ -742,6 +772,47 @@
     addTask();
   });
   newInput.addEventListener('input', updateAddBtn);
+
+  /* ---------- Voice input ---------- */
+  (function setupMic() {
+    var micBtn = document.getElementById('mic-btn');
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!micBtn || !SR) return;
+    micBtn.hidden = false;
+    var rec = null;
+    var listening = false;
+    var baseText = '';
+
+    function setListening(on) {
+      listening = on;
+      micBtn.classList.toggle('listening', on);
+      micBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      micBtn.setAttribute('aria-label', on ? 'Stop dictation' : 'Dictate task');
+    }
+
+    micBtn.addEventListener('click', function () {
+      if (listening && rec) { rec.stop(); return; }
+      rec = new SR();
+      rec.lang = 'ar-AE';
+      rec.interimResults = true;
+      rec.continuous = false;
+      baseText = newInput.value.trim();
+      rec.onresult = function (e) {
+        var spoken = '';
+        for (var i = 0; i < e.results.length; i++) spoken += e.results[i][0].transcript;
+        newInput.value = ((baseText ? baseText + ' ' : '') + spoken.trim()).slice(0, 200);
+        updateAddBtn();
+      };
+      rec.onerror = function (e) {
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') announce('Microphone access was blocked');
+      };
+      rec.onend = function () {
+        setListening(false);
+        newInput.focus();
+      };
+      try { rec.start(); setListening(true); } catch (err) { setListening(false); }
+    });
+  })();
   newInput.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') {
       newInput.value = '';
