@@ -462,6 +462,37 @@
   .edit-loc-row .mic-btn svg { width: 18px; height: 18px; }
 
   /* Filter bar */
+  .header-actions { display: flex; gap: 8px; flex: none; }
+  .icon-head { display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; }
+  .icon-head[aria-expanded="true"], .icon-head.on { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft); }
+  .stats { margin-bottom: 16px; padding: 16px; }
+  .stats-title { margin: 0 0 12px; font-size: 16px; font-weight: 600; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .stat { padding: 10px 8px; border: 1px solid var(--border); border-radius: var(--radius-md); text-align: center; }
+  .stat-n { font-size: 24px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .stat-l { margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+  .stat.good .stat-n { color: var(--success); }
+  .stat.bad .stat-n { color: var(--danger); }
+  .stats-rate { margin: 14px 0 6px; font-size: 13px; color: var(--text-muted); }
+  .stats-track { height: 8px; border-radius: 999px; background: var(--surface-hover); overflow: hidden; }
+  .stats-fill { height: 100%; background: var(--success); border-radius: 999px; transition: width .3s; }
+  .stats-sub { margin: 16px 0 6px; font-size: 13px; color: var(--text-muted); }
+  .stats-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; height: 96px; }
+  .sd { display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 3px; height: 100%; }
+  .sd-n { font-size: 11px; color: var(--text-muted); min-height: 14px; }
+  .sd-bar { width: 70%; max-width: 28px; border-radius: 4px 4px 0 0; background: var(--accent); }
+  .sd-bar.zero { background: var(--border); }
+  .sd-l { font-size: 10px; color: var(--text-muted); white-space: nowrap; }
+  body.locked .page { visibility: hidden; }
+  .lock-screen {
+    position: fixed; inset: 0; z-index: 100; background: var(--bg);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 24px; text-align: center;
+  }
+  .lock-screen[hidden] { display: none; }
+  .lock-screen svg { color: var(--accent); }
+  .lock-title { margin: 0; font-size: 22px; font-weight: 700; }
+  .lock-msg { margin: 0; min-height: 20px; font-size: 14px; color: var(--danger); }
+  .unlock-btn { height: 48px; padding: 0 28px; font-size: 16px; }
   .toolbar { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
   .search-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
   .search-wrap svg { position: absolute; inset-inline-start: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
@@ -579,14 +610,33 @@
 </style>
 </head>
 <body>
+<div class="lock-screen" id="lock-screen" hidden>
+  <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><line x1="9" y1="9" x2="9" y2="10.5"/><line x1="15" y1="9" x2="15" y2="10.5"/><path d="M12 9v4h-1"/><path d="M9 15.5c1.6 1.3 4.4 1.3 6 0"/></svg>
+  <p class="lock-title" data-i18n="lockTitle">المهام مقفلة</p>
+  <button type="button" class="add-btn unlock-btn" id="unlock-btn" data-i18n="unlock">فتح بـ Face ID</button>
+  <p class="lock-msg" id="lock-msg" role="alert"></p>
+</div>
 <main class="page">
   <header class="app-header">
     <div>
       <h1 data-i18n="title">المهام</h1>
       <p class="subtitle" id="subtitle">لا توجد مهام</p>
     </div>
-    <button type="button" class="lang-btn" id="lang-btn" lang="en" aria-label="Switch to English">EN</button>
+    <div class="header-actions">
+      <button type="button" class="lang-btn icon-head" id="stats-btn" aria-expanded="false" aria-controls="stats" aria-label="الإحصائيات" data-i18n-aria="stats"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="20" x2="6" y2="13"/><line x1="12" y1="20" x2="12" y2="6"/><line x1="18" y1="20" x2="18" y2="10"/></svg></button>
+      <button type="button" class="lang-btn icon-head" id="lock-btn" aria-pressed="false" aria-label="تفعيل القفل بـ Face ID"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></button>
+      <button type="button" class="lang-btn" id="lang-btn" lang="en" aria-label="Switch to English">EN</button>
+    </div>
   </header>
+
+  <section class="card stats" id="stats" hidden>
+    <p class="stats-title" data-i18n="stats">الإحصائيات</p>
+    <div class="stats-grid" id="stats-grid"></div>
+    <p class="stats-rate" id="stats-rate-label"></p>
+    <div class="stats-track"><div class="stats-fill" id="stats-bar"></div></div>
+    <p class="stats-sub" data-i18n="stLast7">المنجز في آخر 7 أيام</p>
+    <div class="stats-days" id="stats-days"></div>
+  </section>
 
   <section class="card">
     <form class="new-form" id="new-form" autocomplete="off">
@@ -647,6 +697,7 @@
     <div class="filter-bar" id="filter-bar" hidden>
       <div class="filters" role="group" aria-label="تصفية المهام" data-i18n-aria="filterGroup">
         <button type="button" class="filter-btn" data-filter="all" aria-pressed="true" data-i18n="all">الكل</button>
+        <button type="button" class="filter-btn" data-filter="today" aria-pressed="false" data-i18n="todayF">اليوم</button>
         <button type="button" class="filter-btn" data-filter="active" aria-pressed="false" data-i18n="active">النشطة</button>
         <button type="button" class="filter-btn" data-filter="done" aria-pressed="false" data-i18n="done">المنجزة</button>
       </div>
@@ -668,7 +719,7 @@
 
   var TASKS_KEY = 'todo-app.tasks';
   var FILTER_KEY = 'todo-app.filter';
-  var FILTERS = ['all', 'active', 'done'];
+  var FILTERS = ['all', 'today', 'active', 'done'];
   var SVG_NS = 'http://www.w3.org/2000/svg';
   var LANG_KEY = 'todo-app.lang';
 
@@ -705,6 +756,12 @@
       calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'تطبيق Outlook', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
       inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'تطبيق Outlook', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
+      stats: 'الإحصائيات', stDoneWeek: 'منجزة هذا الأسبوع', stDoneMonth: 'منجزة هذا الشهر', stOverdue: 'متأخرة', stToday: 'مواعيد اليوم',
+      stActive: 'نشطة', stAddedWeek: 'أضيفت هذا الأسبوع', stRate: function (r) { return 'نسبة الإنجاز: ' + r + '%'; }, stLast7: 'المنجز في آخر 7 أيام',
+      todayF: 'اليوم', noToday: 'ما عندك مهام اليوم ولا مهام متأخرة.',
+      lockTitle: 'المهام مقفلة', unlock: 'فتح بـ Face ID', lockOn: 'تفعيل القفل بـ Face ID', lockOff: 'إلغاء القفل',
+      lockEnabled: 'تم تفعيل القفل. التطبيق بيطلب Face ID كل ما تفتحه.', lockDisabled: 'تم إلغاء القفل.', lockFailed: 'ما تم التحقق. حاول مرة ثانية.',
+      lockUnsupported: 'القفل يحتاج فتح التطبيق من الموقع على الآيفون (https).',
       search: 'بحث في المهام والنقاط والمواقع', noResults: 'ما فيه نتائج.', calView: 'عرض التقويم', listView: 'عرض القائمة',
       prevMonth: 'الشهر السابق', nextMonth: 'الشهر التالي', todayBtn: 'اليوم', calNoTasks: 'ما فيه مهام في هذا اليوم.',
       calNoDate: function (n) { return 'مهام بدون موعد (تظهر في عرض القائمة): ' + n; }, allDay: '—',
@@ -746,6 +803,12 @@
       calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook app', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
       inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook app', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
+      stats: 'Stats', stDoneWeek: 'Done this week', stDoneMonth: 'Done this month', stOverdue: 'Overdue', stToday: 'Due today',
+      stActive: 'Active', stAddedWeek: 'Added this week', stRate: function (r) { return 'Completion: ' + r + '%'; }, stLast7: 'Done in the last 7 days',
+      todayF: 'Today', noToday: 'Nothing due today and nothing overdue.',
+      lockTitle: 'Tasks is locked', unlock: 'Unlock with Face ID', lockOn: 'Lock with Face ID', lockOff: 'Turn off lock',
+      lockEnabled: 'Lock is on. Face ID will be asked every time you open the app.', lockDisabled: 'Lock turned off.', lockFailed: 'Could not verify. Try again.',
+      lockUnsupported: 'The lock needs the app opened from the website (https).',
       search: 'Search tasks, notes and places', noResults: 'No results.', calView: 'Calendar view', listView: 'List view',
       prevMonth: 'Previous month', nextMonth: 'Next month', todayBtn: 'Today', calNoTasks: 'No tasks on this day.',
       calNoDate: function (n) { return n + (n === 1 ? ' task has' : ' tasks have') + ' no date and show in list view.'; }, allDay: '—',
@@ -772,6 +835,7 @@
   var viewBtn = document.getElementById('view-btn');
   var calEl = document.getElementById('cal');
   var calMode = false;
+  var statsReady = false;
   var urlCache = {};
   var dbPromise = null;
   var calMonth = (function () { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
@@ -818,6 +882,7 @@
             return { id: a.id, name: String(a.name || '').slice(0, 120), type: String(a.type || ''), size: +a.size || 0 };
           }) : [],
           invitees: Array.isArray(t.invitees) ? t.invitees.filter(function (e) { return typeof e === 'string' && e; }).slice(0, 50) : [],
+          doneAt: typeof t.doneAt === 'number' ? t.doneAt : 0,
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         };
       });
@@ -866,8 +931,16 @@
     hay = norm(hay);
     return norm(query).split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) !== -1; });
   }
+  function isTodayTask(t) {
+    if (!t.due) return false;
+    var now = new Date();
+    var k = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+    if (t.due.slice(0, 10) === k) return true;
+    return !t.done && new Date(t.due).getTime() < now.getTime();
+  }
   function matches(t) {
-    return (filter === 'all' || (filter === 'active' ? !t.done : t.done)) && matchesQuery(t);
+    var ok = filter === 'all' || (filter === 'today' ? isTodayTask(t) : (filter === 'active' ? !t.done : t.done));
+    return ok && matchesQuery(t);
   }
   function reducedMotion() { return !!(reducedMQ && reducedMQ.matches); }
 
@@ -1328,13 +1401,14 @@
     var visible = tasks.filter(matches);
     list.hidden = visible.length === 0;
     if (hasTasks && visible.length === 0) {
-      filterEmpty.textContent = query ? T('noResults') : (filter === 'active' ? T('allDone') : T('noDone'));
+      filterEmpty.textContent = query ? T('noResults') : (filter === 'today' ? T('noToday') : (filter === 'active' ? T('allDone') : T('noDone')));
       filterEmpty.hidden = false;
     } else {
       filterEmpty.hidden = true;
     }
     if (calMode) { list.hidden = true; filterEmpty.hidden = true; }
     calEl.hidden = !calMode || !hasTasks;
+    if (statsReady) renderStats();
     if (calMode && hasTasks) renderCal();
 
     // Keyed reconciliation keeps elements (and focus) stable.
@@ -1727,6 +1801,7 @@
     var willHide = filter !== 'all';
     var target = willHide ? neighborId(id) : null;
     t.done = checked;
+    t.doneAt = checked ? Date.now() : 0;
     saveTasks();
     if (willHide) focusCheckbox(target);
     render();
@@ -1856,6 +1931,7 @@
     langBtn.setAttribute('aria-label', T('switchLabel'));
     nodes.forEach(function (li, id) { var t = findTask(id); if (t) updateItem(li, t); });
     if (viewBtn) viewBtn.setAttribute('aria-label', calMode ? T('listView') : T('calView'));
+    if (statsReady) updateLockBtn();
     render();
   }
   langBtn.addEventListener('click', function () {
@@ -2115,6 +2191,184 @@
       li.classList.add('flash');
     }
   });
+
+  /* ---------- Stats ---------- */
+  var statsEl = document.getElementById('stats');
+  var statsBtn = document.getElementById('stats-btn');
+  function startOfWeek(d) {
+    var x = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+    return x;
+  }
+  function renderStats() {
+    if (statsEl.hidden) return;
+    var now = new Date();
+    var wk = startOfWeek(now).getTime();
+    var mo = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
+    var doneWeek = 0, doneMonth = 0, active = 0, overdue = 0, todayN = 0, doneTotal = 0;
+    var createdWeek = 0;
+    var todayK = dayKey(now);
+    tasks.forEach(function (t) {
+      if (t.done) {
+        doneTotal++;
+        if (t.doneAt >= wk) doneWeek++;
+        if (t.doneAt >= mo) doneMonth++;
+      } else {
+        active++;
+        if (t.due && new Date(t.due).getTime() < now.getTime()) overdue++;
+      }
+      if (t.due && t.due.slice(0, 10) === todayK) todayN++;
+      if (t.createdAt >= wk) createdWeek++;
+    });
+    var rate = tasks.length ? Math.round(doneTotal / tasks.length * 100) : 0;
+    var cells = [
+      [doneWeek, T('stDoneWeek'), 'good'],
+      [doneMonth, T('stDoneMonth'), 'good'],
+      [overdue, T('stOverdue'), overdue ? 'bad' : ''],
+      [todayN, T('stToday'), ''],
+      [active, T('stActive'), ''],
+      [createdWeek, T('stAddedWeek'), '']
+    ];
+    var grid = document.getElementById('stats-grid');
+    grid.textContent = '';
+    cells.forEach(function (c) {
+      var d = document.createElement('div');
+      d.className = 'stat' + (c[2] ? ' ' + c[2] : '');
+      var n = document.createElement('div');
+      n.className = 'stat-n';
+      n.textContent = String(c[0]);
+      var l = document.createElement('div');
+      l.className = 'stat-l';
+      l.textContent = c[1];
+      d.appendChild(n);
+      d.appendChild(l);
+      grid.appendChild(d);
+    });
+    document.getElementById('stats-rate-label').textContent = T('stRate', rate);
+    document.getElementById('stats-bar').style.width = rate + '%';
+    // last 7 days bars
+    var days = document.getElementById('stats-days');
+    days.textContent = '';
+    var counts = [];
+    for (var i = 6; i >= 0; i--) {
+      var d0 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      var d1 = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1);
+      var c = tasks.filter(function (t) { return t.done && t.doneAt >= d0.getTime() && t.doneAt < d1.getTime(); }).length;
+      counts.push([d0, c]);
+    }
+    var max = Math.max.apply(null, counts.map(function (x) { return x[1]; }).concat([1]));
+    counts.forEach(function (x) {
+      var col = document.createElement('div');
+      col.className = 'sd';
+      var num = document.createElement('span');
+      num.className = 'sd-n';
+      num.textContent = x[1] ? String(x[1]) : '';
+      var bar = document.createElement('span');
+      bar.className = 'sd-bar';
+      bar.style.height = Math.max(4, Math.round(x[1] / max * 56)) + 'px';
+      if (!x[1]) bar.classList.add('zero');
+      var lbl = document.createElement('span');
+      lbl.className = 'sd-l';
+      try { lbl.textContent = x[0].toLocaleDateString(T('locale'), { weekday: 'short' }); } catch (e) { lbl.textContent = ''; }
+      col.appendChild(num);
+      col.appendChild(bar);
+      col.appendChild(lbl);
+      days.appendChild(col);
+    });
+  }
+  statsReady = true;
+  statsBtn.addEventListener('click', function () {
+    statsEl.hidden = !statsEl.hidden;
+    statsBtn.setAttribute('aria-expanded', statsEl.hidden ? 'false' : 'true');
+    renderStats();
+  });
+
+  /* ---------- Face ID lock ---------- */
+  var LOCK_KEY = 'todo-app.lock';
+  var lockBtn = document.getElementById('lock-btn');
+  var lockScreen = document.getElementById('lock-screen');
+  var unlockBtn = document.getElementById('unlock-btn');
+  var lockMsg = document.getElementById('lock-msg');
+  var lockCfg = readLock();
+  var hiddenAt = 0;
+  function readLock() { try { return JSON.parse(localStorage.getItem(LOCK_KEY)) || null; } catch (e) { return null; } }
+  function b64(buf) { var s = ''; new Uint8Array(buf).forEach(function (b) { s += String.fromCharCode(b); }); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+  function unb64(str) {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) str += '=';
+    var bin = atob(str), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+  function rand(n) { var a = new Uint8Array(n); crypto.getRandomValues(a); return a; }
+  function lockSupported() {
+    return !!(window.PublicKeyCredential && navigator.credentials && window.isSecureContext);
+  }
+  function updateLockBtn() {
+    var on = !!(lockCfg && lockCfg.id);
+    lockBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    lockBtn.setAttribute('aria-label', on ? T('lockOff') : T('lockOn'));
+    lockBtn.classList.toggle('on', on);
+  }
+  function verify() {
+    return navigator.credentials.get({ publicKey: {
+      challenge: rand(32),
+      allowCredentials: [{ type: 'public-key', id: unb64(lockCfg.id), transports: ['internal'] }],
+      userVerification: 'required',
+      timeout: 60000
+    } });
+  }
+  function showLock() {
+    if (!lockCfg || !lockCfg.id) return;
+    document.body.classList.add('locked');
+    lockScreen.hidden = false;
+    lockMsg.textContent = '';
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+    unlockBtn.focus();
+  }
+  function hideLock() {
+    document.body.classList.remove('locked');
+    lockScreen.hidden = true;
+  }
+  unlockBtn.addEventListener('click', function () {
+    lockMsg.textContent = '';
+    verify().then(function (cred) {
+      if (cred) hideLock();
+    }).catch(function () { lockMsg.textContent = T('lockFailed'); });
+  });
+  lockBtn.addEventListener('click', function () {
+    if (!lockSupported()) { window.alert(T('lockUnsupported')); return; }
+    if (lockCfg && lockCfg.id) {
+      verify().then(function () {
+        lockCfg = null;
+        try { localStorage.removeItem(LOCK_KEY); } catch (e) {}
+        updateLockBtn();
+        announce(T('lockDisabled'));
+      }).catch(function () { announce(T('lockFailed')); });
+      return;
+    }
+    navigator.credentials.create({ publicKey: {
+      rp: { name: T('title') },
+      user: { id: rand(16), name: 'tasks', displayName: T('title') },
+      challenge: rand(32),
+      pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+      authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+      timeout: 60000,
+      attestation: 'none'
+    } }).then(function (cred) {
+      if (!cred) return;
+      lockCfg = { id: b64(cred.rawId) };
+      try { localStorage.setItem(LOCK_KEY, JSON.stringify(lockCfg)); } catch (e) {}
+      updateLockBtn();
+      window.alert(T('lockEnabled'));
+    }).catch(function () { window.alert(T('lockFailed')); });
+  });
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'hidden') hiddenAt = Date.now();
+    else if (lockCfg && lockCfg.id && hiddenAt && Date.now() - hiddenAt > 30000) showLock();
+  });
+  updateLockBtn();
+  showLock();
 
   /* ---------- Due date ---------- */
   var dueWrap = document.getElementById('due-wrap');
