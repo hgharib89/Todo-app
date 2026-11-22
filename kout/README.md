@@ -53,7 +53,7 @@ The engine reads every rule value from this file, and each option has a comment 
 | `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`, which accepts `'H6'` or `'6H'`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
 | `suitRankOrder` | rank order inside a suit (A K Q J 10 … 2) |
 | `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
-| `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / بوان), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
+| `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / لارنس), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
 | `firstLead` | who leads the first card of the hand: `'rightOfBidder'` (default: the player to the winning bidder's right; the bidder still chooses trump), `'bidder'` or `'rightOfDealer'`. After that the trick winner leads |
 | `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6H', '6C']` (the 6♠ and 6♦ stay), giving 36 cards |
 | `firstDealer`, `rotateDealer` | who deals first, dealer rotation |
@@ -61,7 +61,10 @@ The engine reads every rule value from this file, and each option has a comment 
 | `playToLastCard` | `true` (default): every hand is played to the last card. `false`: stop as soon as the bid is made or can no longer be made |
 | `renege` | reneging and catching (القطع والصيد), see below: `allowRenege`, `renegePenaltyMultiplier`, `wrongCatchPenalty`, `botCatchChance`, `botRenegeChance` |
 | `scoring`, `malzoomScoring` | points table |
-| `gameEnd` | `targetScore` (54: first team to 54+ wins), `shutoutTarget` (36: 36+ while the other team has 0 wins; `null` disables it), Bawan-on-first-hand instant win |
+| `gameEnd` | `targetScore` (54: first team to 54+ wins), `shutoutTarget` (36: 36+ while the other team has 0 wins; `null` disables it) |
+| `larens` | bid 9 = لارنس: `larensWinsGame` (true: making it wins the whole game at once, قيم), `larensFailPoints` (18 to the opponents), `larensMadePoints` (only used when `larensWinsGame` is false) |
+| `bawn` | باون: `bawnOnBid` (7; `null` = off), `bawnAskAtTricks` (6), `bawnWinPoints` (36), `bawnFailPoints` (18) |
+| `jokerAsk` | سؤال الجوكر: `allowJokerAsk`, `jokerAskYesBid` (9 = Larens), `jokerAskNoBid` (8) |
 
 ### Joker options (inside each preset)
 
@@ -99,6 +102,18 @@ Like a real table, the game doesn't stop you playing a wrong card.
 - **Penalty.** A correct catch breaks the hand for the reneging team, whether it bid or defended. The catchers get bid × `renegePenaltyMultiplier` (2) and the renegers get 0. A wrong catch does nothing (`wrongCatchPenalty: 'none'`); `'brokenHand'` would break the hand for the caller instead.
 - **Bots.** Bots catch only from visible evidence, with chance `botCatchChance` (Hard 100%, Medium 60%, Easy 25%), deciding once per piece of evidence and once more at the review. Easy and Medium occasionally renege by mistake (`botRenegeChance`: Easy 6%, Medium 3% of the cards where they could; Hard 0%).
 
+## Larens, Bawn and the joker question
+
+- **Larens (لارنس, bid 9).** If the bidding team takes all 9 tricks it wins the whole game on the spot (قيم), whatever the score. If it fails, the opponents get 18.
+- **Bawn (باون).** On a bid of 7, the moment the bidding team has 6 tricks, play pauses (`bawnAsk` phase) and the bidder is asked «تبي باون؟» (action `BAWN`).
+  - **No:** the hand goes on as a normal 7.
+  - **Yes:** the team must win every remaining trick. If it does, it gets 36; if it loses one, the hand is broken and the opponents get 18.
+  - A «باون» badge shows in the header once it is declared. Hard bots decide by simulating the rest of the hand from what they can see; Easy and Medium say yes when every card they hold is a sure winner.
+- **Joker question (سؤال الجوكر).** On their bidding turn, a player holding exactly one joker may ask «عندك الجوكر الثاني؟» (action `JOKER_ASK`, only while 8 and 9 are still legal bids).
+  - The answer is automatic and truthful, and is shown on the table under the partner. In Bo 6, "yes" means any partner has it.
+  - Yes forces a Larens bid; no forces an 8.
+  - Hard bots also use the answer when they imagine the hidden hands.
+
 ## Bots
 
 Bots play from `legalPlays`, so they follow whatever `rules.config.ts` says. The only exception is the configured chance of a mistaken renege for Easy and Medium. They read only their own hand plus public information.
@@ -107,7 +122,7 @@ Bots play from `legalPlays`, so they follow whatever `rules.config.ts` says. The
 |---|---|---|
 | Easy | mostly passes, otherwise a low bid | random legal card |
 | Medium | rough trick estimate | simple rules: draw trumps, cash winners, play low behind a winning partner |
-| **Hard** (default) | hand strength per trump suit (jokers, trump Ace, length, side winners, ruffs) plus what the bidding says about partners, turned into a chance of making each bid; it bids only when that chance is at least 70% and the expected score is positive, and only bids Bawan with a monster hand | **Monte Carlo**: tracks every played card, infers who is out of which suit, then samples hidden hands that fit (40 by default), plays each candidate card out to the end of the hand and picks the best average result; ties go to the cheaper card, so jokers and the trump Ace are kept for when they matter, and it doesn't overtake a winning partner |
+| **Hard** (default) | hand strength per trump suit (jokers, trump Ace, length, side winners, ruffs) plus what the bidding says about partners, turned into a chance of making each bid; it bids only when that chance is at least 70% and the expected score is positive, and only bids Larens with a monster hand (valuing a Larens as winning the game); it asks about the joker when the expected result beats its best plain bid and an 8 would still be safe | **Monte Carlo**: tracks every played card, infers who is out of which suit, then samples hidden hands that fit (40 by default), plays each candidate card out to the end of the hand and picks the best average result; ties go to the cheaper card, so jokers and the trump Ace are kept for when they matter, and it doesn't overtake a winning partner |
 
 In simulated games (Hard team against Medium team) Hard won 18 of 30 Bo 4 games and 14 of 16 Bo 6 games (with the first card led from the bidder's right). A Hard move takes about 12 ms in Bo 4 and 17 ms in Bo 6 on average.
 

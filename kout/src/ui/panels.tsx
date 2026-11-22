@@ -20,12 +20,15 @@ export function bidButtons(rules: RulesConfig, forced: boolean): number[] {
   return forced && !voluntary.includes(b.malzoomBid) ? [b.malzoomBid, ...voluntary] : voluntary;
 }
 
-export function BidPanel({ rules, opts, highBid, onBid, onPass }: {
+export function BidPanel({ rules, opts, highBid, onBid, onPass, canAsk = false, onAsk }: {
   rules: RulesConfig;
   opts: BidOptions;
   highBid: number | null;
   onBid: (v: number) => void;
   onPass: () => void;
+  /** show the "عندك الجوكر الثاني؟" button (exactly one joker, forced bids still legal) */
+  canAsk?: boolean;
+  onAsk?: () => void;
 }) {
   return (
     <div className="panel bid-panel">
@@ -43,12 +46,41 @@ export function BidPanel({ rules, opts, highBid, onBid, onPass }: {
           const ok = opts.values.includes(v);
           const isForced = opts.forced && v === rules.bidding.malzoomBid;
           return (
-            <button key={v} className={`bid-btn ${v === rules.bidding.bawan ? 'bawan' : ''}`} disabled={!ok} onClick={() => onBid(v)}>
+            <button key={v} className={`bid-btn ${v === rules.bidding.larens ? 'larens' : ''}`} disabled={!ok} onClick={() => onBid(v)}>
               <span className="bid-num">{ar(v)}</span>
               <span className="bid-name">{isForced ? 'ملزوم' : rules.bidding.names[v] !== ar(v) ? rules.bidding.names[v] : '\u00a0'}</span>
             </button>
           );
         })}
+      </div>
+      {canAsk && (
+        <button className="ask-btn" onClick={onAsk}>
+          🃏 عندك الجوكر الثاني؟
+          <small>
+            إذا عنده: {bidLabel(rules, rules.jokerAsk.jokerAskYesBid)} · إذا لا: {bidLabel(rules, rules.jokerAsk.jokerAskNoBid)}
+          </small>
+        </button>
+      )}
+    </div>
+  );
+}
+
+/** "تبي باون؟" — the bidder's choice once the bid-7 team has 6 tricks. */
+export function BawnPanel({ rules, onAnswer }: { rules: RulesConfig; onAnswer: (accept: boolean) => void }) {
+  const b = rules.bawn;
+  return (
+    <div className="panel bawn-panel">
+      <div className="panel-title">تبي باون؟</div>
+      <p className="muted small center">
+        لازم تاخذون كل الأكلات الباقية: +{ar(b.bawnWinPoints)} لكم · وإذا انكسر: +{ar(b.bawnFailPoints)} لهم
+      </p>
+      <div className="modal-actions">
+        <button className="btn ghost" onClick={() => onAnswer(false)}>
+          لا
+        </button>
+        <button className="btn primary" onClick={() => onAnswer(true)}>
+          نعم، باون
+        </button>
       </div>
     </div>
   );
@@ -118,6 +150,10 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
                     <td>
                       {h.caught ? (
                         <span className="caught-tag">صيد</span>
+                      ) : h.larensWin ? (
+                        <span className="bawn-tag">قيم</span>
+                      ) : h.bawn ? (
+                        <span className="bawn-tag">باون {h.made ? '✓' : '✗'}</span>
                       ) : (
                         <>
                           {ar(h.tricks[h.team])}/{ar(h.bid)} {h.made ? '✓' : '✗'}
@@ -155,6 +191,7 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
         <div className="result-badge">{r.caught ? '🎯' : r.made ? '✓' : '✗'}</div>
         <h2>{r.caught ? (caughtUs ? 'انصدنا!' : 'صدناهم!') : r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
         {r.caught && <p className="catch-line">{catchMessage(game, r.caught, r.points)}</p>}
+        {!r.caught && r.bawn && <p className="catch-line">{r.made ? `باون! أخذوا كل الأكلات بعد الإعلان: +${ar(r.points[r.team])}` : `انكسر الباون: +${ar(r.points[1 - r.team])} للخصم`}</p>}
         <p className="result-line">
           {names[r.bidder]} — {r.forced ? 'ملزوم' : `طلب ${bidLabel(game.rules, r.bid)}`} · الحكم <SuitIcon suit={r.trump} />
         </p>
@@ -194,14 +231,16 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
 export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameState; onAgain: () => void; onHome: () => void; onPad: () => void }) {
   const won = game.winner === 0;
   const r = game.lastResult;
-  const bawanWin = r && r.handNumber === 1 && r.made && r.bid === game.rules.bidding.bawan && game.rules.gameEnd.bawanFirstHandInstantWin;
+  const larensWin = !!r?.larensWin;
   const shut = game.scores[0] === 0 || game.scores[1] === 0;
   return (
     <div className="modal-back">
       <div className={`modal result ${won ? 'good' : 'bad'}`}>
         <div className="result-badge big">{won ? '🏆' : '☕'}</div>
         <h2>{won ? 'مبروك! فزتوا' : 'خسرتوا هالمرة'}</h2>
-        <p className="result-line">{bawanWin ? 'بوان من أول يد!' : shut ? 'فوز بدون ما يسجل الخصم' : 'وصلوا للهدف'}</p>
+        <p className="result-line">
+          {larensWin ? `لارنس! ${SEAT_NAMES[game.mode][r!.bidder]} أخذ كل الأكلات — قيم` : shut ? 'فوز بدون ما يسجل الخصم' : 'وصلوا للهدف'}
+        </p>
         <div className="score-big">
           <span className="us-txt">لنا {ar(game.scores[0])}</span>
           <span className="sep">—</span>

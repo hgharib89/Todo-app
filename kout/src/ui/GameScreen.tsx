@@ -8,6 +8,7 @@ import {
   buildRules,
   createGame,
   applyAction,
+  canAskJoker,
   catchOptions,
   playableCards,
   teamOf,
@@ -15,7 +16,7 @@ import {
 import { chooseBotAction, chooseBotCatch } from '../bots';
 import { Card } from './Card';
 import { Hand } from './Hand';
-import { BidPanel, CatchModal, GameOverModal, HandResultModal, ReviewPanel, ScorePad, SuitIcon, TrumpPicker, bidLabel, catchMessage } from './panels';
+import { BawnPanel, BidPanel, CatchModal, GameOverModal, HandResultModal, ReviewPanel, ScorePad, SuitIcon, TrumpPicker, bidLabel, catchMessage } from './panels';
 import { SEAT_NAMES, SEAT_POS, ar, trickOffset } from './layout';
 import { SPEED_MS, Settings, saveGame } from './settings';
 import { setSoundEnabled, sfx } from './sound';
@@ -85,6 +86,17 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         if (next.lastTrick !== prev.lastTrick && next.lastTrick) setCollecting({ trick: next.lastTrick, stage: 'show' });
       } else if (a.type === 'BID' || a.type === 'PASS') {
         sfx.bid();
+      } else if (a.type === 'JOKER_ASK') {
+        sfx.bid();
+        const entry = next.bids[next.bids.length - 1];
+        const ans = entry.jokerAsk!;
+        showToast(
+          `${names[a.player]}: عندك الجوكر الثاني؟ — ${ans.answer ? `${names[ans.holder!]}: عندي ✓` : 'ما عندي ✗'} ← ${bidLabel(next.rules, entry.value!)}`,
+          3200,
+        );
+      } else if (a.type === 'BAWN') {
+        sfx.bid();
+        showToast(`${names[a.player]}: ${a.accept ? 'باون! 🔥' : 'بدون باون'}`, 2200);
       } else if (a.type === 'CATCH' && next.lastCatch) {
         const c = next.lastCatch;
         if (c.success) sfx.collect();
@@ -120,7 +132,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   useEffect(() => {
     if (busy) return;
     // صيد: any bot that has seen evidence against an opponent may call it (never peeking)
-    if (game.phase === 'playing' || game.phase === 'review') {
+    if (game.phase === 'playing' || game.phase === 'review' || game.phase === 'bawnAsk') {
       for (let seat = 0; seat < game.numPlayers; seat++) {
         if (seat === HUMAN) continue;
         const c = chooseBotCatch(game, seat, settings.difficulty);
@@ -136,7 +148,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
       const t = setTimeout(() => act({ type: 'END_REVIEW' }), speed.bot);
       return () => clearTimeout(t);
     }
-    if (!['bidding', 'choosingTrump', 'playing'].includes(game.phase)) return;
+    if (!['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(game.phase)) return;
     if (game.currentPlayer === HUMAN) {
       sfx.turn();
       return;
@@ -167,7 +179,16 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   const seatBid = (seat: number) => {
     const b = [...game.bids].reverse().find((x) => x.player === seat);
     if (!b) return null;
-    return b.value === null ? 'طاف' : b.forced ? 'ملزوم' : bidLabel(game.rules, b.value);
+    return b.value === null ? 'طاف' : b.forced ? 'ملزوم' : `${bidLabel(game.rules, b.value)}${b.jokerAsk ? ' 🃏' : ''}`;
+  };
+  // the answer to "عندك الجوكر الثاني؟", shown under the partner(s) for the whole hand
+  const askTag = (seat: number): { text: string; yes: boolean } | null => {
+    for (const b of game.bids) {
+      if (!b.jokerAsk || b.player === seat || teamOf(game, b.player) !== teamOf(game, seat)) continue;
+      if (b.jokerAsk.answer) return b.jokerAsk.holder === seat ? { text: '🃏 عندي', yes: true } : null;
+      return { text: 'ما عندي 🃏', yes: false };
+    }
+    return null;
   };
 
   return (
@@ -183,6 +204,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
             <div className="contract">
               <SuitIcon suit={c.trump} />
               <span className="contract-bid">{c.forced ? 'ملزوم' : bidLabel(game.rules, c.value)}</span>
+              {c.bawn && <span className="bawn-badge">باون</span>}
               <span className={`contract-who ${c.team === 0 ? 'us-txt' : 'them-txt'}`}>{names[c.bidder]}</span>
             </div>
           ) : (
@@ -231,7 +253,8 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         <div className="felt" />
         {Array.from({ length: n }, (_, seat) => {
           const p = SEAT_POS[game.mode][seat];
-          const isTurn = !busy && game.currentPlayer === seat && ['bidding', 'choosingTrump', 'playing'].includes(game.phase);
+          const isTurn = !busy && game.currentPlayer === seat && ['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(game.phase);
+          const ask = askTag(seat);
           const bid = game.phase === 'bidding' || game.phase === 'choosingTrump' ? seatBid(seat) : null;
           const team = teamOf(game, seat);
           return (
@@ -250,6 +273,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
               </div>
               <div className="seat-name">{names[seat]}</div>
               {bid && <div className={`bubble ${bid === 'طاف' ? 'pass' : ''}`}>{bid}</div>}
+              {ask && <div className={`ask-tag ${ask.yes ? '' : 'no'}`}>{ask.text}</div>}
               {isTurn && seat !== HUMAN && <div className="thinking">•••</div>}
             </div>
           );
@@ -291,8 +315,11 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
             highBid={game.highBid?.value ?? null}
             onBid={(v) => act({ type: 'BID', player: HUMAN, value: v })}
             onPass={() => act({ type: 'PASS', player: HUMAN })}
+            canAsk={canAskJoker(game, HUMAN)}
+            onAsk={() => act({ type: 'JOKER_ASK', player: HUMAN })}
           />
         )}
+        {myTurn && game.phase === 'bawnAsk' && <BawnPanel rules={game.rules} onAnswer={(accept) => act({ type: 'BAWN', player: HUMAN, accept })} />}
         {myTurn && game.phase === 'choosingTrump' && <TrumpPicker onPick={(s) => act({ type: 'CHOOSE_TRUMP', player: HUMAN, suit: s })} />}
         {myTurn && game.phase === 'playing' && <div className="your-turn">دورك — اضغط الورقة مرتين للعب</div>}
         {!busy && humanCanCatch && <ReviewPanel onCatch={() => setCatchOpen(true)} onDone={() => act({ type: 'END_REVIEW' })} />}
@@ -307,7 +334,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
       </section>
 
       {padOpen && <ScorePad game={game} onClose={() => setPadOpen(false)} />}
-      {catchOpen && (game.phase === 'playing' || game.phase === 'review') && (
+      {catchOpen && (game.phase === 'playing' || game.phase === 'review' || game.phase === 'bawnAsk') && (
         <CatchModal
           game={game}
           me={HUMAN}

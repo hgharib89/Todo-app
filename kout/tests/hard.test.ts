@@ -174,7 +174,7 @@ describe('hard bot — hand evaluation, trump and bidding', () => {
     expect(hardBid(s)).toEqual({ type: 'BID', player: 0, value: 5 });
   });
 
-  it('only bids Bawan with a monster hand', () => {
+  it('only bids Larens with a monster hand', () => {
     expect(hardBid(biddingState(table(1, MONSTER)))).toMatchObject({ type: 'BID', value: 9 });
     const good = hardBid(biddingState(table(1, GOOD)));
     expect(good.type === 'BID' && good.value).not.toBe(9);
@@ -277,7 +277,7 @@ describe('hard bot — card play', () => {
     // seat 1 showed out of hearts earlier, so cashing H14 risks a ruff; trump first.
     // seat 3 leads clubs; seat 0 (us) wins with C14; seat 1 shows out of clubs
     let s = consistent({
-      trump: 'S', bidder: 0, bid: 7, leader: 3, tricksPlayed: 6, tricksWon: [5, 1],
+      trump: 'S', bidder: 0, bid: 8, leader: 3, tricksPlayed: 6, tricksWon: [5, 1],
       hands: [
         ['C14', 'S14', 'C13'],
         ['D10', 'S7', 'D9'],

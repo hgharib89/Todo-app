@@ -16,7 +16,6 @@ describe('scoring table', () => {
     [6, 6, 12],
     [7, 7, 14],
     [8, 8, 16],
-    [9, 36, 18],
   ])('bid %i: made → %i to bidders, failed → %i to opponents', (bid, made, failed) => {
     expect(handPoints(rules, { team: 0, value: bid, forced: false }, true)).toEqual([made, 0]);
     expect(handPoints(rules, { team: 0, value: bid, forced: false }, false)).toEqual([0, failed]);
@@ -130,19 +129,22 @@ describe('game end', () => {
     expect(s.scores).toEqual([0, 36]);
     expect(s.winner).toBe(1);
   });
-  it('Bawan made on the first hand is an instant win', () => {
-    expect(checkGameEnd(r, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0);
-    expect(checkGameEnd(r, [0, 36], { handNumber: 1, made: true, bid: 9, team: 1 })).toBe(1);
-    expect(checkGameEnd(r, [36, 10], { handNumber: 2, made: true, bid: 9, team: 0 })).toBeNull();
+  it('a Larens win ends the game whatever the score', () => {
+    expect(checkGameEnd(r, [0, 50], { team: 0, larensWin: true })).toBe(0);
+    expect(checkGameEnd(r, [0, 0], { team: 1, larensWin: true })).toBe(1);
+    expect(checkGameEnd(r, [10, 0], { team: 0, larensWin: false })).toBeNull();
+  });
+  it('the old "Bawan on the first hand" rule is gone', () => {
+    expect((RULES.gameEnd as Record<string, unknown>).bawanFirstHandInstantWin).toBeUndefined();
+    expect(RULES.scoring[9]).toBeUndefined();
   });
   it('thresholds are configurable', () => {
-    const r2 = buildRules('default', { gameEnd: { targetScore: 31, shutoutTarget: null, bawanFirstHandInstantWin: false } });
+    const r2 = buildRules('default', { gameEnd: { targetScore: 31, shutoutTarget: null } });
     expect(checkGameEnd(r2, [31, 0])).toBe(0);
     expect(checkGameEnd(r2, [30, 0])).toBeNull();
-    expect(checkGameEnd(r2, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0); // via 31 target
-    const r3 = buildRules('default', { gameEnd: { targetScore: 101, shutoutTarget: null, bawanFirstHandInstantWin: false } });
+    const r3 = buildRules('default', { gameEnd: { targetScore: 101, shutoutTarget: null } });
     expect(checkGameEnd(r3, [51, 0])).toBeNull();
-    expect(checkGameEnd(r3, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBeNull();
+    expect(checkGameEnd(r3, [36, 0])).toBeNull();
   });
 });
 

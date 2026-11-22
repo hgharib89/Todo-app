@@ -4,8 +4,8 @@ import { describeJokerLead, describeJokerPlay, presetDescription } from '../src/
 
 describe('UI rule text is generated from rules.config.ts', () => {
   it('describes each preset from its config', () => {
-    expect(presetDescription('default', RULES)).toBe('بوان: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم');
-    expect(presetDescription('strict', RULES)).toBe('بوان: أي جوكر · ٨: الأحمر فقط');
+    expect(presetDescription('default', RULES)).toBe('لارنس: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم');
+    expect(presetDescription('strict', RULES)).toBe('لارنس: أي جوكر · ٨: الأحمر فقط');
     expect(presetDescription('stricter', RULES)).toContain('كل أوراق الحكم');
     expect(presetDescription('relaxed', RULES)).toContain('ما عنده إكَه الحكم يجوز أي وقت');
   });
@@ -62,5 +62,27 @@ describe('rules text for reneging and catching', () => {
     const g = createGame(RULES, 'bo4', 1);
     expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خالد قطع في الأكلة ٣ (ما لحق هاص) — صاده أنت: +١٢ لنا');
     expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('صاد غلط');
+  });
+});
+
+describe('rules text for Larens, Bawn and the joker question', () => {
+  it('is generated from the config', async () => {
+    const { describeLarens, describeBawn, describeJokerAsk } = await import('../src/ui/rulesText');
+    expect(describeLarens(RULES).join(' ')).toContain('يفوز باللعبة كلها فوراً (قيم)');
+    expect(describeLarens(RULES).join(' ')).toContain('١٨');
+    expect(describeBawn(RULES).join(' ')).toContain('إذا الطلب ٧ ووصل الفريق المزايد ٦ أكلات');
+    expect(describeBawn(RULES).join(' ')).toContain('٣٦');
+    expect(describeJokerAsk(RULES).join(' ')).toContain('مجبور يطلب لارنس');
+    expect(describeJokerAsk(RULES).join(' ')).toContain('مجبور يطلب ٨');
+    expect(describeBawn(buildRules('default', { bawn: { ...RULES.bawn, bawnOnBid: null } }))).toEqual([]);
+    expect(describeJokerAsk(buildRules('default', { jokerAsk: { ...RULES.jokerAsk, allowJokerAsk: false } }))).toEqual([]);
+  });
+  it('bid 9 is shown as لارنس everywhere (no بوان left)', async () => {
+    const { bidLabel } = await import('../src/ui/panels');
+    expect(bidLabel(RULES, 9)).toBe('لارنس');
+    const { readFileSync } = await import('node:fs');
+    for (const f of ['src/ui/panels.tsx', 'src/ui/Screens.tsx', 'src/ui/GameScreen.tsx', 'src/ui/rulesText.ts', 'src/engine/rules.config.ts']) {
+      expect(readFileSync(f, 'utf8')).not.toContain('بوان');
+    }
   });
 });

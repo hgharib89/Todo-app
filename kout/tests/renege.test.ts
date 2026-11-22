@@ -181,7 +181,7 @@ describe('catching (الصيد)', () => {
     expect(renegeEvidence(s)).toEqual([expect.objectContaining({ accused: 1, trick: 0, suit: 'S' })]);
   });
 
-  it('Bawan on the first hand is not an instant win when the defenders were caught', () => {
+  it('a caught renege during Larens breaks the hand normally (double the bid, no game win)', () => {
     let s = start({ bid: 9, tricksWon: [6, 0] });
     s = { ...s, handNumber: 1 };
     s = play(s, 'H14', 'D9', 'H8', 'H7', 'C14', 'H9');
