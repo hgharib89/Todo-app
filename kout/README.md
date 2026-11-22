@@ -33,6 +33,17 @@ The build uses `base: './'`, so `dist/` works from any sub-path.
 
 **Option B: manual.** Run `npm run build` and upload the contents of `kout/dist/` to any static host, or to a `gh-pages` branch.
 
+## Install it as an app (PWA)
+
+The game is an installable Progressive Web App that works fully offline.
+
+- **Manifest** (`public/manifest.webmanifest`): name «ديوانية الكوت» (short name «الكوت»), RTL Arabic, `display: standalone`, portrait orientation, theme and background colour `#0b2226`.
+- **Icons** (`public/icons/`): original artwork in 192 and 512 px (plus maskable versions), a 180 px Apple touch icon, a 32 px favicon and an SVG. The source is `assets/icon.svg`; regenerate the PNGs with `node scripts/make-icons.cjs` (needs Playwright's Chromium).
+- **Offline**: the build generates `dist/sw.js` (`pwa/serviceWorkerPlugin.ts` + `pwa/sw.template.js`). It precaches every built file, including the bundled Arabic fonts (no Google Fonts request), and its cache version changes with every build. Pages are network-first with the cached app as fallback; files are cache-first. It only handles requests inside its own folder, so it doesn't clash with other apps on the same site.
+- **iOS**: `apple-mobile-web-app-capable`, a `black-translucent` status bar, the home-screen title and the touch icon give full-screen standalone mode. Safe-area padding keeps the UI clear of the notch.
+- **Installing**: Android and desktop Chrome show a «ثبّت اللعبة» button on the home screen. On iPhone and iPad the home screen shows the Share → Add to Home Screen hint.
+- **Check it**: run `npm run build`, serve `dist/`, then run `node scripts/check-pwa.cjs <url>`. It checks installability, precaching, and that the game loads and deals a hand offline.
+
 ## Editing the rules: `src/engine/rules.config.ts`
 
 The engine reads every rule value from this file, and each option has a comment in Arabic and English. Edit it, then run `npm test` to see what changed.
