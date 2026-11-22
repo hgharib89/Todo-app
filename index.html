@@ -632,6 +632,8 @@
     font-variant-numeric: tabular-nums;
   }
   .hint { margin: 0; font-size: 12px; color: var(--text-muted); }
+  .backup { margin-top: 20px; padding-top: 14px; border-top: 1px solid var(--border); display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; }
+  .backup-info { flex: 1 1 100%; margin: 0; font-size: 12px; color: var(--text-muted); text-align: center; }
 
   @media (min-width: 480px) {
     .page { padding: 48px 24px 48px; }
@@ -776,6 +778,12 @@
   <footer class="app-footer">
     <p class="counter" id="counter" aria-live="polite">المتبقي: 0</p>
     <p class="hint" id="hint" hidden></p>
+    <div class="backup">
+      <button type="button" class="chip-btn" id="export-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><polyline points="7 10 12 15 17 10"/><path d="M5 21h14"/></svg><span data-i18n="exportBtn">نسخة احتياطية</span></button>
+      <button type="button" class="chip-btn" id="import-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V3"/><polyline points="7 8 12 3 17 8"/><path d="M5 21h14"/></svg><span data-i18n="importBtn">استرجاع</span></button>
+      <input type="file" id="import-input" accept="application/json,.json" hidden>
+      <p class="backup-info" id="backup-info"></p>
+    </div>
   </footer>
 
   <div class="visually-hidden" id="announcer" aria-live="polite"></div>
@@ -833,6 +841,13 @@
       smartLabel: 'تعبئة ذكية بـ Claude', smartHint: 'اكتب المهمة بكلامك أول، مثل: اجتماع مع محمد بكرة الساعة ١٠ في دبي مول',
       smartDone: 'تمت تعبئة الخانات', aiSum: 'تلخيص', aiSumLabel: 'تلخيص وخطوات تالية بـ Claude', aiSummary: 'ملخص Claude',
       nextSteps: 'الخطوات التالية:', addAsNotes: 'إضافة كنقاط', copy: 'نسخ',
+      exportBtn: 'نسخة احتياطية', importBtn: 'استرجاع', neverBackedUp: 'ما سويت نسخة احتياطية للحين',
+      lastBackup: function (d) { return 'آخر نسخة احتياطية: ' + d; }, backupDone: 'تم تجهيز النسخة الاحتياطية',
+      badBackup: 'هذا الملف مو نسخة احتياطية من تطبيق المهام.', restoreTitle: 'استرجاع النسخة الاحتياطية',
+      backupSummary: function (n, d) { return 'الملف فيه ' + n + ' مهمة' + (d ? ' (نسخة ' + d + ')' : '') + '.'; },
+      restoreMerge: 'إضافة للمهام الحالية', restoreReplace: 'استبدال كل المهام الحالية',
+      replaceConfirm: 'بتنحذف كل المهام الحالية وتنحط مكانها مهام الملف. متأكد؟',
+      restored: function (n) { return 'تم استرجاع ' + n + ' مهمة.'; },
       stats: 'الإحصائيات', stDoneWeek: 'منجزة هذا الأسبوع', stDoneMonth: 'منجزة هذا الشهر', stOverdue: 'متأخرة', stToday: 'مواعيد اليوم',
       stActive: 'نشطة', stAddedWeek: 'أضيفت هذا الأسبوع', stRate: function (r) { return 'نسبة الإنجاز: ' + r + '%'; }, stLast7: 'المنجز في آخر 7 أيام',
       todayF: 'اليوم', noToday: 'ما عندك مهام اليوم ولا مهام متأخرة.',
@@ -889,6 +904,13 @@
       smartLabel: 'Smart fill with Claude', smartHint: 'Type the task in your own words first, e.g. Meeting with Mohamed tomorrow at 10 at Dubai Mall',
       smartDone: 'Fields filled in', aiSum: 'Summarise', aiSumLabel: 'Summary and next steps with Claude', aiSummary: 'Claude summary',
       nextSteps: 'Next steps:', addAsNotes: 'Add as notes', copy: 'Copy',
+      exportBtn: 'Back up', importBtn: 'Restore', neverBackedUp: 'No backup yet',
+      lastBackup: function (d) { return 'Last backup: ' + d; }, backupDone: 'Backup ready',
+      badBackup: 'This file is not a Tasks backup.', restoreTitle: 'Restore backup',
+      backupSummary: function (n, d) { return 'The file has ' + n + (n === 1 ? ' task' : ' tasks') + (d ? ' (from ' + d + ')' : '') + '.'; },
+      restoreMerge: 'Add to my current tasks', restoreReplace: 'Replace all current tasks',
+      replaceConfirm: 'All current tasks will be deleted and replaced with the file. Continue?',
+      restored: function (n) { return 'Restored ' + n + (n === 1 ? ' task.' : ' tasks.'); },
       stats: 'Stats', stDoneWeek: 'Done this week', stDoneMonth: 'Done this month', stOverdue: 'Overdue', stToday: 'Due today',
       stActive: 'Active', stAddedWeek: 'Added this week', stRate: function (r) { return 'Completion: ' + r + '%'; }, stLast7: 'Done in the last 7 days',
       todayF: 'Today', noToday: 'Nothing due today and nothing overdue.',
@@ -2037,7 +2059,7 @@
     langBtn.setAttribute('aria-label', T('switchLabel'));
     nodes.forEach(function (li, id) { var t = findTask(id); if (t) updateItem(li, t); });
     if (viewBtn) viewBtn.setAttribute('aria-label', calMode ? T('listView') : T('calView'));
-    if (statsReady) updateLockBtn();
+    if (statsReady) { updateLockBtn(); updateBackupInfo(); }
     render();
   }
   langBtn.addEventListener('click', function () {
@@ -2760,6 +2782,140 @@
     });
   }
   updateAiUI();
+
+  /* ---------- Backup ---------- */
+  var BACKUP_KEY = 'todo-app.lastBackup';
+  var backupInfo = document.getElementById('backup-info');
+  var importInput = document.getElementById('import-input');
+  function updateBackupInfo() {
+    var last = 0;
+    try { last = +localStorage.getItem(BACKUP_KEY) || 0; } catch (e) {}
+    if (!last) { backupInfo.textContent = T('neverBackedUp'); return; }
+    var d = new Date(last);
+    var label;
+    try { label = d.toLocaleDateString(T('locale'), { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) { label = d.toISOString().slice(0, 10); }
+    backupInfo.textContent = T('lastBackup', label);
+  }
+  function blobToDataUrl(blob) {
+    return new Promise(function (resolve) {
+      var r = new FileReader();
+      r.onload = function () { resolve(r.result); };
+      r.onerror = function () { resolve(null); };
+      r.readAsDataURL(blob);
+    });
+  }
+  function dataUrlToBlob(url) {
+    var m = /^data:([^;,]*)(;base64)?,(.*)$/.exec(url || '');
+    if (!m) return null;
+    var bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]);
+    var arr = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+    return new Blob([arr], { type: m[1] || 'application/octet-stream' });
+  }
+  function exportBackup() {
+    var ids = [];
+    tasks.forEach(function (t) { (t.attachments || []).forEach(function (a) { ids.push(a.id); }); });
+    var files = {};
+    var chain = Promise.resolve();
+    ids.forEach(function (id) {
+      chain = chain.then(function () { return idbGet(id); }).then(function (blob) {
+        if (!blob) return;
+        return blobToDataUrl(blob).then(function (u) { if (u) files[id] = u; });
+      });
+    });
+    chain.then(function () {
+      var data = { app: 'tasks-hgharib89', version: 1, exportedAt: new Date().toISOString(), lang: lang, tasks: tasks, files: files };
+      var json = JSON.stringify(data);
+      var d = new Date();
+      var name = 'tasks-backup-' + d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + '.json';
+      var file;
+      try { file = new File([json], name, { type: 'application/json' }); } catch (e) { file = null; }
+      var done = function () {
+        try { localStorage.setItem(BACKUP_KEY, String(Date.now())); } catch (e) {}
+        updateBackupInfo();
+        announce(T('backupDone'));
+      };
+      if (file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: name }).then(done).catch(function (err) {
+          if (err && err.name === 'AbortError') return;
+          downloadBlob(new Blob([json], { type: 'application/json' }), name);
+          done();
+        });
+      } else {
+        downloadBlob(new Blob([json], { type: 'application/json' }), name);
+        done();
+      }
+    });
+  }
+  function downloadBlob(blob, name) {
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = name;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+  }
+  function restoreFrom(data, mode) {
+    var incoming = Array.isArray(data.tasks) ? data.tasks : [];
+    var files = data.files && typeof data.files === 'object' ? data.files : {};
+    var existing = {};
+    tasks.forEach(function (t) { existing[t.id] = 1; });
+    var list = mode === 'replace' ? incoming : incoming.filter(function (t) { return t && !existing[t.id]; });
+    // write attachment files first
+    var chain = Promise.resolve();
+    list.forEach(function (t) {
+      (t.attachments || []).forEach(function (a) {
+        var blob = files[a.id] ? dataUrlToBlob(files[a.id]) : null;
+        if (blob) chain = chain.then(function () { return idbWrite(function (st) { st.put(blob, a.id); }); });
+      });
+    });
+    return chain.then(function () {
+      if (mode === 'replace') {
+        tasks.forEach(function (t) {
+          (t.attachments || []).forEach(function (a) {
+            var keep = list.some(function (x) { return (x.attachments || []).some(function (y) { return y.id === a.id; }); });
+            if (!keep) removeFile(a.id);
+          });
+        });
+      }
+      try { localStorage.setItem(TASKS_KEY, JSON.stringify(mode === 'replace' ? list : tasks.concat(list))); } catch (e) {}
+      tasks = loadTasks();
+      nodes.forEach(function (li) { li.remove(); });
+      nodes.clear();
+      openNotes.clear();
+      openInvite.clear();
+      editingId = null;
+      render();
+      return list.length;
+    });
+  }
+  importInput.addEventListener('change', function () {
+    var f = importInput.files && importInput.files[0];
+    importInput.value = '';
+    if (!f) return;
+    var r = new FileReader();
+    r.onload = function () {
+      var data = null;
+      try { data = JSON.parse(r.result); } catch (e) { data = null; }
+      if (!data || data.app !== 'tasks-hgharib89' || !Array.isArray(data.tasks)) { window.alert(T('badBackup')); return; }
+      var n = data.tasks.length;
+      var when = '';
+      try { when = new Date(data.exportedAt).toLocaleDateString(T('locale'), { day: 'numeric', month: 'short', year: 'numeric' }); } catch (e) {}
+      var finish = function (count) { window.alert(T('restored', count)); };
+      showSheet(T('restoreTitle'), [
+        { label: T('restoreMerge'), primary: true, run: function () { restoreFrom(data, 'merge').then(finish); } },
+        { label: T('restoreReplace'), run: function () {
+          if (window.confirm(T('replaceConfirm'))) restoreFrom(data, 'replace').then(finish);
+        } }
+      ], T('backupSummary', n, when));
+    };
+    r.readAsText(f);
+  });
+  document.getElementById('export-btn').addEventListener('click', exportBackup);
+  document.getElementById('import-btn').addEventListener('click', function () { importInput.click(); });
+  updateBackupInfo();
 
   /* ---------- Due date ---------- */
   var dueWrap = document.getElementById('due-wrap');
