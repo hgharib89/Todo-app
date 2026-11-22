@@ -307,6 +307,27 @@
   .invite-btn.has-invitees, .invite-btn[aria-expanded="true"] { color: var(--accent-text); }
   .invite-btn:hover { color: var(--accent); background: var(--surface-hover); }
   .invite-err { margin: 6px 0 0; font-size: 13px; color: var(--danger); }
+  .sheet-backdrop {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(15, 17, 21, .45);
+    display: flex; align-items: flex-end; justify-content: center;
+  }
+  .sheet {
+    width: 100%; max-width: 560px; box-sizing: border-box;
+    background: var(--surface); color: var(--text);
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding: 16px 16px calc(16px + env(safe-area-inset-bottom));
+    box-shadow: 0 -8px 24px rgba(0,0,0,.15);
+  }
+  .sheet-title { margin: 0 0 12px; font-size: 15px; font-weight: 600; text-align: center; color: var(--text-muted); }
+  .sheet-opt {
+    display: block; width: 100%; min-height: 48px; margin: 0 0 8px; padding: 0 16px;
+    border: 1px solid var(--border); border-radius: var(--radius-md);
+    background: var(--surface); color: var(--text); font-size: 16px; font-weight: 500; text-align: center; cursor: pointer;
+  }
+  .sheet-opt:hover { background: var(--surface-hover); }
+  .sheet-opt.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+  .sheet-cancel { color: var(--text-muted); border: 0; margin: 4px 0 0; }
   .note-list { list-style: none; margin: 0 0 8px; padding: 0; }
   .note-list:empty { display: none; }
   .note {
@@ -595,6 +616,9 @@
       badEmail: 'تأكد من الإيميل: ', removeInvitee: function (e) { return 'إزالة ' + e; },
       mailSubject: function (t) { return 'دعوة: ' + t; }, mailTask: 'المهمة: ', mailLoc: 'الموقع: ', mailNotes: 'النقاط:',
       mailFooter: 'أُرسلت من تطبيق المهام', invited: 'تم فتح الإيميل للإرسال',
+      calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'Outlook (حساب العمل)', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
+      inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'دعوة Outlook (حساب العمل)', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
+      cancel: 'إلغاء',
       due: 'الموعد', clearDue: 'مسح الموعد', addCal: function (d) { return 'إضافة إلى التقويم: ' + d; },
       mailWhen: 'الموعد: ', mailCal: 'أضفها إلى تقويمك:', locale: 'ar-AE',
       speech: 'ar-AE', switchTo: 'EN', switchLabel: 'Switch to English', switchLang: 'en'
@@ -628,6 +652,9 @@
       badEmail: 'Check this email: ', removeInvitee: function (e) { return 'Remove ' + e; },
       mailSubject: function (t) { return 'Invitation: ' + t; }, mailTask: 'Task: ', mailLoc: 'Location: ', mailNotes: 'Notes:',
       mailFooter: 'Sent from Tasks', invited: 'Email opened to send',
+      calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook (work account)', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
+      inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook invite (work account)', outlookInviteHome: 'Outlook.com invite (personal)',
+      cancel: 'Cancel',
       due: 'When', clearDue: 'Clear date', addCal: function (d) { return 'Add to calendar: ' + d; },
       mailWhen: 'When: ', mailCal: 'Add it to your calendar:', locale: 'en-GB',
       speech: 'en-US', switchTo: 'ع', switchLabel: 'التبديل إلى العربية', switchLang: 'ar'
@@ -1203,6 +1230,98 @@
     return u;
   }
   function icsEscape(v) { return String(v).replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n'); }
+  function isoLocal(d) {
+    var off = -d.getTimezoneOffset();
+    var sign = off >= 0 ? '+' : '-';
+    off = Math.abs(off);
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':00' + sign + pad(Math.floor(off / 60)) + ':' + pad(off % 60);
+  }
+  function outlookBody(t) {
+    var parts = [];
+    var det = eventDetails(t);
+    if (det) parts.push(det);
+    if (t.location) parts.push('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(t.location));
+    return parts.join('\n\n');
+  }
+  function outlookUrl(t, guests, kind) {
+    var host = kind === 'live' ? 'https://outlook.live.com' : 'https://outlook.office.com';
+    var body = outlookBody(t);
+    if (!t.due) {
+      var mu = host + '/mail/deeplink/compose?subject=' + encodeURIComponent(T('mailSubject', t.text));
+      if (guests && guests.length) mu += '&to=' + encodeURIComponent(guests.join(','));
+      var lines = [T('mailTask') + t.text];
+      if (t.location) lines.push(T('mailLoc') + t.location);
+      if (body) { lines.push(''); lines.push(body); }
+      return mu + '&body=' + encodeURIComponent(lines.join('\n'));
+    }
+    var start = new Date(t.due);
+    var end = new Date(start.getTime() + 60 * 60 * 1000);
+    var u = host + '/calendar/0/deeplink/compose?path=%2Fcalendar%2Faction%2Fcompose&rru=addevent' +
+      '&subject=' + encodeURIComponent(t.text) +
+      '&startdt=' + encodeURIComponent(isoLocal(start)) +
+      '&enddt=' + encodeURIComponent(isoLocal(end));
+    if (t.location) u += '&location=' + encodeURIComponent(t.location);
+    if (body) u += '&body=' + encodeURIComponent(body);
+    if (guests && guests.length) u += '&to=' + encodeURIComponent(guests.join(','));
+    return u;
+  }
+  function openUrl(u) {
+    var w = window.open(u, '_blank');
+    if (w) { try { w.opener = null; } catch (e) {} }
+    else window.location.href = u;
+  }
+  var sheetEl = null;
+  var sheetReturn = null;
+  function closeSheet() {
+    if (!sheetEl) return;
+    sheetEl.remove();
+    sheetEl = null;
+    document.removeEventListener('keydown', sheetKey, true);
+    if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus();
+  }
+  function sheetKey(e) { if (e.key === 'Escape') { e.preventDefault(); closeSheet(); } }
+  function showSheet(title, opts) {
+    closeSheet();
+    sheetReturn = document.activeElement;
+    var bd = document.createElement('div');
+    bd.className = 'sheet-backdrop';
+    var sh = document.createElement('div');
+    sh.className = 'sheet';
+    sh.setAttribute('role', 'dialog');
+    sh.setAttribute('aria-modal', 'true');
+    sh.setAttribute('aria-label', title);
+    var h = document.createElement('p');
+    h.className = 'sheet-title';
+    h.textContent = title;
+    sh.appendChild(h);
+    opts.concat([{ label: T('cancel'), cancel: true }]).forEach(function (o) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'sheet-opt' + (o.primary ? ' primary' : '') + (o.cancel ? ' sheet-cancel' : '');
+      b.textContent = o.label;
+      b.addEventListener('click', function () { closeSheet(); if (o.run) o.run(); });
+      sh.appendChild(b);
+    });
+    bd.appendChild(sh);
+    bd.addEventListener('click', function (e) { if (e.target === bd) closeSheet(); });
+    document.body.appendChild(bd);
+    sheetEl = bd;
+    document.addEventListener('keydown', sheetKey, true);
+    sh.querySelector('.sheet-opt').focus();
+  }
+  function calendarMenu(id) {
+    var t = findTask(id);
+    if (!t || !t.due) return;
+    var g = t.invitees || [];
+    showSheet(T('calTitle'), [
+      { label: T('phoneCal'), run: function () { addToCalendar(id); } },
+      { label: T('outlookWork'), primary: true, run: function () { openUrl(outlookUrl(t, g, 'office')); } },
+      { label: T('outlookHome'), run: function () { openUrl(outlookUrl(t, g, 'live')); } },
+      { label: T('googleCal'), run: function () { openUrl(googleCalUrl(t, g)); } }
+    ]);
+  }
+
   function addToCalendar(id) {
     var t = findTask(id);
     if (!t || !t.due) return;
@@ -1296,8 +1415,10 @@
     var href = 'mailto:' + to.map(encodeURIComponent).join(',') +
       '?subject=' + encodeURIComponent(T('mailSubject', t.text)) +
       '&body=' + encodeURIComponent(lines.join('\n'));
-    announce(T('invited'));
-    window.location.href = href;
+    var opts = [{ label: T('mailApp'), run: function () { announce(T('invited')); window.location.href = href; } }];
+    opts.push({ label: T('outlookInvite'), primary: true, run: function () { openUrl(outlookUrl(t, to, 'office')); } });
+    opts.push({ label: T('outlookInviteHome'), run: function () { openUrl(outlookUrl(t, to, 'live')); } });
+    showSheet(T('inviteTitle'), opts);
   }
 
   function removeInvitee(id, email) {
@@ -1608,7 +1729,7 @@
       dictate(btn, fld);
       return;
     }
-    if (btn.classList.contains('due')) { addToCalendar(li.dataset.id); return; }
+    if (btn.classList.contains('due')) { calendarMenu(li.dataset.id); return; }
     if (btn.classList.contains('notes-btn')) { toggleNotes(li.dataset.id); return; }
     if (btn.classList.contains('invite-btn')) { toggleInvite(li.dataset.id); return; }
     if (btn.classList.contains('invitee-del')) { removeInvitee(li.dataset.id, btn.closest('.invitee').dataset.email); return; }
