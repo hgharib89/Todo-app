@@ -765,3 +765,8 @@ html[data-theme="dark"] .home-head { background: #0F5B4D; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .confetti { display: none; }
 }
+
+/* PWA install row + steps */
+[data-install] .grow { display: flex; flex-direction: column; gap: 2px; }
+.pwa-steps { list-style: decimal; margin: 12px 0 0; padding-inline-start: 22px; display: grid; gap: 8px; }
+.pwa-steps li { line-height: 1.6; }

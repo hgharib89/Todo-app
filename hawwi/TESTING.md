@@ -53,3 +53,10 @@ Every screen of the run gets four automatic checks: no untranslated `a.b.c` keys
 - `#/category/<unknown>` shows search with no category filter, not a "not found" state. The spec only defines not-found for business, product and order IDs.
 - The language-switch link sits at the start edge of onboarding, as in the spec's annotation. The spec's ASCII wireframe draws it at the other edge.
 - Only Chromium was tested. Firefox and Safari were not.
+
+## Installable app (PWA)
+
+- `manifest.webmanifest`, icons (192, 512, maskable 512, Apple 180) and `sw.js`, scoped to `hawwi/` only. The root to-do app's service worker ignores `hawwi/`.
+- Settings has an "Install Hawwi" row. On Android/Chrome it opens the browser's install prompt; on iPhone it shows the Safari "Add to Home Screen" steps. The row is hidden when the app is already running installed.
+- Checked headlessly: the manifest and icons load, the service worker controls the page, an offline reload opens the business page, the steps show in AR and EN with an iPhone and a desktop user agent, and there are zero console errors. AR and EN regression suites still pass (503 + 505 checks).
+- Not yet tried on a real phone.
