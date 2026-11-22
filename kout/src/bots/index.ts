@@ -14,6 +14,7 @@ import {
   SUITS,
   Trick,
   bidOptions,
+  canAskJoker,
   buildDeck,
   isJoker,
   catchOptions,
@@ -27,7 +28,7 @@ import {
   suitPower,
   winningPlayIndex,
 } from '../engine';
-import { HARD_DEFAULT_SAMPLES, HardOptions, Rng, chooseTrump, hardBid, hardPlay } from './hard';
+import { HARD_DEFAULT_SAMPLES, HardOptions, Rng, chooseTrump, hardBawn, hardBid, hardPlay } from './hard';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type { Rng };
@@ -40,8 +41,9 @@ export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: R
     const mistake = renegeMistake(state, difficulty, rng);
     if (mistake) return mistake;
   }
-  if (difficulty === 'easy') return easyAction(state, acts, rng);
   if (difficulty === 'hard') return hardAction(state, acts, rng, opts);
+  if (state.phase === 'bawnAsk') return simpleBawn(state, difficulty, rng);
+  if (difficulty === 'easy') return easyAction(state, acts, rng);
   switch (state.phase) {
     case 'bidding':
       return mediumBid(state);
@@ -63,9 +65,24 @@ function hardAction(state: GameState, acts: Action[], rng: Rng, opts: HardOption
       return { type: 'CHOOSE_TRUMP', player: me, suit: chooseTrump(state, state.hands[me]).suit };
     case 'playing':
       return { type: 'PLAY', player: me, card: hardPlay(state, rng, opts.samples ?? HARD_DEFAULT_SAMPLES) };
+    case 'bawnAsk':
+      return hardBawn(state, rng, opts.samples ?? HARD_DEFAULT_SAMPLES);
     default:
       return acts[0];
   }
+}
+
+/**
+ * Easy/Medium answer to "تبي باون؟": yes when the bidder holds a sure winner (no higher card still
+ * out) for every remaining trick. Easy sometimes says yes on a hunch.
+ */
+function simpleBawn(state: GameState, difficulty: Difficulty, rng: Rng): Action {
+  const me = state.currentPlayer;
+  const trump = state.contract!.trump as Suit;
+  const left = state.hands[me].length;
+  const sure = state.hands[me].filter((c) => isBoss(state, me, c, trump)).length;
+  const accept = sure >= left || (difficulty === 'easy' && rng() < 0.15);
+  return { type: 'BAWN', player: me, accept };
 }
 
 // ---------------------------------------------------------------------------
@@ -114,6 +131,8 @@ export function chooseBotCatch(state: GameState, seat: number, difficulty: Diffi
 // ---------------------------------------------------------------------------
 function easyAction(state: GameState, acts: Action[], rng: Rng): Action {
   if (state.phase === 'bidding') {
+    const ask = acts.find((a) => a.type === 'JOKER_ASK');
+    if (ask && rng() < 0.1) return ask;
     const pass = acts.find((a) => a.type === 'PASS');
     if (pass && rng() < 0.7) return pass;
     const bids = acts.filter((a) => a.type === 'BID');
@@ -175,9 +194,12 @@ function mediumBid(state: GameState): Action {
   const partners = state.numPlayers / 2 - 1;
   const partnerShare = state.numPlayers === 6 ? 1.45 : 2.5;
   const team = est + partners * partnerShare;
-  const bawan = state.rules.bidding.bawan;
+  const larens = state.rules.bidding.larens;
   let target = Math.floor(team);
-  if (target >= bawan && team < bawan + 0.8) target = bawan - 1; // Bawan only with a monster hand
+  if (target >= larens && team < larens + 0.8) target = larens - 1; // Larens only with a monster hand
+
+  // سؤال الجوكر: with one joker and a strong hand, ask partner (forces Larens or 8)
+  if (canAskJoker(state, p) && est >= (state.numPlayers === 6 ? 4.5 : 5)) return { type: 'JOKER_ASK', player: p };
 
   if (opts.forced) {
     const v = opts.values.filter((x) => x <= Math.max(target, opts.values[0]));

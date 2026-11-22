@@ -86,7 +86,7 @@ describe('bidding', () => {
     expect(bidOptions(g).values).toEqual([5]);
   });
 
-  it('bidding 9 (Bawan) ends bidding immediately', () => {
+  it('bidding 9 (Larens) ends bidding immediately', () => {
     let g = game('bo6', 0);
     g = applyAction(g, { type: 'BID', player: 1, value: 9 });
     expect(g.phase).toBe('choosingTrump');

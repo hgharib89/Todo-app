@@ -23,13 +23,23 @@ import { randomInt, shuffle } from './rng';
 
 export type Team = 0 | 1;
 /** 'review' = all cards played; the table may still call a catch (صيد) before the hand is scored */
-export type Phase = 'bidding' | 'choosingTrump' | 'playing' | 'review' | 'handOver' | 'gameOver';
+/** 'bawnAsk' = bid 7 reached 6 tricks: the bidder answers "تبي باون؟" */
+export type Phase = 'bidding' | 'choosingTrump' | 'playing' | 'bawnAsk' | 'review' | 'handOver' | 'gameOver';
+
+/** The (public) answer to "عندك الجوكر الثاني؟" */
+export interface JokerAskAnswer {
+  answer: boolean;
+  /** the partner who has the other joker (null when the answer is no) */
+  holder: number | null;
+}
 
 export interface BidEntry {
   player: number;
   /** null = pass (طاف) */
   value: number | null;
   forced: boolean;
+  /** set when this bid was forced by asking partner about the other joker */
+  jokerAsk?: JokerAskAnswer;
 }
 
 export interface Contract {
@@ -41,6 +51,10 @@ export interface Contract {
   trump: Suit | null;
   /** did the bidder hold the "leadUnlockedIfBidderLacks" card when trump was chosen? */
   bidderHeldUnlockCard: boolean;
+  /** Bawn (باون): null = not asked, true = declared, false = declined */
+  bawn?: boolean | null;
+  /** the opponents' tricks when Bawn was declared (they must not win another) */
+  bawnOppTricks?: number;
 }
 
 export interface TrickPlay {
@@ -99,6 +113,10 @@ export interface HandResult {
   endedEarly: boolean;
   /** set when the hand was broken by a successful catch */
   caught: CatchResult | null;
+  /** Bawn declared this hand (true), declined (false) or not asked (null) */
+  bawn: boolean | null;
+  /** the bidding team made Larens and so won the whole game (قيم) */
+  larensWin: boolean;
 }
 
 export interface GameState {
@@ -147,7 +165,11 @@ export type Action =
   /** صيد: `player` accuses `accused` of reneging in trick number `trick` (0 = first) of this hand */
   | { type: 'CATCH'; player: number; accused: number; trick: number }
   /** finish the end-of-hand review and score the hand */
-  | { type: 'END_REVIEW' };
+  | { type: 'END_REVIEW' }
+  /** the bidder's answer to "تبي باون؟" */
+  | { type: 'BAWN'; player: number; accept: boolean }
+  /** "عندك الجوكر الثاني؟": ask partner, then bid jokerAskYesBid / jokerAskNoBid by the answer */
+  | { type: 'JOKER_ASK'; player: number };
 
 // ---------------------------------------------------------------------------
 // helpers
@@ -303,17 +325,18 @@ function finishBidding(state: GameState): GameState {
       forced: hb.forced,
       trump: null,
       bidderHeldUnlockCard: false,
+      bawn: null,
     },
   };
 }
 
-function applyBid(state: GameState, player: number, value: number | null): GameState {
+function applyBid(state: GameState, player: number, value: number | null, jokerAsk?: JokerAskAnswer): GameState {
   const opts = bidOptions(state, player);
   if (value === null && !opts.canPass) throw new Error('Pass not allowed');
   if (value !== null && !opts.values.includes(value)) throw new Error(`Bid ${value} not allowed`);
   const b = state.rules.bidding;
-  const forced = opts.forced && value === b.malzoomBid;
-  const entry: BidEntry = { player, value, forced };
+  const forced = opts.forced && value === b.malzoomBid && !jokerAsk;
+  const entry: BidEntry = jokerAsk ? { player, value, forced, jokerAsk } : { player, value, forced };
   const passed = state.passed.slice();
   if (value === null) passed[player] = true;
   let s: GameState = {
@@ -337,6 +360,43 @@ function applyBid(state: GameState, player: number, value: number | null): GameS
   while (passed[n]) n = nextSeat(s, n);
   s = { ...s, currentPlayer: n };
   return s;
+}
+
+// ---------------------------------------------------------------------------
+// asking partner about the other joker (سؤال الجوكر)
+// ---------------------------------------------------------------------------
+
+/**
+ * May `player` ask "عندك الجوكر الثاني؟" now? Only on their bidding turn, holding exactly one joker,
+ * and only while both forced answers (jokerAskYesBid and jokerAskNoBid) are still legal bids.
+ */
+export function canAskJoker(state: GameState, player: number = state.currentPlayer): boolean {
+  const ja = state.rules.jokerAsk;
+  if (!ja.allowJokerAsk || state.phase !== 'bidding' || player !== state.currentPlayer) return false;
+  const jokers = state.hands[player].filter(isJoker);
+  if (jokers.length !== 1) return false;
+  const deck = state.rules.modes[state.mode].jokers;
+  if (!deck.some((j) => j !== jokers[0])) return false; // no second joker in this deck
+  const opts = bidOptions(state, player);
+  return opts.values.includes(ja.jokerAskYesBid) && opts.values.includes(ja.jokerAskNoBid);
+}
+
+/** The truthful answer: does a partner of `player` hold the other joker? */
+export function jokerAskAnswer(state: GameState, player: number): JokerAskAnswer {
+  const mine = state.hands[player].find(isJoker);
+  const other = state.rules.modes[state.mode].jokers.find((j) => j !== mine);
+  const team = teamOf(state, player);
+  for (let p = 0; p < state.numPlayers; p++) {
+    if (p !== player && teamOf(state, p) === team && other && state.hands[p].includes(other)) return { answer: true, holder: p };
+  }
+  return { answer: false, holder: null };
+}
+
+function applyJokerAsk(state: GameState, player: number): GameState {
+  if (!canAskJoker(state, player)) throw new Error('Joker ask not allowed');
+  const ans = jokerAskAnswer(state, player);
+  const ja = state.rules.jokerAsk;
+  return applyBid(state, player, ans.answer ? ja.jokerAskYesBid : ja.jokerAskNoBid, ans);
 }
 
 // ---------------------------------------------------------------------------
@@ -519,15 +579,64 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
     currentPlayer: winner,
   };
   const total = totalTricks(s);
-  const bidTricks = tricksWon[c.team];
-  const made = bidTricks >= c.value;
-  const failed = bidTricks + (total - tricksPlayed) < c.value;
   if (tricksPlayed >= total) {
     // every card is on the table: with reneging possible, the table reviews before scoring
-    return s.rules.renege.allowRenege ? { ...s, phase: 'review' } : scoreHand(s, made, false);
+    return s.rules.renege.allowRenege ? { ...s, phase: 'review' } : scoreHand(s, false);
   }
-  if (!s.rules.playToLastCard && (made || failed)) return scoreHand(s, made, true);
+  // Bawn: the bid-7 team just reached 6 tricks → ask the bidder
+  const bw = s.rules.bawn;
+  if (bw.bawnOnBid !== null && c.value === bw.bawnOnBid && !c.forced && (c.bawn ?? null) === null && tricksWon[c.team] >= bw.bawnAskAtTricks) {
+    return { ...s, phase: 'bawnAsk', currentPlayer: c.bidder };
+  }
+  if (!s.rules.playToLastCard && handDecided(s)) return scoreHand(s, true);
   return s;
+}
+
+/** Is the result of the hand already certain (for playToLastCard: false)? */
+function handDecided(state: GameState): boolean {
+  const c = state.contract as Contract;
+  const total = totalTricks(state);
+  const left = total - state.tricksPlayed;
+  const bid = state.tricksWon[c.team];
+  const opp = state.tricksWon[1 - c.team];
+  if (c.bawn) return opp > (c.bawnOppTricks ?? 0) || left === 0;
+  return bid >= c.value || bid + left < c.value;
+}
+
+function applyBawn(state: GameState, player: number, accept: boolean): GameState {
+  if (state.phase !== 'bawnAsk') throw new Error('No Bawn question now');
+  const c = state.contract as Contract;
+  if (player !== c.bidder) throw new Error('Only the bidder answers');
+  const contract: Contract = { ...c, bawn: accept, bawnOppTricks: state.tricksWon[1 - c.team] };
+  return { ...state, contract, phase: 'playing', currentPlayer: state.trick.leader };
+}
+
+export interface HandOutcome {
+  made: boolean;
+  points: [number, number];
+  larensWin: boolean;
+}
+
+/** How the hand scores as it stands (no catch): normal bid, Bawn or Larens. */
+export function handOutcome(state: GameState): HandOutcome {
+  const c = state.contract as Contract;
+  const r = state.rules;
+  const bid = state.tricksWon[c.team];
+  const opp = state.tricksWon[1 - c.team];
+  const other = (1 - c.team) as Team;
+  const points: [number, number] = [0, 0];
+  if (c.bawn) {
+    const made = opp === (c.bawnOppTricks ?? 0);
+    points[made ? c.team : other] = made ? r.bawn.bawnWinPoints : r.bawn.bawnFailPoints;
+    return { made, points, larensWin: false };
+  }
+  const made = bid >= c.value;
+  const larensWin = made && isLarens(r, c) && r.larens.larensWinsGame;
+  return { made, points: handPoints(r, c, made), larensWin };
+}
+
+function isLarens(rules: RulesConfig, c: Pick<Contract, 'value' | 'forced'>): boolean {
+  return !c.forced && c.value === rules.bidding.larens;
 }
 
 // ---------------------------------------------------------------------------
@@ -598,7 +707,7 @@ export function renegeEvidence(state: GameState): RenegeEvidence[] {
 
 /** Catches `player` could correctly call right now (evidence against an opponent). */
 export function catchOptions(state: GameState, player: number): RenegeEvidence[] {
-  if (state.phase !== 'playing' && state.phase !== 'review') return [];
+  if (state.phase !== 'playing' && state.phase !== 'review' && state.phase !== 'bawnAsk') return [];
   const team = teamOf(state, player);
   return renegeEvidence(state).filter((e) => teamOf(state, e.accused) !== team);
 }
@@ -609,11 +718,12 @@ function breakHand(state: GameState, offenderTeam: Team, caught: CatchResult): G
   const other = (1 - offenderTeam) as Team;
   const points: [number, number] = [0, 0];
   points[other] = c.value * state.rules.renege.renegePenaltyMultiplier;
-  return finishHand(state, other === c.team, points, state.tricksPlayed < totalTricks(state), caught);
+  const outcome: HandOutcome = { made: other === c.team, points, larensWin: false };
+  return finishHand(state, outcome, state.tricksPlayed < totalTricks(state), caught);
 }
 
 function applyCatch(state: GameState, player: number, accused: number, trick: number): GameState {
-  if (state.phase !== 'playing' && state.phase !== 'review') throw new Error('No catch now');
+  if (state.phase !== 'playing' && state.phase !== 'review' && state.phase !== 'bawnAsk') throw new Error('No catch now');
   if (!state.rules.renege.allowRenege) throw new Error('Reneging is disabled');
   if (teamOf(state, player) === teamOf(state, accused)) throw new Error('Catch an opponent');
   const ev = renegeEvidence(state).find((e) => e.accused === accused && e.trick === trick);
@@ -630,12 +740,20 @@ function applyCatch(state: GameState, player: number, accused: number, trick: nu
 
 /** The points a hand would score as it stands (bid made or not), ignoring catches. */
 export function provisionalPoints(state: GameState): [number, number] {
-  const c = state.contract as Contract;
-  return handPoints(state.rules, c, state.tricksWon[c.team] >= c.value);
+  return handOutcome(state).points;
 }
 
-/** Points [team0, team1] for a hand result, from rules.scoring / rules.malzoomScoring. */
+/**
+ * Points [team0, team1] for a hand result, from rules.scoring / rules.malzoomScoring, and
+ * rules.larens for bid 9 (making Larens scores 0 when it wins the whole game instead).
+ */
 export function handPoints(rules: RulesConfig, contract: Pick<Contract, 'team' | 'value' | 'forced'>, made: boolean): [number, number] {
+  if (isLarens(rules, contract)) {
+    const pts: [number, number] = [0, 0];
+    if (made) pts[contract.team] = rules.larens.larensWinsGame ? 0 : rules.larens.larensMadePoints;
+    else pts[(1 - contract.team) as Team] = rules.larens.larensFailPoints;
+    return pts;
+  }
   const row = contract.forced ? rules.malzoomScoring : rules.scoring[contract.value];
   if (!row) throw new Error(`No scoring row for bid ${contract.value}`);
   const pts: [number, number] = [0, 0];
@@ -648,12 +766,10 @@ export function handPoints(rules: RulesConfig, contract: Pick<Contract, 'team' |
 export function checkGameEnd(
   rules: RulesConfig,
   scores: [number, number],
-  lastHand?: Pick<HandResult, 'handNumber' | 'made' | 'bid' | 'team'> & { caught?: CatchResult | null },
+  lastHand?: Pick<HandResult, 'team' | 'larensWin'>,
 ): Team | null {
   const g = rules.gameEnd;
-  if (g.bawanFirstHandInstantWin && lastHand && lastHand.handNumber === 1 && lastHand.made && !lastHand.caught && lastHand.bid === rules.bidding.bawan) {
-    return lastHand.team;
-  }
+  if (lastHand?.larensWin) return lastHand.team; // Larens wins the whole game (قيم)
   const [a, b] = scores;
   if (a >= g.targetScore || b >= g.targetScore) return a >= b ? 0 : 1;
   if (g.shutoutTarget !== null) {
@@ -663,12 +779,13 @@ export function checkGameEnd(
   return null;
 }
 
-function scoreHand(state: GameState, made: boolean, endedEarly: boolean): GameState {
-  return finishHand(state, made, handPoints(state.rules, state.contract as Contract, made), endedEarly, null);
+function scoreHand(state: GameState, endedEarly: boolean): GameState {
+  return finishHand(state, handOutcome(state), endedEarly, null);
 }
 
-function finishHand(state: GameState, made: boolean, points: [number, number], endedEarly: boolean, caught: CatchResult | null): GameState {
+function finishHand(state: GameState, outcome: HandOutcome, endedEarly: boolean, caught: CatchResult | null): GameState {
   const c = state.contract as Contract;
+  const { made, points } = outcome;
   const totals: [number, number] = [state.scores[0] + points[0], state.scores[1] + points[1]];
   const result: HandResult = {
     handNumber: state.handNumber,
@@ -684,6 +801,8 @@ function finishHand(state: GameState, made: boolean, points: [number, number], e
     totals,
     endedEarly,
     caught,
+    bawn: c.bawn ?? null,
+    larensWin: outcome.larensWin,
   };
   const winner = checkGameEnd(state.rules, totals, result);
   return {
@@ -719,8 +838,14 @@ export function applyAction(state: GameState, action: Action): GameState {
       return applyCatch(state, action.player, action.accused, action.trick);
     case 'END_REVIEW': {
       if (state.phase !== 'review') throw new Error('Not reviewing');
-      const c = state.contract as Contract;
-      return scoreHand(state, state.tricksWon[c.team] >= c.value, false);
+      return scoreHand(state, false);
+    }
+    case 'BAWN':
+      return applyBawn(state, action.player, action.accept);
+    case 'JOKER_ASK': {
+      if (state.phase !== 'bidding') throw new Error('Not bidding');
+      if (action.player !== state.currentPlayer) throw new Error('Not your turn');
+      return applyJokerAsk(state, action.player);
     }
     case 'NEXT_HAND': {
       if (state.phase !== 'handOver') throw new Error('Hand not over');
@@ -738,6 +863,7 @@ export function legalActions(state: GameState): Action[] {
       const o = bidOptions(state, p);
       const acts: Action[] = o.values.map((value) => ({ type: 'BID', player: p, value }));
       if (o.canPass) acts.unshift({ type: 'PASS', player: p });
+      if (canAskJoker(state, p)) acts.push({ type: 'JOKER_ASK', player: p });
       return acts;
     }
     case 'choosingTrump':
@@ -746,6 +872,11 @@ export function legalActions(state: GameState): Action[] {
       return playableCards(state, p).map((card) => ({ type: 'PLAY', player: p, card }));
     case 'review':
       return [{ type: 'END_REVIEW' }];
+    case 'bawnAsk':
+      return [
+        { type: 'BAWN', player: p, accept: false },
+        { type: 'BAWN', player: p, accept: true },
+      ];
     case 'handOver':
       return [{ type: 'NEXT_HAND' }];
     default:

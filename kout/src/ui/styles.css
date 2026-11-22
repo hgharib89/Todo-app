@@ -888,11 +888,11 @@ button:disabled {
   font-size: 0.72rem;
   color: var(--gold);
 }
-.bid-btn.bawan:not(:disabled) {
+.bid-btn.larens:not(:disabled) {
   background: linear-gradient(180deg, #f1c873, #c9963f);
   color: #2a1d06;
 }
-.bid-btn.bawan:not(:disabled) .bid-name {
+.bid-btn.larens:not(:disabled) .bid-name {
   color: #2a1d06;
 }
 .pass-btn {
@@ -1185,4 +1185,60 @@ button:disabled {
 .install-hint {
   text-align: center;
   margin: 10px 16px 0;
+}
+
+/* ------------------------------------------------------------ joker ask, Bawn, Larens */
+.ask-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  margin-top: 6px;
+  padding: 6px;
+  border-radius: 10px;
+  border: 1px dashed var(--gold);
+  background: rgba(224, 177, 90, 0.1);
+  color: var(--gold);
+  font-weight: 800;
+}
+.ask-btn small {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 0.75rem;
+}
+.ask-tag {
+  position: absolute;
+  top: 100%;
+  margin-top: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: rgba(7, 22, 25, 0.9);
+  border: 1px solid var(--gold-soft);
+  color: var(--gold);
+  z-index: 3;
+}
+.ask-tag.no {
+  color: var(--muted);
+}
+.bawn-badge {
+  margin-inline-start: 6px;
+  padding: 0 8px;
+  border-radius: 8px;
+  background: var(--red);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8rem;
+  animation: pulse 1.4s infinite;
+}
+.bawn-tag {
+  color: var(--gold);
+  background: rgba(224, 177, 90, 0.18);
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-weight: 800;
 }

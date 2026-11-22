@@ -17,6 +17,7 @@
 import {
   Action,
   CardId,
+  RED_JOKER,
   GameState,
   RulesConfig,
   Suit,
@@ -25,8 +26,9 @@ import {
   applyAction,
   bidOptions,
   buildDeck,
+  canAskJoker,
+  handOutcome,
   handPoints,
-  provisionalPoints,
   isJoker,
   legalPlays,
   nextSeat,
@@ -170,20 +172,65 @@ export function inferVoids(state: GameState): Set<Suit>[] {
 }
 
 /**
- * Deal the unseen cards to the other players at random, respecting their hand sizes
- * and known voids. Falls back to ignoring voids if no consistent deal is found.
+ * What the table learned from "عندك الجوكر الثاني؟" this hand: how many jokers each player can
+ * still hold (min/max). The asker had exactly one; a partner who answered yes had the other;
+ * when the answer was no, the asker's partners had none. Jokers played since are taken off.
+ */
+export function jokerKnowledge(state: GameState): { min: number[]; max: number[] } {
+  const n = state.numPlayers;
+  const min = Array(n).fill(0);
+  const max = Array(n).fill(2);
+  const played = Array(n).fill(0);
+  for (const t of [...(state.tricks ?? []), state.trick]) for (const p of t.plays) if (isJoker(p.card)) played[p.player]++;
+  for (const b of state.bids) {
+    if (!b.jokerAsk) continue;
+    const exactlyOne = (p: number) => {
+      min[p] = Math.max(0, 1 - played[p]);
+      max[p] = Math.max(0, 1 - played[p]);
+    };
+    exactlyOne(b.player);
+    if (b.jokerAsk.answer && b.jokerAsk.holder !== null) exactlyOne(b.jokerAsk.holder);
+    if (!b.jokerAsk.answer) {
+      for (let p = 0; p < n; p++) if (p !== b.player && teamOf(state, p) === teamOf(state, b.player)) max[p] = 0;
+    }
+  }
+  return { min, max };
+}
+
+/**
+ * Deal the unseen cards to the other players at random, respecting their hand sizes, known
+ * voids and what the joker question revealed. Falls back to ignoring them if no consistent deal is found.
  */
 export function sampleHands(state: GameState, me: number, voids: Set<Suit>[], rng: Rng): CardId[][] {
   const unseen = unseenCards(state, me);
   const n = state.numPlayers;
   const need = state.hands.map((h, i) => (i === me ? 0 : h.length));
-  const allowed = (p: number, c: CardId, strict: boolean) => !strict || isJoker(c) || !voids[p].has(suitOf(c)!);
+  const jk = jokerKnowledge(state);
+  const allowed = (p: number, c: CardId, strict: boolean) => !strict || (isJoker(c) ? jk.max[p] > 0 : !voids[p].has(suitOf(c)!));
 
   for (let attempt = 0; attempt < 40; attempt++) {
     const strict = attempt < 30;
     const cap = need.slice();
     const hands: CardId[][] = Array.from({ length: n }, () => []);
-    const order = unseen.slice();
+    // jokers first: to players known to hold one, never to players known not to
+    const jokersOut = unseen.filter(isJoker);
+    if (strict) {
+      for (let i = jokersOut.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [jokersOut[i], jokersOut[j]] = [jokersOut[j], jokersOut[i]];
+      }
+      for (const jc of jokersOut) {
+        const count = (p: number) => hands[p].filter(isJoker).length;
+        let pool = [...Array(n).keys()].filter((p) => p !== me && cap[p] > 0 && count(p) < jk.min[p]);
+        if (!pool.length) pool = [...Array(n).keys()].filter((p) => p !== me && cap[p] > 0 && count(p) < jk.max[p]);
+        if (!pool.length) continue; // left for the general deal below
+        const pick = pool[Math.floor(rng() * pool.length)];
+        hands[pick].push(jc);
+        cap[pick]--;
+      }
+    }
+    const placed = new Set(hands.flat());
+    const order = unseen.filter((c) => !placed.has(c));
     for (let i = order.length - 1; i > 0; i--) {
       const j = Math.floor(rng() * (i + 1));
       [order[i], order[j]] = [order[j], order[i]];
@@ -191,12 +238,16 @@ export function sampleHands(state: GameState, me: number, voids: Set<Suit>[], rn
     // most constrained cards first
     const elig = (c: CardId) => need.filter((k, p) => k > 0 && allowed(p, c, strict)).length;
     order.sort((a, b) => elig(a) - elig(b));
-    let ok = true;
+    let ok = !strict || hands.every((h, p) => p === me || h.filter(isJoker).length >= jk.min[p]);
     let left = cap.reduce((x, y) => x + y, 0);
     for (const c of order) {
       if (left === 0) break; // every hand is full (extra unseen cards only occur in hand-built positions)
       let total = 0;
       for (let p = 0; p < n; p++) if (cap[p] > 0 && allowed(p, c, strict)) total += cap[p];
+      if (total === 0 && strict && isJoker(c)) {
+        ok = false; // a joker nobody may hold under the constraints
+        break;
+      }
       if (total === 0) {
         if (unseen.length > need.reduce((x, y) => x + y, 0)) continue;
         ok = false;
@@ -299,18 +350,30 @@ export function rolloutCard(s: GameState): CardId {
 /** Play the hand out from `s` with the rollout policy. */
 function rollout(s: GameState): GameState {
   let guard = 0;
-  while (s.phase === 'playing' && s.hands[s.currentPlayer].length > 0 && guard++ < 200) {
+  while (guard++ < 200) {
+    if (s.phase === 'bawnAsk') {
+      s = applyAction(s, { type: 'BAWN', player: s.currentPlayer, accept: false }); // simulations decline
+      continue;
+    }
+    if (s.phase !== 'playing' || s.hands[s.currentPlayer].length === 0) break;
     s = applyAction(s, { type: 'PLAY', player: s.currentPlayer, card: rolloutCard(s) });
   }
   return s;
+}
+
+/** What winning the whole game at once (Larens) is worth, in points, for the evaluations. */
+export function gameWinValue(state: GameState): number {
+  return state.rules.gameEnd.targetScore;
 }
 
 /** Score of a finished hand from `team`'s point of view: points difference, plus a little for tricks. */
 function handValue(s: GameState, team: number): number {
   const other = 1 - team;
   // a finished simulation is either in review (all cards played) or scored (handOver/gameOver)
-  const points = s.phase === 'review' || s.phase === 'playing' ? provisionalPoints(s) : s.lastResult!.points;
-  return points[team] - points[other] + 0.05 * (s.tricksWon[team] - s.tricksWon[other]);
+  const scored = s.phase === 'handOver' || s.phase === 'gameOver';
+  const o = scored ? { points: s.lastResult!.points, larensWin: s.lastResult!.larensWin } : handOutcome(s);
+  if (o.larensWin) return (s.contract!.team === team ? 1 : -1) * gameWinValue(s);
+  return o.points[team] - o.points[other] + 0.05 * (s.tricksWon[team] - s.tricksWon[other]);
 }
 
 // ---------------------------------------------------------------------------
@@ -478,10 +541,10 @@ export function teamEstimate(state: GameState, me: number): { own: number; team:
 
 /**
  * Chance of making `value` tricks given an expected `team` tricks (fitted to simulated hands:
- * at estimate = bid about 60% are made, one trick above about 85%). Bawan is judged more strictly.
+ * at estimate = bid about 60% are made, one trick above about 85%). Larens is judged more strictly.
  */
-export function makeChance(team: number, value: number, bawan: number): number {
-  if (value >= bawan) return 1 / (1 + Math.exp(-(team - value - 0.3) / 0.5));
+export function makeChance(team: number, value: number, larens: number): number {
+  if (value >= larens) return 1 / (1 + Math.exp(-(team - value - 0.3) / 0.5));
   return 1 / (1 + Math.exp(-(team - value + 0.3) / 0.8));
 }
 
@@ -503,16 +566,97 @@ export function hardBid(state: GameState): Action {
   let best: { value: number; ev: number } | null = null;
   for (const v of opts.values) {
     const forced = opts.forced && v === b.malzoomBid;
-    const p = makeChance(team, v, b.bawan);
-    if (v >= b.bawan && own < totalTricks(state) - 1.5) continue; // Bawan needs a monster hand of my own
-    const [made] = handPoints(rules, { team: 0, value: v, forced }, true);
-    const [, failed] = handPoints(rules, { team: 0, value: v, forced }, false);
-    const ev = p * made - (1 - p) * failed;
+    const p = makeChance(team, v, b.larens);
+    if (v >= b.larens && own < totalTricks(state) - 1.5) continue; // Larens needs a monster hand of my own
+    const ev = bidValue(state, v, forced, p);
     const need = forced ? 0 : partnerHolds ? 0.85 : HARD_MIN_MAKE_CHANCE;
     if (!forced && p < need) continue;
     if (!best || ev > best.ev) best = { value: v, ev };
   }
+
+  // سؤال الجوكر: with exactly one joker, asking forces Larens (partner has the other) or 8 (not)
+  if (canAskJoker(state, me)) {
+    const ja = rules.jokerAsk;
+    const ask = jokerAskValue(state, me, team);
+    const baseline = Math.max(opts.forced ? -Infinity : 0, best?.ev ?? -Infinity);
+    if (makeChance(ask.estNo, ja.jokerAskNoBid, b.larens) >= HARD_MIN_MAKE_CHANCE && ask.ev > baseline) {
+      return { type: 'JOKER_ASK', player: me };
+    }
+  }
   if (opts.forced) return { type: 'BID', player: me, value: best ? best.value : b.malzoomBid };
   if (!best || best.ev <= 0) return { type: 'PASS', player: me };
   return { type: 'BID', player: me, value: best.value };
+}
+
+/** Expected points of bidding `v` with chance `p` of making it (Larens counts as winning the game). */
+function bidValue(state: GameState, v: number, forced: boolean, p: number): number {
+  const r = state.rules;
+  const [made] = handPoints(r, { team: 0, value: v, forced }, true);
+  const [, failed] = handPoints(r, { team: 0, value: v, forced }, false);
+  const win = !forced && v === r.bidding.larens && r.larens.larensWinsGame ? gameWinValue(state) : made;
+  return p * win - (1 - p) * failed;
+}
+
+/**
+ * Value of asking "عندك الجوكر الثاني؟": the partner(s) hold the other joker with a chance equal to
+ * their share of the cards I can't see; yes → Larens with that joker added, no → 8 with a weaker partner.
+ */
+export function jokerAskValue(state: GameState, me: number, team: number): { ev: number; pYes: number; estYes: number; estNo: number } {
+  const r = state.rules;
+  const ja = r.jokerAsk;
+  const mine = state.hands[me].find(isJoker);
+  const other = r.modes[state.mode].jokers.find((j) => j !== mine);
+  const unseen = buildDeck(r, state.mode).length - state.hands[me].length;
+  const partnerCards = state.hands.reduce((n, h, p) => (p !== me && teamOf(state, p) === teamOf(state, me) ? n + h.length : n), 0);
+  const pYes = partnerCards / Math.max(1, unseen);
+  const jokerTricks = other === RED_JOKER ? 1 : 0.85;
+  const estYes = team + jokerTricks;
+  const estNo = team - 0.3;
+  const yes = bidValue(state, ja.jokerAskYesBid, false, makeChance(estYes, ja.jokerAskYesBid, r.bidding.larens));
+  const no = bidValue(state, ja.jokerAskNoBid, false, makeChance(estNo, ja.jokerAskNoBid, r.bidding.larens));
+  return { ev: pYes * yes + (1 - pYes) * no, pYes, estYes, estNo };
+}
+
+// ---------------------------------------------------------------------------
+// باون: answer "تبي باون؟" by simulation
+// ---------------------------------------------------------------------------
+
+/**
+ * From the bidder's view (own hand + what the table showed), the chance that the team wins every
+ * remaining trick (Bawn succeeds) and the chance it reaches the plain bid.
+ */
+export function bawnChances(state: GameState, rng: Rng, samples = HARD_DEFAULT_SAMPLES): { all: number; make: number } {
+  const me = state.currentPlayer;
+  const c = state.contract!;
+  const opp = 1 - c.team;
+  const voids = inferVoids(state);
+  // play every remaining trick, no reneging in the simulation, and don't ask again
+  const simRules = { ...state.rules, playToLastCard: true, renege: { ...state.rules.renege, allowRenege: false } };
+  let all = 0;
+  let make = 0;
+  for (let k = 0; k < samples; k++) {
+    const world: GameState = {
+      ...state,
+      rules: simRules,
+      phase: 'playing',
+      currentPlayer: state.trick.leader,
+      contract: { ...c, bawn: false },
+      hands: sampleHands(state, me, voids, rng),
+    };
+    const end = rollout(world);
+    if (end.tricksWon[opp] === state.tricksWon[opp]) all++;
+    if (end.tricksWon[c.team] >= c.value) make++;
+  }
+  return { all: all / samples, make: make / samples };
+}
+
+export function hardBawn(state: GameState, rng: Rng, samples = HARD_DEFAULT_SAMPLES): Action {
+  const c = state.contract!;
+  const r = state.rules;
+  const { all, make } = bawnChances(state, rng, samples);
+  const yes = all * r.bawn.bawnWinPoints - (1 - all) * r.bawn.bawnFailPoints;
+  const [made] = handPoints(r, c, true);
+  const [, failed] = handPoints(r, c, false);
+  const no = make * made - (1 - make) * failed;
+  return { type: 'BAWN', player: state.currentPlayer, accept: yes > no };
 }

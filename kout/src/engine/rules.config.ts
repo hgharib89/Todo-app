@@ -65,8 +65,8 @@ export interface BidRules {
   minVoluntaryBid: number;
   /** أسماء المزايدات / display names of the bids */
   names: Record<number, string>;
-  /** قيمة "بوان" (كل الأكلات) / the Bawan value (all tricks) */
-  bawan: number;
+  /** قيمة "لارنس" (كل الأكلات) / the Larens value (all tricks) */
+  larens: number;
   /**
    * كل لاعب يتكلم مرة واحدة فقط (لفة واحدة).
    * Each player gets exactly one turn to bid or pass (single round).
@@ -253,9 +253,58 @@ export interface RulesConfig {
      * Win when a team reaches this score while the other team has 0 (null = disabled).
      */
     shutoutTarget: number | null;
-    /** الفوز فوراً إذا جاب فريق بوان في أول يد / instant win for making Bawan on the first hand */
-    bawanFirstHandInstantWin: boolean;
   };
+  /** لارنس (طلب ٩ = كل الأكلات) / Larens (bid 9 = every trick) */
+  larens: LarensRules;
+  /** باون على طلب ٧ / Bawn on a bid of 7 */
+  bawn: BawnRules;
+  /** سؤال الجوكر / asking partner about the other joker */
+  jokerAsk: JokerAskRules;
+}
+
+export interface LarensRules {
+  /**
+   * إذا جاب الفريق المزايد لارنس (كل الأكلات) يفوز باللعبة كلها فوراً (قيم) مهما كانت النتيجة.
+   * Making Larens (every trick) wins the WHOLE GAME immediately (قيم), whatever the score.
+   */
+  larensWinsGame: boolean;
+  /** نقاط لارنس إذا جابوه و larensWinsGame = false / points for making Larens when larensWinsGame is false */
+  larensMadePoints: number;
+  /** نقاط الخصم إذا انكسر لارنس / opponents' points when Larens fails */
+  larensFailPoints: number;
+}
+
+export interface BawnRules {
+  /**
+   * الطلب اللي يجوز فيه الباون (null = بدون باون).
+   * The bid on which Bawn may be declared (null = no Bawn).
+   */
+  bawnOnBid: number | null;
+  /**
+   * أول ما يوصل الفريق المزايد لهذا العدد من الأكلات، ينسأل المزايد: "تبي باون؟".
+   * If نعم: لازم ياخذون كل الأكلات الباقية.
+   * As soon as the bidding team reaches this many tricks the bidder is asked "تبي باون؟".
+   * If yes, the team must win every remaining trick.
+   */
+  bawnAskAtTricks: number;
+  /** نقاط الباون إذا نجح / points when Bawn succeeds */
+  bawnWinPoints: number;
+  /** نقاط الخصم إذا انكسر الباون / opponents' points when Bawn fails */
+  bawnFailPoints: number;
+}
+
+export interface JokerAskRules {
+  /**
+   * لاعب عنده جوكر واحد بالضبط يقدر يسأل شريكه في دوره بالمزايدة: "عندك الجوكر الثاني؟".
+   * الجواب تلقائي وصادق ويبين على الطاولة. (في بو ٦: الجواب "عندي" إذا أي شريك عنده.)
+   * A player holding exactly one joker may ask on their bidding turn: "عندك الجوكر الثاني؟".
+   * The answer is automatic, truthful and shown on the table. (In Bo 6: "yes" if any partner has it.)
+   */
+  allowJokerAsk: boolean;
+  /** إذا الشريك عنده الجوكر الثاني، السائل مجبور يطلب هذا / forced bid when the partner has it */
+  jokerAskYesBid: number;
+  /** إذا ما عنده، السائل مجبور يطلب هذا / forced bid when the partner doesn't */
+  jokerAskNoBid: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -270,7 +319,7 @@ const BID_8_9_LEAD: JokerRules['leadAllowedByBid'] = {
 
 export const JOKER_PRESETS: Record<JokerPresetId, JokerRules> = {
   /**
-   * الافتراضي: بوان → أي جوكر، ٨ → الأحمر فقط، أو بعد لعب إكَه وشايب وبنت وولد الحكم.
+   * الافتراضي: لارنس → أي جوكر، ٨ → الأحمر فقط، أو بعد لعب إكَه وشايب وبنت وولد الحكم.
    * Default: bid 9 → either joker, bid 8 → red only, or once trump A, K, Q, J have all been played.
    */
   default: {
@@ -363,8 +412,8 @@ export const RULES: RulesConfig = {
   bidding: {
     values: [5, 6, 7, 8, 9],
     minVoluntaryBid: 6,
-    names: { 5: 'ملزوم', 6: '٦', 7: '٧', 8: '٨', 9: 'بوان' },
-    bawan: 9,
+    names: { 5: 'ملزوم', 6: '٦', 7: '٧', 8: '٨', 9: 'لارنس' },
+    larens: 9,
     singleRound: true,
     minRaise: 1,
     endOnMaxBid: true,
@@ -400,14 +449,32 @@ export const RULES: RulesConfig = {
     6: { made: 6, failed: 12 },
     7: { made: 7, failed: 14 },
     8: { made: 8, failed: 16 },
-    9: { made: 36, failed: 18 },
+    // ٩ = لارنس: نقاطه في larens تحت / 9 = Larens: scored by the larens settings below
   },
   malzoomScoring: { made: 5, failed: 5 },
 
   gameEnd: {
     targetScore: 54,
     shutoutTarget: 36,
-    bawanFirstHandInstantWin: true,
+  },
+
+  larens: {
+    larensWinsGame: true,
+    larensMadePoints: 18,
+    larensFailPoints: 18,
+  },
+
+  bawn: {
+    bawnOnBid: 7,
+    bawnAskAtTricks: 6,
+    bawnWinPoints: 36,
+    bawnFailPoints: 18,
+  },
+
+  jokerAsk: {
+    allowJokerAsk: true,
+    jokerAskYesBid: 9,
+    jokerAskNoBid: 8,
   },
 };
 

@@ -1,9 +1,9 @@
-import { JokerPresetId, ModeId, RULES, buildDeck } from '../engine';
+import { JokerPresetId, ModeId, RULES, buildDeck, handPoints } from '../engine';
 import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
-import { describeFirstLead, describeJokerPlay, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
+import { describeBawn, describeFirstLead, describeJokerAsk, describeJokerPlay, describeLarens, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 import { useInstall } from '../pwa/install';
 
@@ -166,20 +166,38 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
               <td>{ar(r.malzoomScoring.made)}</td>
               <td>{ar(r.malzoomScoring.failed)}</td>
             </tr>
-            {voluntary.map((v) => (
-              <tr key={v}>
-                <td>{bidLabel(r, v)}</td>
-                <td>{ar(r.scoring[v].made)}</td>
-                <td>{ar(r.scoring[v].failed)}</td>
+            {voluntary.map((v) => {
+              const [made] = handPoints(r, { team: 0, value: v, forced: false }, true);
+              const [, failed] = handPoints(r, { team: 0, value: v, forced: false }, false);
+              const larensGame = v === r.bidding.larens && r.larens.larensWinsGame;
+              return (
+                <tr key={v}>
+                  <td>{bidLabel(r, v)}</td>
+                  <td>{larensGame ? 'قيم (الفوز باللعبة)' : ar(made)}</td>
+                  <td>{ar(failed)}</td>
+                </tr>
+              );
+            })}
+            {r.bawn.bawnOnBid !== null && (
+              <tr>
+                <td>باون (على {ar(r.bawn.bawnOnBid)})</td>
+                <td>{ar(r.bawn.bawnWinPoints)}</td>
+                <td>{ar(r.bawn.bawnFailPoints)}</td>
               </tr>
-            ))}
+            )}
           </tbody>
         </table>
         <p>
           الفوز: الوصول لـ{ar(g.targetScore)}
           {g.shutoutTarget !== null && <>، أو {ar(g.shutoutTarget)} والخصم صفر</>}
-          {g.bawanFirstHandInstantWin && <>، أو بوان من أول يد</>}.
+          {r.larens.larensWinsGame && <>، أو {bidLabel(r, r.bidding.larens)}</>}.
         </p>
+      </section>
+      <section>
+        <h3>{bidLabel(r, r.bidding.larens)} والباون وسؤال الجوكر</h3>
+        {[...describeLarens(r), ...describeBawn(r), ...describeJokerAsk(r)].map((t) => (
+          <p key={t}>{t}</p>
+        ))}
       </section>
     </div>
   );

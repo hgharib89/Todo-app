@@ -15,7 +15,7 @@ function bidName(rules: RulesConfig, v: number): string {
   return n && n !== ar(v) ? n : ar(v);
 }
 
-/** When may a joker be led? e.g. "بوان: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم" */
+/** When may a joker be led? e.g. "لارنس: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم" */
 export function describeJokerLead(jr: JokerRules, rules: RulesConfig): string {
   const parts: string[] = [];
   const bids = Object.keys(jr.leadAllowedByBid)
@@ -95,4 +95,36 @@ export function describeRenege(rules: RulesConfig): string[] {
   const pct = (x: number) => `${ar(Math.round(x * 100))}٪`;
   out.push(`البوتات تصيد بس من اللي شافته: صعب ${pct(r.botCatchChance.hard)}، متوسط ${pct(r.botCatchChance.medium)}، سهل ${pct(r.botCatchChance.easy)}.`);
   return out;
+}
+
+/** Larens (لارنس) rules as sentences, from rules.larens. */
+export function describeLarens(rules: RulesConfig): string[] {
+  const l = rules.larens;
+  const name = bidName(rules, rules.bidding.larens);
+  return [
+    l.larensWinsGame
+      ? `${name} (طلب ${ar(rules.bidding.larens)}): إذا أخذ الفريق المزايد كل الأكلات يفوز باللعبة كلها فوراً (قيم) مهما كانت النتيجة.`
+      : `${name} (طلب ${ar(rules.bidding.larens)}): إذا أخذ الفريق المزايد كل الأكلات ياخذ ${ar(l.larensMadePoints)}.`,
+    `إذا انكسر ${name}: الخصم ياخذ ${ar(l.larensFailPoints)}.`,
+  ];
+}
+
+/** Bawn (باون) rules as sentences, from rules.bawn. */
+export function describeBawn(rules: RulesConfig): string[] {
+  const b = rules.bawn;
+  if (b.bawnOnBid === null) return [];
+  return [
+    `الباون: إذا الطلب ${ar(b.bawnOnBid)} ووصل الفريق المزايد ${ar(b.bawnAskAtTricks)} أكلات، ينسأل المزايد: «تبي باون؟»`,
+    `إذا قال نعم لازم ياخذون كل الأكلات الباقية: إذا جابوها ياخذون ${ar(b.bawnWinPoints)}، وإذا راحت عليهم أكلة تنكسر والخصم ياخذ ${ar(b.bawnFailPoints)}. وإذا قال لا تكمل اليد عادي.`,
+  ];
+}
+
+/** Joker-question (سؤال الجوكر) rules as sentences, from rules.jokerAsk. */
+export function describeJokerAsk(rules: RulesConfig): string[] {
+  const j = rules.jokerAsk;
+  if (!j.allowJokerAsk) return [];
+  return [
+    `سؤال الجوكر: اللي عنده جوكر واحد بس يقدر يسأل شريكه في دوره بالمزايدة: «عندك الجوكر الثاني؟» والجواب يطلع على الطاولة.`,
+    `إذا عنده: السائل مجبور يطلب ${bidName(rules, j.jokerAskYesBid)}. إذا ما عنده: مجبور يطلب ${bidName(rules, j.jokerAskNoBid)}. السؤال يجوز بس إذا الطلبين لسا مسموحين.`,
+  ];
 }
