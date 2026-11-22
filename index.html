@@ -1,9 +1,18 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Tasks</title>
+<title>المهام</title>
+<meta name="theme-color" content="#F6F7F9" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1115" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="المهام">
 <style>
   :root {
     color-scheme: light dark;
@@ -90,7 +99,28 @@
     margin: 0 auto;
     padding: 0 16px 48px;
   }
-  .app-header { padding: 24px 0 16px; }
+  .app-header {
+    padding: calc(24px + env(safe-area-inset-top)) 0 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .lang-btn {
+    flex: none;
+    height: 36px;
+    min-width: 44px;
+    padding: 0 12px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .lang-btn:hover { border-color: var(--border-strong); }
+  .lang-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   h1 {
     margin: 0;
     font-size: 28px;
@@ -313,7 +343,7 @@
   .item.editing .check,
   .item.editing .body,
   .item.editing .icon-btn { display: none; }
-  .item.editing .edit { display: block; margin-left: 34px; }
+  .item.editing .edit { display: block; margin-inline-start: 34px; }
 
   /* Filter bar */
   .filter-bar {
@@ -344,7 +374,7 @@
     color: var(--accent-text);
     font-weight: 600;
   }
-  .clear-btn { margin-left: auto; }
+  .clear-btn { margin-inline-start: auto; }
   .clear-btn:hover { color: var(--danger); text-decoration: underline; }
   .clear-btn.is-hidden { visibility: hidden; }
 
@@ -364,8 +394,8 @@
 
   @media (min-width: 480px) {
     .page { padding: 48px 24px 48px; }
-    .app-header { padding-top: 32px; }
-    .app-footer { text-align: left; }
+    .app-header { padding-top: calc(32px + env(safe-area-inset-top)); }
+    .app-footer { text-align: start; }
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -379,22 +409,25 @@
 <body>
 <main class="page">
   <header class="app-header">
-    <h1>Tasks</h1>
-    <p class="subtitle" id="subtitle">No tasks</p>
+    <div>
+      <h1 data-i18n="title">المهام</h1>
+      <p class="subtitle" id="subtitle">لا توجد مهام</p>
+    </div>
+    <button type="button" class="lang-btn" id="lang-btn" lang="en" aria-label="Switch to English">EN</button>
   </header>
 
   <section class="card">
     <form class="new-form" id="new-form" autocomplete="off">
-      <label for="new-input" class="visually-hidden">New task</label>
-      <input class="field" id="new-input" type="text" maxlength="200" placeholder="What needs to be done?" dir="auto">
-      <button class="mic-btn" id="mic-btn" type="button" aria-label="Dictate task" aria-pressed="false" hidden>
+      <label for="new-input" class="visually-hidden" data-i18n="newTask">مهمة جديدة</label>
+      <input class="field" id="new-input" type="text" maxlength="200" placeholder="ماذا تريد أن تنجز؟" data-i18n-ph="placeholder" dir="auto">
+      <button class="mic-btn" id="mic-btn" type="button" aria-label="إملاء المهمة" aria-pressed="false" hidden>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
       </button>
-      <button class="add-btn" id="add-btn" type="submit" aria-disabled="true">Add</button>
+      <button class="add-btn" id="add-btn" type="submit" aria-disabled="true" data-i18n="add">إضافة</button>
       <div class="loc-row">
-        <label for="loc-input" class="visually-hidden">Location</label>
-        <input class="field loc-field" id="loc-input" type="text" maxlength="200" placeholder="Location (optional)" dir="auto">
-        <button class="mic-btn locate-btn" id="locate-btn" type="button" aria-label="Use my current location">
+        <label for="loc-input" class="visually-hidden" data-i18n="location">الموقع</label>
+        <input class="field loc-field" id="loc-input" type="text" maxlength="200" placeholder="الموقع (اختياري)" data-i18n-ph="locPh" dir="auto">
+        <button class="mic-btn locate-btn" id="locate-btn" type="button" aria-label="استخدم موقعي الحالي" data-i18n-aria="useLoc">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
         </button>
       </div>
@@ -405,26 +438,26 @@
         <circle cx="12" cy="12" r="9.5"/>
         <polyline points="8 12.5 11 15.5 16.5 9.5"/>
       </svg>
-      <p class="empty-title">Nothing to do yet</p>
-      <p class="empty-text">Add your first task above to get started.</p>
+      <p class="empty-title" data-i18n="emptyTitle">لا شيء لإنجازه بعد</p>
+      <p class="empty-text" data-i18n="emptyText">أضف أول مهمة في الأعلى للبدء.</p>
     </div>
 
-    <ul class="list" id="list" aria-label="Tasks"></ul>
+    <ul class="list" id="list" aria-label="المهام" data-i18n-aria="title"></ul>
     <p class="filter-empty" id="filter-empty" hidden></p>
 
     <div class="filter-bar" id="filter-bar" hidden>
-      <div class="filters" role="group" aria-label="Filter tasks">
-        <button type="button" class="filter-btn" data-filter="all" aria-pressed="true">All</button>
-        <button type="button" class="filter-btn" data-filter="active" aria-pressed="false">Active</button>
-        <button type="button" class="filter-btn" data-filter="done" aria-pressed="false">Done</button>
+      <div class="filters" role="group" aria-label="تصفية المهام" data-i18n-aria="filterGroup">
+        <button type="button" class="filter-btn" data-filter="all" aria-pressed="true" data-i18n="all">الكل</button>
+        <button type="button" class="filter-btn" data-filter="active" aria-pressed="false" data-i18n="active">النشطة</button>
+        <button type="button" class="filter-btn" data-filter="done" aria-pressed="false" data-i18n="done">المنجزة</button>
       </div>
-      <button type="button" class="clear-btn" id="clear-btn">Clear completed</button>
+      <button type="button" class="clear-btn" id="clear-btn" data-i18n="clear">حذف المنجزة</button>
     </div>
   </section>
 
   <footer class="app-footer">
-    <p class="counter" id="counter" aria-live="polite">0 items left</p>
-    <p class="hint" id="hint" hidden>Double-click a task to edit</p>
+    <p class="counter" id="counter" aria-live="polite">المتبقي: 0</p>
+    <p class="hint" id="hint" hidden></p>
   </footer>
 
   <div class="visually-hidden" id="announcer" aria-live="polite"></div>
@@ -438,6 +471,66 @@
   var FILTER_KEY = 'todo-app.filter';
   var FILTERS = ['all', 'active', 'done'];
   var SVG_NS = 'http://www.w3.org/2000/svg';
+  var LANG_KEY = 'todo-app.lang';
+
+  var STR = {
+    ar: {
+      title: 'المهام', noTasks: 'لا توجد مهام',
+      summary: function (a, d) { return a + ' نشطة · ' + d + ' منجزة'; },
+      left: function (n) { return 'المتبقي: ' + n; },
+      hintTouch: 'اضغط على القلم للتعديل', hintMouse: 'انقر مرتين على المهمة لتعديلها',
+      allDone: 'أنجزت كل شيء، أحسنت.', noDone: 'لا توجد مهام منجزة بعد.',
+      newTask: 'مهمة جديدة', placeholder: 'ماذا تريد أن تنجز؟', add: 'إضافة',
+      dictate: 'إملاء المهمة', stopDictate: 'إيقاف الإملاء',
+      location: 'الموقع', locPh: 'الموقع (اختياري)', useLoc: 'استخدم موقعي الحالي',
+      emptyTitle: 'لا شيء لإنجازه بعد', emptyText: 'أضف أول مهمة في الأعلى للبدء.',
+      filterGroup: 'تصفية المهام', all: 'الكل', active: 'النشطة', done: 'المنجزة', clear: 'حذف المنجزة',
+      editTask: 'تعديل المهمة',
+      markDone: function (t) { return "تعليم '" + t + "' كمنجزة"; },
+      markUndone: function (t) { return "تعليم '" + t + "' كغير منجزة"; },
+      editT: function (t) { return "تعديل '" + t + "'"; },
+      delT: function (t) { return "حذف '" + t + "'"; },
+      added: function (t) { return "تمت إضافة '" + t + "'"; },
+      markedDone: function (t) { return "'" + t + "' منجزة"; },
+      markedUndone: function (t) { return "'" + t + "' غير منجزة"; },
+      deleted: function (t) { return "تم حذف '" + t + "'"; },
+      cleared: function (n) { return 'تم حذف ' + n + ' من المهام المنجزة'; },
+      locNA: 'خدمة الموقع غير متاحة على هذا الجهاز', locAdded: 'تمت إضافة موقعك الحالي',
+      locFail: 'تعذّر تحديد موقعك', micBlocked: 'تم منع الوصول إلى المايك',
+      speech: 'ar-AE', switchTo: 'EN', switchLabel: 'Switch to English', switchLang: 'en'
+    },
+    en: {
+      title: 'Tasks', noTasks: 'No tasks',
+      summary: function (a, d) { return a + ' active · ' + d + ' done'; },
+      left: function (n) { return n + (n === 1 ? ' item left' : ' items left'); },
+      hintTouch: 'Tap the pencil to edit', hintMouse: 'Double-click a task to edit',
+      allDone: 'All done. Nice work.', noDone: 'No completed tasks yet.',
+      newTask: 'New task', placeholder: 'What needs to be done?', add: 'Add',
+      dictate: 'Dictate task', stopDictate: 'Stop dictation',
+      location: 'Location', locPh: 'Location (optional)', useLoc: 'Use my current location',
+      emptyTitle: 'Nothing to do yet', emptyText: 'Add your first task above to get started.',
+      filterGroup: 'Filter tasks', all: 'All', active: 'Active', done: 'Done', clear: 'Clear completed',
+      editTask: 'Edit task',
+      markDone: function (t) { return "Mark '" + t + "' as done"; },
+      markUndone: function (t) { return "Mark '" + t + "' as not done"; },
+      editT: function (t) { return "Edit '" + t + "'"; },
+      delT: function (t) { return "Delete '" + t + "'"; },
+      added: function (t) { return "Added '" + t + "'"; },
+      markedDone: function (t) { return "Marked '" + t + "' done"; },
+      markedUndone: function (t) { return "Marked '" + t + "' not done"; },
+      deleted: function (t) { return "Deleted '" + t + "'"; },
+      cleared: function (n) { return 'Cleared ' + n + ' completed ' + (n === 1 ? 'task' : 'tasks'); },
+      locNA: 'Location is not available on this device', locAdded: 'Current location added',
+      locFail: 'Could not get your location', micBlocked: 'Microphone access was blocked',
+      speech: 'en-US', switchTo: 'ع', switchLabel: 'التبديل إلى العربية', switchLang: 'ar'
+    }
+  };
+  var lang = 'ar';
+  try { if (localStorage.getItem(LANG_KEY) === 'en') lang = 'en'; } catch (e) { /* default */ }
+  function T(key) {
+    var v = STR[lang][key];
+    return typeof v === 'function' ? v.apply(null, Array.prototype.slice.call(arguments, 1)) : v;
+  }
 
   var form = document.getElementById('new-form');
   var newInput = document.getElementById('new-input');
@@ -587,7 +680,8 @@
     edit.type = 'text';
     edit.className = 'field edit';
     edit.maxLength = 200;
-    edit.setAttribute('aria-label', 'Edit task');
+    edit.setAttribute('aria-label', T('editTask'));
+    edit.dir = 'auto';
 
     var editBtn = document.createElement('button');
     editBtn.type = 'button';
@@ -617,7 +711,8 @@
     var cb = li.querySelector('.check input');
     var text = li.querySelector('.text');
     cb.checked = t.done;
-    cb.setAttribute('aria-label', t.done ? "Mark '" + t.text + "' as not done" : "Mark '" + t.text + "' as done");
+    cb.setAttribute('aria-label', t.done ? T('markUndone', t.text) : T('markDone', t.text));
+    li.querySelector('.edit').setAttribute('aria-label', T('editTask'));
     if (text.textContent !== t.text) text.textContent = t.text;
     var loc = li.querySelector('.loc');
     var locText = loc.querySelector('span');
@@ -625,8 +720,8 @@
     loc.hidden = !place;
     if (locText.textContent !== place) locText.textContent = place;
     if (place) loc.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place);
-    li.querySelector('.edit-btn').setAttribute('aria-label', "Edit '" + t.text + "'");
-    li.querySelector('.del-btn').setAttribute('aria-label', "Delete '" + t.text + "'");
+    li.querySelector('.edit-btn').setAttribute('aria-label', T('editT', t.text));
+    li.querySelector('.del-btn').setAttribute('aria-label', T('delT', t.text));
     li.classList.toggle('done', t.done);
     li.classList.toggle('editing', editingId === t.id);
   }
@@ -638,11 +733,11 @@
     var done = tasks.length - active;
     var hasTasks = tasks.length > 0;
 
-    subtitle.textContent = hasTasks ? active + ' active · ' + done + ' done' : 'No tasks';
-    var countText = active + (active === 1 ? ' item left' : ' items left');
+    subtitle.textContent = hasTasks ? T('summary', active, done) : T('noTasks');
+    var countText = T('left', active);
     if (counter.textContent !== countText) counter.textContent = countText;
     hint.hidden = !hasTasks;
-    hint.textContent = touchMQ && touchMQ.matches ? 'Tap the pencil to edit' : 'Double-click a task to edit';
+    hint.textContent = touchMQ && touchMQ.matches ? T('hintTouch') : T('hintMouse');
 
     emptyPanel.hidden = hasTasks;
     filterBar.hidden = !hasTasks;
@@ -658,7 +753,7 @@
     var visible = tasks.filter(matches);
     list.hidden = visible.length === 0;
     if (hasTasks && visible.length === 0) {
-      filterEmpty.textContent = filter === 'active' ? 'All done. Nice work.' : 'No completed tasks yet.';
+      filterEmpty.textContent = filter === 'active' ? T('allDone') : T('noDone');
       filterEmpty.hidden = false;
     } else {
       filterEmpty.hidden = true;
@@ -717,7 +812,7 @@
     justAddedId = t.id;
     render();
     justAddedId = null;
-    announce("Added '" + t.text + "'");
+    announce(T('added', t.text));
   }
 
   function toggleTask(id, checked) {
@@ -730,7 +825,7 @@
     if (willHide) focusCheckbox(target);
     render();
     if (willHide) focusCheckbox(target);
-    announce((checked ? "Marked '" : "Marked '") + t.text + (checked ? "' done" : "' not done"));
+    announce(checked ? T('markedDone', t.text) : T('markedUndone', t.text));
   }
 
   function deleteTask(id, refocus) {
@@ -758,7 +853,7 @@
     }
     render();
     if (refocus) focusCheckbox(target);
-    announce("Deleted '" + t.text + "'");
+    announce(T('deleted', t.text));
   }
 
   function clearCompleted() {
@@ -774,7 +869,7 @@
     if (hadFocus) newInput.focus();
     render();
     if (hadFocus || document.activeElement === document.body) newInput.focus();
-    announce('Cleared ' + n + ' completed ' + (n === 1 ? 'task' : 'tasks'));
+    announce(T('cleared', n));
   }
 
   function setFilter(f) {
@@ -826,20 +921,45 @@
   });
   newInput.addEventListener('input', updateAddBtn);
 
+  /* ---------- Language ---------- */
+  var langBtn = document.getElementById('lang-btn');
+  function applyLang() {
+    var root = document.documentElement;
+    root.lang = lang;
+    root.dir = lang === 'ar' ? 'rtl' : 'ltr';
+    document.title = T('title');
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n]'), function (el) { el.textContent = T(el.dataset.i18n); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-ph]'), function (el) { el.placeholder = T(el.dataset.i18nPh); });
+    Array.prototype.forEach.call(document.querySelectorAll('[data-i18n-aria]'), function (el) { el.setAttribute('aria-label', T(el.dataset.i18nAria)); });
+    var mic = document.getElementById('mic-btn');
+    if (mic) mic.setAttribute('aria-label', mic.classList.contains('listening') ? T('stopDictate') : T('dictate'));
+    langBtn.textContent = T('switchTo');
+    langBtn.lang = T('switchLang');
+    langBtn.setAttribute('aria-label', T('switchLabel'));
+    nodes.forEach(function (li, id) { var t = findTask(id); if (t) updateItem(li, t); });
+    render();
+  }
+  langBtn.addEventListener('click', function () {
+    lang = lang === 'ar' ? 'en' : 'ar';
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) { /* session only */ }
+    applyLang();
+  });
+  applyLang();
+
   /* ---------- Location ---------- */
   locInput.addEventListener('keydown', function (e) {
     if (e.key === 'Escape') locInput.value = '';
   });
   locateBtn.addEventListener('click', function () {
-    if (!navigator.geolocation) { announce('Location is not available on this device'); return; }
+    if (!navigator.geolocation) { announce(T('locNA')); return; }
     locateBtn.classList.add('busy');
     navigator.geolocation.getCurrentPosition(function (pos) {
       locateBtn.classList.remove('busy');
       locInput.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
-      announce('Current location added');
+      announce(T('locAdded'));
     }, function () {
       locateBtn.classList.remove('busy');
-      announce('Could not get your location');
+      announce(T('locFail'));
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
   });
 
@@ -857,13 +977,13 @@
       listening = on;
       micBtn.classList.toggle('listening', on);
       micBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
-      micBtn.setAttribute('aria-label', on ? 'Stop dictation' : 'Dictate task');
+      micBtn.setAttribute('aria-label', on ? T('stopDictate') : T('dictate'));
     }
 
     micBtn.addEventListener('click', function () {
       if (listening && rec) { rec.stop(); return; }
       rec = new SR();
-      rec.lang = 'ar-AE';
+      rec.lang = T('speech');
       rec.interimResults = true;
       rec.continuous = false;
       baseText = newInput.value.trim();
@@ -874,7 +994,7 @@
         updateAddBtn();
       };
       rec.onerror = function (e) {
-        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') announce('Microphone access was blocked');
+        if (e.error === 'not-allowed' || e.error === 'service-not-allowed') announce(T('micBlocked'));
       };
       rec.onend = function () {
         setListening(false);
@@ -979,6 +1099,13 @@
   if (tasks.length === 0) {
     newInput.setAttribute('autofocus', '');
     newInput.focus();
+  }
+
+  /* ---------- Offline / install ---------- */
+  if ('serviceWorker' in navigator && location.protocol === 'https:') {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () { /* optional */ });
+    });
   }
 })();
 </script>
