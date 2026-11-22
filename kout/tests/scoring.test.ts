@@ -1,0 +1,136 @@
+import { describe, expect, it } from 'vitest';
+import {
+  applyAction, buildRules, checkGameEnd, createGame, handPoints, legalActions, GameState, RULES,
+} from '../src/engine';
+import { playingState } from './helpers';
+
+function play(s: GameState, ...cards: string[]): GameState {
+  for (const card of cards) s = applyAction(s, { type: 'PLAY', player: s.currentPlayer, card });
+  return s;
+}
+
+describe('scoring table', () => {
+  const rules = buildRules();
+  it.each([
+    [5, 5, 10],
+    [6, 6, 12],
+    [7, 7, 14],
+    [8, 8, 16],
+    [9, 36, 18],
+  ])('bid %i: made → %i to bidders, failed → %i to opponents', (bid, made, failed) => {
+    expect(handPoints(rules, { team: 0, value: bid, forced: false }, true)).toEqual([made, 0]);
+    expect(handPoints(rules, { team: 0, value: bid, forced: false }, false)).toEqual([0, failed]);
+    expect(handPoints(rules, { team: 1, value: bid, forced: false }, true)).toEqual([0, made]);
+    expect(handPoints(rules, { team: 1, value: bid, forced: false }, false)).toEqual([failed, 0]);
+  });
+  it('Malzoom 5: 5 if made, 5 to opponents if failed', () => {
+    expect(handPoints(rules, { team: 1, value: 5, forced: true }, true)).toEqual([0, 5]);
+    expect(handPoints(rules, { team: 1, value: 5, forced: true }, false)).toEqual([5, 0]);
+  });
+  it('scoring reads from config', () => {
+    const r = buildRules('default', { scoring: { ...RULES.scoring, 6: { made: 60, failed: 1 } } });
+    expect(handPoints(r, { team: 0, value: 6, forced: false }, true)).toEqual([60, 0]);
+  });
+});
+
+describe('early hand end', () => {
+  // bidder team 0 bid 5; give it 5 sure tricks then more cards
+  const hands = () => [
+    ['S14', 'S13', 'S12', 'S11', 'S10', 'H6'],
+    ['H14', 'H13', 'H12', 'H11', 'H10', 'H9'],
+    ['C6', 'C7', 'C8', 'C9', 'C10', 'C11'],
+    ['D6', 'D7', 'D8', 'D9', 'D10', 'D11'],
+  ];
+  const leadAll = (s: GameState) => {
+    for (const c of ['S14', 'S13', 'S12', 'S11', 'S10']) {
+      if (s.phase !== 'playing') break;
+      const p1 = s.hands[1][0], p2 = s.hands[2][0], p3 = s.hands[3][0];
+      s = play(s, c, p1, p2, p3);
+    }
+    return s;
+  };
+
+  it('ends as soon as the bid is made (when enabled)', () => {
+    let s = playingState({ trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
+    s = leadAll(s);
+    expect(s.phase).toBe('handOver');
+    expect(s.lastResult).toMatchObject({ made: true, endedEarly: true, points: [5, 0] });
+    expect(s.scores).toEqual([5, 0]);
+  });
+
+  it('ends as soon as the bid can no longer be made', () => {
+    // bidder team 1 bid 9 (Bawan): losing the first trick ends the hand
+    let s = playingState({ trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
+    s = play(s, 'S14', 'H14', 'C6', 'D6');
+    expect(s.phase).toBe('handOver');
+    expect(s.lastResult).toMatchObject({ made: false, endedEarly: true, points: [18, 0] });
+  });
+
+  it('plays all tricks when endHandEarly is off', () => {
+    const rules = buildRules('default', { endHandEarly: false });
+    let s = playingState({ rules, trump: 'S', bidder: 0, bid: 5, hands: hands(), tricksPlayed: 3 });
+    s = leadAll(s);
+    expect(s.phase).toBe('playing');
+    s = play(s, 'H6', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
+    expect(s.phase).toBe('handOver');
+    expect(s.lastResult).toMatchObject({ made: true, endedEarly: false, tricks: [5, 1] });
+  });
+});
+
+describe('game end', () => {
+  const r = buildRules();
+  it('a team reaching 101+ wins', () => {
+    expect(checkGameEnd(r, [101, 40])).toBe(0);
+    expect(checkGameEnd(r, [60, 120])).toBe(1);
+    expect(checkGameEnd(r, [100, 99])).toBeNull();
+  });
+  it('51+ while the other team has 0 wins', () => {
+    expect(checkGameEnd(r, [51, 0])).toBe(0);
+    expect(checkGameEnd(r, [0, 56])).toBe(1);
+    expect(checkGameEnd(r, [51, 5])).toBeNull();
+    expect(checkGameEnd(r, [50, 0])).toBeNull();
+  });
+  it('Bawan made on the first hand is an instant win', () => {
+    expect(checkGameEnd(r, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0);
+    expect(checkGameEnd(r, [0, 36], { handNumber: 1, made: true, bid: 9, team: 1 })).toBe(1);
+    expect(checkGameEnd(r, [36, 10], { handNumber: 2, made: true, bid: 9, team: 0 })).toBeNull();
+  });
+  it('thresholds are configurable', () => {
+    const r2 = buildRules('default', { gameEnd: { targetScore: 31, shutoutScore: null, bawanFirstHandInstantWin: false } });
+    expect(checkGameEnd(r2, [31, 0])).toBe(0);
+    expect(checkGameEnd(r2, [30, 0])).toBeNull();
+    expect(checkGameEnd(r2, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0); // via 31 target
+    const r3 = buildRules('default', { gameEnd: { targetScore: 101, shutoutScore: null, bawanFirstHandInstantWin: false } });
+    expect(checkGameEnd(r3, [51, 0])).toBeNull();
+    expect(checkGameEnd(r3, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBeNull();
+  });
+});
+
+describe('full random games (invariants)', () => {
+  it.each(['bo4', 'bo6'] as const)('%s: random legal play always reaches game over', (mode) => {
+    for (let seed = 1; seed <= 30; seed++) {
+      let s = createGame(buildRules(seed % 2 ? 'default' : 'relaxed'), mode, seed);
+      let rnd = seed * 7919;
+      let guard = 0;
+      while (s.phase !== 'gameOver') {
+        const acts = legalActions(s);
+        expect(acts.length).toBeGreaterThan(0);
+        rnd = (rnd * 1103515245 + 12345) & 0x7fffffff;
+        const before = s.dealer;
+        s = applyAction(s, acts[rnd % acts.length]);
+        if (s.phase === 'bidding' && s.bids.length === 0 && s.handNumber > 1) {
+          expect(s.dealer).toBe((before + 1) % s.numPlayers);
+        }
+        if (s.phase === 'handOver' || s.phase === 'gameOver') {
+          const h = s.lastResult!;
+          const sum = h.totals[0] + h.totals[1];
+          expect(sum).toBeGreaterThan(0);
+        }
+        if (++guard > 20000) throw new Error('game did not end');
+      }
+      expect(s.winner).not.toBeNull();
+      const last = s.history[s.history.length - 1];
+      expect(s.scores).toEqual(last.totals);
+    }
+  });
+});
