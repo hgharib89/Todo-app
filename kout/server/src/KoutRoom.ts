@@ -19,7 +19,8 @@ import {
   catchOptions,
   createGame,
 } from '../../src/engine';
-import { chooseBotAction, chooseBotCatch } from '../../src/bots';
+import { chooseBotCatch } from '../../src/bots';
+import { botPool } from './botPool';
 import { loadConfig, type ServerConfig } from './config';
 import { cleanName, roomCode } from './codes';
 import { log } from './log';
@@ -410,7 +411,7 @@ export class KoutRoom extends Room {
   }
 
   /** A bot moves for seat p (its own seat, or a human who timed out / is away / disconnected). */
-  private botMove(p: number, timedOut: boolean) {
+  private async botMove(p: number, timedOut: boolean) {
     const g = this.game;
     if (!g || g.currentPlayer !== p || !['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(g.phase)) return;
     if (timedOut) {
@@ -419,8 +420,15 @@ export class KoutRoom extends Room {
       if (s.timeouts >= this.cfg.awayAfterTimeouts) s.away = true;
       log('info', 'turn_timeout', { roomId: this.roomId, seat: p, timeouts: s.timeouts });
     }
-    // humans' seats get a bot that never reneges on purpose
-    const action = chooseBotAction(g, 'hard', Math.random, { samples: this.cfg.botSamples });
+    // humans' seats get a bot that never reneges on purpose; it thinks in a worker thread
+    let action: Action;
+    try {
+      action = await botPool().decide(g, this.cfg.botSamples);
+    } catch (e) {
+      log('error', 'bot_failed', { roomId: this.roomId, error: String(e) });
+      return;
+    }
+    if (this.game !== g) return; // something else happened meanwhile (a catch, a reconnect move…)
     this.apply(action);
   }
 

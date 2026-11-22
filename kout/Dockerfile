@@ -13,7 +13,7 @@ RUN npm run server:build
 FROM node:22.11.0-alpine
 WORKDIR /app
 ENV NODE_ENV=production PORT=2567
-COPY --from=build /app/server/dist/index.cjs ./index.cjs
+COPY --from=build /app/server/dist/index.cjs /app/server/dist/botWorker.cjs ./
 USER node
 EXPOSE 2567
 HEALTHCHECK --interval=30s --timeout=5s CMD wget -qO- http://localhost:2567/healthz || exit 1

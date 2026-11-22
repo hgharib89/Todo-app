@@ -6,7 +6,8 @@
  * Each player joins public matchmaking (Bo 6 / Bo 4 mix), acts like a person (0.3–1.5 s to decide,
  * using the Easy bot on its own view — so it also reneges sometimes, which exercises صيد),
  * votes for the next hand, and starts a new game when one ends. We measure the time from sending
- * an action until the server's answer (the next view), plus errors and drops.
+ * a move (bid, trump, card, Bawn answer, joker question) until the server's answer (the next view),
+ * plus errors and drops. Votes (next hand / end of review) are not timed: they wait for the others.
  */
 import { Client, type Room } from '@colyseus/sdk';
 import { buildRules, type GameState } from '../../src/engine';
@@ -24,6 +25,8 @@ const DURATION = Number(arg('duration', '180')) * 1000;
 const RAMP_PER_SEC = Number(arg('ramp', '50'));
 const THINK_MIN = Number(arg('thinkMin', '300'));
 const THINK_MAX = Number(arg('thinkMax', '1500'));
+/** --solo: every player sits alone at a private table with bots (the bot-heavy worst case for CPU) */
+const SOLO = process.argv.includes('--solo');
 
 const rules = buildRules();
 const lat: number[] = [];
@@ -39,7 +42,8 @@ async function player(i: number) {
   while (!stopping) {
     let room: Room;
     try {
-      room = await client.joinOrCreate('kout', { mode: i % 3 === 0 ? 'bo4' : 'bo6', name: `حمل${i}` });
+      const mode = i % 3 === 0 ? 'bo4' : 'bo6';
+      room = SOLO ? await client.create('kout', { mode, private: true, name: `حمل${i}` }) : await client.joinOrCreate('kout', { mode, name: `حمل${i}` });
       totals.joined++;
       totals.active++;
       totals.maxActive = Math.max(totals.maxActive, totals.active);
@@ -58,7 +62,9 @@ async function player(i: number) {
         resolve();
       });
       room.onDrop(() => totals.drops++);
-      room.onMessage('lobby', () => {});
+      room.onMessage('lobby', () => {
+        if (SOLO) room.send('start');
+      });
       room.onMessage('error', (m: { reason: string }) => {
         totals.serverErrors++;
         errorReasons[m.reason] = (errorReasons[m.reason] ?? 0) + 1;
@@ -85,7 +91,7 @@ async function player(i: number) {
         timer = setTimeout(() => {
           if (stopping) return;
           const a = vote ? { type: g.phase === 'handOver' ? 'NEXT_HAND' : 'END_REVIEW' } : chooseBotAction(g, 'easy');
-          pending = performance.now();
+          pending = vote ? null : performance.now();
           totals.actions++;
           room.send('act', { a });
         }, think());
@@ -118,6 +124,7 @@ function pct(a: number[], p: number) {
   stopping = true;
   clearInterval(tick);
   const result = {
+    scenario: SOLO ? 'solo tables with bots' : 'public matchmaking',
     players: PLAYERS,
     durationSec: Math.round((Date.now() - t0) / 1000),
     maxConcurrentPlayers: totals.maxActive,

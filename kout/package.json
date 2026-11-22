@@ -10,7 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "server:dev": "tsx watch server/src/index.ts",
-    "server:build": "esbuild server/src/index.ts --bundle --platform=node --target=node20 --format=cjs --outfile=server/dist/index.cjs --log-level=warning",
+    "server:build": "esbuild server/src/index.ts server/src/botWorker.ts --bundle --platform=node --target=node20 --format=cjs --outdir=server/dist --out-extension:.js=.cjs --log-level=warning --log-override:empty-import-meta=silent",
     "server:start": "node server/dist/index.cjs",
     "loadtest": "tsx server/loadtest/loadtest.ts"
   },
