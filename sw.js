@@ -1,5 +1,5 @@
 /* Service worker for the Tasks app: lets it open offline. */
-var CACHE = 'tasks-v7';
+var CACHE = 'tasks-v8';
 var ASSETS = [
   './',
   './index.html',
