@@ -281,8 +281,11 @@
   }
   .note::before { content: "•"; color: var(--accent); font-weight: 700; flex: none; }
   .note-text { flex: 1; min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
-  .note-del { width: 24px; height: 24px; flex: none; }
-  .note-del svg { width: 14px; height: 14px; }
+  .note-del, .note-edit { width: 24px; height: 24px; flex: none; }
+  .note-del svg, .note-edit svg { width: 14px; height: 14px; }
+  .note-edit:hover { color: var(--accent); background: var(--surface-hover); }
+  .note-text { cursor: text; }
+  .note-input { flex: 1; min-width: 0; height: 34px; font-size: 14px; padding: 0 8px; }
   .note-del:hover { color: var(--danger); background: var(--danger-soft); }
   .note-form { display: flex; gap: 6px; }
   .note-field { height: 38px; font-size: 15px; }
@@ -533,7 +536,7 @@
       locNA: 'خدمة الموقع غير متاحة على هذا الجهاز', locAdded: 'تمت إضافة موقعك الحالي',
       locFail: 'تعذّر تحديد موقعك', micBlocked: 'تم منع الوصول إلى المايك',
       notes: function (t) { return "نقاط '" + t + "'"; }, notePh: 'أضف نقطة...', addNote: 'إضافة نقطة',
-      dictateNote: 'إملاء النقطة', delNote: 'حذف النقطة', noteAdded: 'تمت إضافة النقطة', noteDeleted: 'تم حذف النقطة',
+      dictateNote: 'إملاء النقطة', delNote: 'حذف النقطة', editNote: 'تعديل النقطة', noteSaved: 'تم حفظ النقطة', noteAdded: 'تمت إضافة النقطة', noteDeleted: 'تم حذف النقطة',
       speech: 'ar-AE', switchTo: 'EN', switchLabel: 'Switch to English', switchLang: 'en'
     },
     en: {
@@ -560,7 +563,7 @@
       locNA: 'Location is not available on this device', locAdded: 'Current location added',
       locFail: 'Could not get your location', micBlocked: 'Microphone access was blocked',
       notes: function (t) { return "Notes for '" + t + "'"; }, notePh: 'Add a point...', addNote: 'Add point',
-      dictateNote: 'Dictate point', delNote: 'Delete point', noteAdded: 'Point added', noteDeleted: 'Point deleted',
+      dictateNote: 'Dictate point', delNote: 'Delete point', editNote: 'Edit point', noteSaved: 'Point saved', noteAdded: 'Point added', noteDeleted: 'Point deleted',
       speech: 'en-US', switchTo: 'ع', switchLabel: 'التبديل إلى العربية', switchLang: 'ar'
     }
   };
@@ -856,7 +859,16 @@
           ['line', { x1: '6', y1: '6', x2: '18', y2: '18' }],
           ['line', { x1: '18', y1: '6', x2: '6', y2: '18' }]
         ]));
+        var ed = document.createElement('button');
+        ed.type = 'button';
+        ed.className = 'icon-btn note-edit';
+        ed.setAttribute('aria-label', T('editNote'));
+        ed.appendChild(iconSvg('0 0 24 24', '2', [
+          ['path', { d: 'M12 20h9' }],
+          ['path', { d: 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' }]
+        ]));
         item.appendChild(tx);
+        item.appendChild(ed);
         item.appendChild(del);
         nl.appendChild(item);
       });
@@ -973,6 +985,44 @@
     render();
     input.focus();
     announce(T('noteAdded'));
+  }
+
+  function startNoteEdit(item) {
+    if (!item || item.querySelector('.note-input')) return;
+    var li = item.closest('.item');
+    var t = li && findTask(li.dataset.id);
+    var note = t && t.notes && t.notes.find(function (x) { return x.id === item.dataset.noteId; });
+    if (!note) return;
+    var tx = item.querySelector('.note-text');
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'field note-input';
+    input.maxLength = 300;
+    input.dir = 'auto';
+    input.value = note.text;
+    input.setAttribute('aria-label', T('editNote'));
+    tx.hidden = true;
+    item.querySelector('.note-edit').hidden = true;
+    item.insertBefore(input, tx);
+    var done = false;
+    function finish(save) {
+      if (done) return;
+      done = true;
+      var v = input.value.trim().slice(0, 300);
+      if (save && !v) { deleteNote(t.id, note.id); return; }
+      if (save && v !== note.text) { note.text = v; saveTasks(); announce(T('noteSaved')); }
+      var nl = item.parentNode;
+      if (nl) nl.dataset.sig = '';
+      render();
+    }
+    input.addEventListener('keydown', function (e) {
+      e.stopPropagation();
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+    });
+    input.addEventListener('blur', function () { finish(true); });
+    input.focus();
+    input.select();
   }
 
   function deleteNote(id, noteId) {
@@ -1202,6 +1252,7 @@
     if (!btn) return;
     var li = btn.closest('.item');
     if (!li || li.classList.contains('leaving')) return;
+    if (btn.classList.contains('note-edit')) { startNoteEdit(btn.closest('.note')); return; }
     if (btn.classList.contains('note-del')) { deleteNote(li.dataset.id, btn.closest('.note').dataset.noteId); return; }
     if (btn.classList.contains('note-mic')) {
       var fld = li.querySelector('.note-field');
@@ -1232,6 +1283,11 @@
       };
       document.addEventListener('mouseup', release);
     }
+  });
+
+  list.addEventListener('click', function (e) {
+    var nt = e.target.closest('.note-text');
+    if (nt) startNoteEdit(nt.closest('.note'));
   });
 
   list.addEventListener('dblclick', function (e) {
