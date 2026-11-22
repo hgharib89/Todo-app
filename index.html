@@ -546,6 +546,44 @@
   .chip-btn:hover { background: var(--surface-hover); }
   .chip-btn svg { width: 15px; height: 15px; flex: none; }
   .chip-btn.wa { color: #128C7E; border-color: #25D36655; }
+  .chip-btn.ai-sum-btn { color: #7C3AED; border-color: #7C3AED44; }
+  .chip-btn.busy, .smart-btn.busy { opacity: .55; pointer-events: none; animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .25; } }
+  .smart-btn { color: #7C3AED; }
+  .ai-btn { color: #7C3AED; }
+  .ai { margin-bottom: 16px; }
+  .ai[hidden] { display: none; }
+  .ai-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .ai-title { flex: 1; margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 6px; }
+  .ai-title svg { color: #7C3AED; }
+  .ai-head .icon-btn { display: grid; }
+  .ai-head .icon-btn:hover { color: var(--accent); background: var(--surface-hover); }
+  .ai-setup { padding: 16px; display: grid; gap: 10px; }
+  .ai-setup p { margin: 0; font-size: 13px; color: var(--text-muted); }
+  .ai-setup a { color: var(--accent-text); }
+  .ai-setup .field { height: 40px; font-size: 15px; }
+  .ai-setup .add-btn { justify-self: start; }
+  .ai-log { list-style: none; margin: 0; padding: 12px 16px 4px; max-height: 50vh; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+  .ai-log:empty { display: none; }
+  .ai-msg { display: flex; flex-direction: column; }
+  .ai-msg.user { align-items: flex-end; }
+  .ai-msg.assistant { align-items: flex-start; }
+  .ai-bubble { max-width: 88%; padding: 8px 12px; border-radius: 14px; font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .ai-msg.user .ai-bubble { background: var(--accent); color: var(--on-accent); }
+  .ai-msg.assistant .ai-bubble { background: var(--surface-hover); color: var(--text); }
+  .ai-msg.pending .ai-bubble { animation: pulse 1s ease-in-out infinite; }
+  .ai-props { max-width: 88%; margin-top: 6px; padding: 8px 10px; border: 1px dashed #7C3AED66; border-radius: 12px; font-size: 14px; display: grid; gap: 4px; }
+  .ai-add-all { justify-self: start; height: 34px; padding: 0 12px; font-size: 14px; margin-top: 4px; }
+  .ai-add-all:disabled { background: var(--success); opacity: 1; }
+  .ai-chips { display: flex; gap: 6px; padding: 8px 16px 0; overflow-x: auto; scrollbar-width: none; }
+  .ai-chip { flex: none; height: 30px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; }
+  .ai-chip:hover { background: var(--surface-hover); }
+  .ai-form { display: flex; gap: 6px; padding: 10px 16px 14px; }
+  .ai-form .field { flex: 1; min-width: 0; height: 40px; font-size: 15px; }
+  .ai-form .mic-btn { width: 40px; height: 40px; }
+  .ai-form .add-btn { height: 40px; }
+  .ai-err { margin: 0 16px 12px; font-size: 13px; color: var(--danger); }
+  .sheet-body { margin: 0 0 12px; max-height: 45vh; overflow-y: auto; font-size: 15px; white-space: pre-wrap; text-align: start; }
   .att-input { display: none; }
   .meta-att { display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
   .meta-att svg { width: 12px; height: 12px; }
@@ -629,6 +667,34 @@
     </div>
   </header>
 
+  <section class="card ai" id="ai" hidden>
+    <div class="ai-head">
+      <p class="ai-title"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg><span data-i18n="aiTitle">مساعد Claude</span></p>
+      <button type="button" class="icon-btn" id="ai-clear" aria-label="محادثة جديدة" data-i18n-aria="aiNew"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+      <button type="button" class="icon-btn" id="ai-settings" aria-label="مفتاح API" data-i18n-aria="aiKeyLabel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></button>
+    </div>
+    <form class="ai-setup" id="ai-setup" autocomplete="off">
+      <p data-i18n="aiSetupHelp">الصق مفتاح Claude API من console.anthropic.com. المفتاح ينحفظ في جوالك فقط.</p>
+      <input class="field" id="ai-key" type="password" dir="ltr" placeholder="sk-ant-..." autocapitalize="off" spellcheck="false" aria-label="مفتاح API" data-i18n-aria="aiKeyLabel">
+      <button type="submit" class="add-btn" data-i18n="save">حفظ</button>
+    </form>
+    <div id="ai-chat" hidden>
+      <ul class="ai-log" id="ai-log" aria-live="polite"></ul>
+      <div class="ai-chips" id="ai-chips">
+        <button type="button" class="ai-chip" data-i18n="aiQ1">رتّب لي يومي</button>
+        <button type="button" class="ai-chip" data-i18n="aiQ2">شو المتأخر عندي؟</button>
+        <button type="button" class="ai-chip" data-i18n="aiQ3">لخّص لي مهام الأسبوع</button>
+        <button type="button" class="ai-chip" data-i18n="aiQ4">شو أسوي أول؟</button>
+      </div>
+      <form class="ai-form" id="ai-form" autocomplete="off">
+        <input class="field" id="ai-input" type="text" dir="auto" placeholder="اسأل Claude عن مهامك" data-i18n-ph="aiPh" aria-label="اسأل Claude" data-i18n-aria="aiPh">
+        <button type="button" class="mic-btn" id="ai-mic" aria-label="إملاء" data-label="dictate" aria-pressed="false" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg></button>
+        <button type="submit" class="add-btn" data-i18n="send">إرسال</button>
+      </form>
+    </div>
+    <p class="ai-err" id="ai-err" hidden></p>
+  </section>
+
   <section class="card stats" id="stats" hidden>
     <p class="stats-title" data-i18n="stats">الإحصائيات</p>
     <div class="stats-grid" id="stats-grid"></div>
@@ -645,6 +711,7 @@
       <button class="mic-btn" id="mic-btn" type="button" aria-label="إملاء المهمة" aria-pressed="false" hidden>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
       </button>
+      <button class="mic-btn smart-btn" id="smart-btn" type="button" aria-label="تعبئة ذكية بـ Claude" data-i18n-aria="smartLabel" hidden><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></button>
       <button class="add-btn" id="add-btn" type="submit" aria-disabled="true" data-i18n="add">إضافة</button>
       <div class="loc-row">
         <label for="loc-input" class="visually-hidden" data-i18n="location">الموقع</label>
@@ -677,6 +744,7 @@
       <div class="search-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
         <input class="field search-field" id="search" type="search" dir="auto" placeholder="بحث" data-i18n-ph="search" aria-label="بحث" data-i18n-aria="search" autocomplete="off">
       </div>
+      <button type="button" class="mic-btn view-btn ai-btn" id="ai-btn" aria-expanded="false" aria-controls="ai" aria-label="مساعد Claude" data-i18n-aria="aiTitle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8L19 15z"/></svg></button>
       <button type="button" class="mic-btn view-btn" id="view-btn" aria-pressed="false" aria-label="عرض التقويم" data-i18n-aria="calView"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg></button>
     </div>
     <div class="cal" id="cal" hidden>
@@ -756,6 +824,15 @@
       calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'تطبيق Outlook', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
       inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'تطبيق Outlook', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
+      aiTitle: 'مساعد Claude', aiNew: 'محادثة جديدة', aiKeyLabel: 'مفتاح API', aiPh: 'اسأل Claude عن مهامك',
+      aiSetupHelp: 'الصق مفتاح Claude API من console.anthropic.com. المفتاح ينحفظ في جوالك فقط.',
+      aiQ1: 'رتّب لي يومي', aiQ2: 'شو المتأخر عندي؟', aiQ3: 'لخّص لي مهام الأسبوع', aiQ4: 'شو أسوي أول؟',
+      aiNoKey: 'أضف مفتاح Claude API أول.', aiBadKey: 'مفتاح API غير صحيح.', aiBusy: 'Claude مشغول، حاول بعد شوي.',
+      aiCredit: 'رصيد حساب Anthropic خلص. اشحن من console.anthropic.com.', aiFail: 'ما قدرت أتواصل مع Claude.',
+      aiAddTasks: function (n) { return 'إضافة ' + n + ' للمهام'; }, aiAdded: function (n) { return 'تمت إضافة ' + n + ' ✓'; },
+      smartLabel: 'تعبئة ذكية بـ Claude', smartHint: 'اكتب المهمة بكلامك أول، مثل: اجتماع مع محمد بكرة الساعة ١٠ في دبي مول',
+      smartDone: 'تمت تعبئة الخانات', aiSum: 'تلخيص', aiSumLabel: 'تلخيص وخطوات تالية بـ Claude', aiSummary: 'ملخص Claude',
+      nextSteps: 'الخطوات التالية:', addAsNotes: 'إضافة كنقاط', copy: 'نسخ',
       stats: 'الإحصائيات', stDoneWeek: 'منجزة هذا الأسبوع', stDoneMonth: 'منجزة هذا الشهر', stOverdue: 'متأخرة', stToday: 'مواعيد اليوم',
       stActive: 'نشطة', stAddedWeek: 'أضيفت هذا الأسبوع', stRate: function (r) { return 'نسبة الإنجاز: ' + r + '%'; }, stLast7: 'المنجز في آخر 7 أيام',
       todayF: 'اليوم', noToday: 'ما عندك مهام اليوم ولا مهام متأخرة.',
@@ -803,6 +880,15 @@
       calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook app', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
       inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook app', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
+      aiTitle: 'Claude assistant', aiNew: 'New chat', aiKeyLabel: 'API key', aiPh: 'Ask Claude about your tasks...',
+      aiSetupHelp: 'Paste a Claude API key from console.anthropic.com. It is stored on this phone only.',
+      aiQ1: 'Plan my day', aiQ2: 'What is overdue?', aiQ3: 'Summarise this week', aiQ4: 'What should I do first?',
+      aiNoKey: 'Add a Claude API key first.', aiBadKey: 'The API key is not valid.', aiBusy: 'Claude is busy, try again shortly.',
+      aiCredit: 'Your Anthropic credit has run out. Top up at console.anthropic.com.', aiFail: 'Could not reach Claude.',
+      aiAddTasks: function (n) { return 'Add ' + n + ' to tasks'; }, aiAdded: function (n) { return 'Added ' + n + ' ✓'; },
+      smartLabel: 'Smart fill with Claude', smartHint: 'Type the task in your own words first, e.g. Meeting with Mohamed tomorrow at 10 at Dubai Mall',
+      smartDone: 'Fields filled in', aiSum: 'Summarise', aiSumLabel: 'Summary and next steps with Claude', aiSummary: 'Claude summary',
+      nextSteps: 'Next steps:', addAsNotes: 'Add as notes', copy: 'Copy',
       stats: 'Stats', stDoneWeek: 'Done this week', stDoneMonth: 'Done this month', stOverdue: 'Overdue', stToday: 'Due today',
       stActive: 'Active', stAddedWeek: 'Added this week', stRate: function (r) { return 'Completion: ' + r + '%'; }, stLast7: 'Done in the last 7 days',
       todayF: 'Today', noToday: 'Nothing due today and nothing overdue.',
@@ -835,6 +921,7 @@
   var viewBtn = document.getElementById('view-btn');
   var calEl = document.getElementById('cal');
   var calMode = false;
+  var smartNotes = [];
   var statsReady = false;
   var urlCache = {};
   var dbPromise = null;
@@ -1142,8 +1229,16 @@
       ['path', { d: 'M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.3-1.8-.9-.8.8c-.9-.4-1.9-1.4-2.3-2.3l.8-.8-.9-1.8L9 9.5Z' }]
     ]));
     waBtn.appendChild(document.createElement('span'));
+    var sumBtn = document.createElement('button');
+    sumBtn.type = 'button';
+    sumBtn.className = 'chip-btn ai-sum-btn';
+    sumBtn.appendChild(iconSvg('0 0 24 24', '2', [
+      ['path', { d: 'M12 3l1.8 4.7L18.5 9.5l-4.7 1.8L12 16l-1.8-4.7L5.5 9.5l4.7-1.8L12 3z' }]
+    ]));
+    sumBtn.appendChild(document.createElement('span'));
     actionsRow.appendChild(attBtn);
     actionsRow.appendChild(waBtn);
+    actionsRow.appendChild(sumBtn);
     actionsRow.appendChild(attInput);
     notes.appendChild(noteList);
     notes.appendChild(noteForm);
@@ -1295,6 +1390,9 @@
     var ab = notesPanel.querySelector('.att-btn');
     ab.querySelector('span').textContent = T('attachShort');
     ab.setAttribute('aria-label', T('attach'));
+    var sb = notesPanel.querySelector('.ai-sum-btn');
+    sb.querySelector('span').textContent = T('aiSum');
+    sb.setAttribute('aria-label', T('aiSumLabel'));
     var wb = notesPanel.querySelector('.wa-btn');
     wb.querySelector('span').textContent = T('waShare');
     wb.setAttribute('aria-label', T('waShareLabel'));
@@ -1388,7 +1486,7 @@
 
     emptyPanel.hidden = hasTasks;
     filterBar.hidden = !hasTasks || calMode;
-    toolbar.hidden = !hasTasks;
+    toolbar.hidden = false;
     clearBtn.classList.toggle('is-hidden', done === 0);
     if (done === 0) clearBtn.setAttribute('aria-hidden', 'true');
     else clearBtn.removeAttribute('aria-hidden');
@@ -1454,7 +1552,8 @@
     if (editingId) finishEdit(true, false);
     var place = locInput.value.trim().slice(0, 200);
     var dueVal = dueInput.value ? dueInput.value.slice(0, 16) : '';
-    var t = { id: newId(), text: text, done: false, location: place, due: dueVal, notes: [], attachments: [], invitees: [], createdAt: Date.now() };
+    var t = { id: newId(), text: text, done: false, location: place, due: dueVal, notes: smartNotes.map(function (n) { return { id: newId(), text: n.slice(0, 300), at: Date.now() }; }), attachments: [], invitees: [], createdAt: Date.now() };
+    smartNotes = [];
     tasks.push(t);
     saveTasks();
     if (filter === 'done') { filter = 'all'; saveFilter(); }
@@ -1587,7 +1686,7 @@
     if (sheetReturn && document.contains(sheetReturn)) sheetReturn.focus();
   }
   function sheetKey(e) { if (e.key === 'Escape') { e.preventDefault(); closeSheet(); } }
-  function showSheet(title, opts) {
+  function showSheet(title, opts, bodyText) {
     closeSheet();
     sheetReturn = document.activeElement;
     var bd = document.createElement('div');
@@ -1601,6 +1700,13 @@
     h.className = 'sheet-title';
     h.textContent = title;
     sh.appendChild(h);
+    if (bodyText) {
+      var bp = document.createElement('p');
+      bp.className = 'sheet-body';
+      bp.dir = 'auto';
+      bp.textContent = bodyText;
+      sh.appendChild(bp);
+    }
     opts.concat([{ label: T('cancel'), cancel: true }]).forEach(function (o) {
       var b = document.createElement('button');
       b.type = 'button';
@@ -2370,6 +2476,280 @@
   updateLockBtn();
   showLock();
 
+  /* ---------- Claude assistant ---------- */
+  var AI_KEY = 'todo-app.ai.key';
+  var AI_MODEL = 'claude-sonnet-5-5';
+  var aiPanel = document.getElementById('ai');
+  var aiBtn = document.getElementById('ai-btn');
+  var aiSetup = document.getElementById('ai-setup');
+  var aiChat = document.getElementById('ai-chat');
+  var aiLog = document.getElementById('ai-log');
+  var aiForm = document.getElementById('ai-form');
+  var aiInput = document.getElementById('ai-input');
+  var aiKeyInput = document.getElementById('ai-key');
+  var aiErr = document.getElementById('ai-err');
+  var smartBtn = document.getElementById('smart-btn');
+  var aiHistory = [];
+  var aiBusy = false;
+  function aiKey() { try { return localStorage.getItem(AI_KEY) || ''; } catch (e) { return ''; } }
+  function nowContext() {
+    var d = new Date();
+    var wd = '';
+    try { wd = d.toLocaleDateString('en-GB', { weekday: 'long' }); } catch (e) {}
+    var tz = '';
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone; } catch (e) {}
+    return 'Current local date and time: ' + localStamp(d).slice(0, 16) + ' (' + wd + ')' + (tz ? ', time zone ' + tz : '') + '.';
+  }
+  function tasksContext() {
+    return JSON.stringify(tasks.map(function (t) {
+      var o = { id: t.id, task: t.text, done: t.done };
+      if (t.due) o.due = t.due;
+      if (t.location) o.location = t.location;
+      if (t.notes && t.notes.length) o.notes = t.notes.map(function (n) { return n.text; });
+      if (t.invitees && t.invitees.length) o.invited = t.invitees;
+      return o;
+    }));
+  }
+  function callClaude(system, messages, maxTokens) {
+    var key = aiKey();
+    if (!key) return Promise.reject(new Error('nokey'));
+    return fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({ model: AI_MODEL, max_tokens: maxTokens || 1500, system: system, messages: messages })
+    }).then(function (r) {
+      return r.json().then(function (data) {
+        if (!r.ok) {
+          var e = new Error((data && data.error && data.error.message) || ('HTTP ' + r.status));
+          e.status = r.status;
+          throw e;
+        }
+        return (data.content || []).filter(function (c) { return c.type === 'text'; }).map(function (c) { return c.text; }).join('');
+      });
+    });
+  }
+  function aiErrorText(err) {
+    if (err && err.message === 'nokey') return T('aiNoKey');
+    if (err && err.status === 401) return T('aiBadKey');
+    if (err && err.status === 429) return T('aiBusy');
+    if (err && (err.status === 402 || /credit|billing/i.test(err.message || ''))) return T('aiCredit');
+    return T('aiFail') + (err && err.message ? ' (' + err.message.slice(0, 120) + ')' : '');
+  }
+  function extractJSON(text, open, close) {
+    var a = text.indexOf(open), b = text.lastIndexOf(close);
+    if (a === -1 || b <= a) return null;
+    try { return JSON.parse(text.slice(a, b + 1)); } catch (e) { return null; }
+  }
+  function cleanDue(v) { return typeof v === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(v) ? v.slice(0, 16) : ''; }
+  function makeTask(o) {
+    var text = String(o.text || o.task || '').trim().slice(0, 200);
+    if (!text) return null;
+    return {
+      id: newId(), text: text, done: false,
+      location: String(o.location || '').trim().slice(0, 200),
+      due: cleanDue(o.due),
+      notes: (Array.isArray(o.notes) ? o.notes : []).filter(function (n) { return typeof n === 'string' && n.trim(); })
+        .slice(0, 20).map(function (n) { return { id: newId(), text: n.trim().slice(0, 300), at: Date.now() }; }),
+      attachments: [], invitees: [], doneAt: 0, createdAt: Date.now()
+    };
+  }
+  function updateAiUI() {
+    var has = !!aiKey();
+    smartBtn.hidden = !has;
+    aiSetup.hidden = has && !aiSetup.dataset.forced;
+    aiChat.hidden = !has;
+  }
+  function addBubble(role, text, proposals) {
+    var li = document.createElement('li');
+    li.className = 'ai-msg ' + role;
+    var b = document.createElement('div');
+    b.className = 'ai-bubble';
+    b.dir = 'auto';
+    b.textContent = text;
+    li.appendChild(b);
+    if (proposals && proposals.length) {
+      var box = document.createElement('div');
+      box.className = 'ai-props';
+      proposals.forEach(function (p) {
+        var row = document.createElement('div');
+        row.className = 'ai-prop';
+        row.dir = 'auto';
+        var line = p.text || p.task || '';
+        if (p.due) line += ' · ' + formatDue(cleanDue(p.due) || p.due);
+        if (p.location) line += ' · ' + p.location;
+        row.textContent = '• ' + line;
+        box.appendChild(row);
+      });
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'add-btn ai-add-all';
+      add.textContent = T('aiAddTasks', proposals.length);
+      add.addEventListener('click', function () {
+        var n = 0;
+        proposals.forEach(function (p) { var t = makeTask(p); if (t) { tasks.push(t); n++; } });
+        if (!n) return;
+        saveTasks();
+        if (filter === 'done') { filter = 'all'; saveFilter(); }
+        render();
+        add.disabled = true;
+        add.textContent = T('aiAdded', n);
+        announce(T('aiAdded', n));
+      });
+      box.appendChild(add);
+      li.appendChild(box);
+    }
+    aiLog.appendChild(li);
+    aiLog.scrollTop = aiLog.scrollHeight;
+    return li;
+  }
+  var AI_SYSTEM_BASE = 'You are a helpful assistant built into a personal to-do app used by Hamad in the UAE. ' +
+    'Reply in the same language the user writes in (usually Gulf Arabic). Be brief and practical; use short lines or bullets, no markdown headings, no bold. ';
+  function sendAi(text) {
+    if (aiBusy || !text) return;
+    aiBusy = true;
+    aiErr.hidden = true;
+    addBubble('user', text);
+    aiHistory.push({ role: 'user', content: text });
+    if (aiHistory.length > 16) aiHistory = aiHistory.slice(-16);
+    var wait = addBubble('assistant', '…');
+    wait.classList.add('pending');
+    var system = AI_SYSTEM_BASE + nowContext() +
+      ' The user\'s current tasks (JSON): ' + tasksContext() +
+      ' If the user asks you to plan something or create tasks, you may propose new tasks by adding, at the very end of your reply, ' +
+      'a block exactly like <tasks>[{"text":"...","due":"YYYY-MM-DDTHH:MM or empty","location":"","notes":["..."]}]</tasks>. ' +
+      'Only include that block when proposing tasks to add. Never claim you changed tasks yourself; the user adds proposals with a button.';
+    callClaude(system, aiHistory, 1500).then(function (out) {
+      aiBusy = false;
+      wait.remove();
+      var props = null;
+      var m = out.match(/<tasks>([\s\S]*?)<\/tasks>/);
+      if (m) {
+        try { props = JSON.parse(m[1]); } catch (e) { props = null; }
+        out = out.replace(m[0], '').trim();
+      }
+      aiHistory.push({ role: 'assistant', content: out || '…' });
+      addBubble('assistant', out || '…', Array.isArray(props) ? props.slice(0, 20) : null);
+    }).catch(function (err) {
+      aiBusy = false;
+      wait.remove();
+      aiHistory.pop();
+      aiErr.textContent = aiErrorText(err);
+      aiErr.hidden = false;
+    });
+  }
+  aiBtn.addEventListener('click', function () {
+    aiPanel.hidden = !aiPanel.hidden;
+    aiBtn.setAttribute('aria-expanded', aiPanel.hidden ? 'false' : 'true');
+    delete aiSetup.dataset.forced;
+    updateAiUI();
+    if (!aiPanel.hidden) (aiKey() ? aiInput : aiKeyInput).focus();
+  });
+  document.getElementById('ai-settings').addEventListener('click', function () {
+    if (aiSetup.hidden) { aiSetup.dataset.forced = '1'; aiSetup.hidden = false; aiKeyInput.value = aiKey(); aiKeyInput.focus(); }
+    else { delete aiSetup.dataset.forced; updateAiUI(); }
+  });
+  document.getElementById('ai-clear').addEventListener('click', function () {
+    aiHistory = [];
+    aiLog.textContent = '';
+    aiErr.hidden = true;
+  });
+  aiSetup.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var k = aiKeyInput.value.trim();
+    try { if (k) localStorage.setItem(AI_KEY, k); else localStorage.removeItem(AI_KEY); } catch (er) {}
+    delete aiSetup.dataset.forced;
+    aiErr.hidden = true;
+    updateAiUI();
+    if (k) aiInput.focus();
+  });
+  aiForm.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = aiInput.value.trim();
+    if (!v) return;
+    aiInput.value = '';
+    sendAi(v);
+  });
+  document.getElementById('ai-chips').addEventListener('click', function (e) {
+    var c = e.target.closest('.ai-chip');
+    if (c) sendAi(c.textContent);
+  });
+  var aiMic = document.getElementById('ai-mic');
+  if ((window.SpeechRecognition || window.webkitSpeechRecognition) && aiMic) {
+    aiMic.hidden = false;
+    aiMic.addEventListener('click', function () { dictate(aiMic, aiInput); });
+  }
+
+  // Smart add: turn a free sentence into task fields.
+  smartBtn.addEventListener('click', function () {
+    var v = newInput.value.trim();
+    if (!v) { newInput.focus(); announce(T('smartHint')); return; }
+    if (smartBtn.classList.contains('busy')) return;
+    smartBtn.classList.add('busy');
+    var system = 'Extract a to-do item from the user\'s sentence. ' + nowContext() +
+      ' Resolve relative dates like tomorrow / بكرة / الخميس الجاي to an exact local date-time. If a day is given without time, use 09:00. ' +
+      'Reply with ONLY a JSON object: {"text":"short task title in the user\'s language, without the date/time/place words","due":"YYYY-MM-DDTHH:MM or empty string","location":"place or empty string","notes":["any extra details, optional"]}';
+    callClaude(system, [{ role: 'user', content: v }], 400).then(function (out) {
+      smartBtn.classList.remove('busy');
+      var o = extractJSON(out, '{', '}');
+      if (!o || !o.text) { window.alert(T('aiFail')); return; }
+      newInput.value = String(o.text).slice(0, 200);
+      if (o.location) locInput.value = String(o.location).slice(0, 200);
+      var d = cleanDue(o.due);
+      if (d) { dueInput.value = d; syncDue(); }
+      smartNotes = (Array.isArray(o.notes) ? o.notes : []).filter(function (n) { return typeof n === 'string' && n.trim(); }).slice(0, 10);
+      updateAddBtn();
+      newInput.focus();
+      announce(T('smartDone'));
+    }).catch(function (err) {
+      smartBtn.classList.remove('busy');
+      window.alert(aiErrorText(err));
+    });
+  });
+
+  // Per-task: summarise notes with Claude
+  function summariseTask(id) {
+    var t = findTask(id);
+    if (!t) return;
+    if (!aiKey()) { aiPanel.hidden = false; aiBtn.setAttribute('aria-expanded', 'true'); updateAiUI(); aiKeyInput.focus(); return; }
+    var li = nodes.get(id);
+    var btn = li && li.querySelector('.ai-sum-btn');
+    if (btn) btn.classList.add('busy');
+    var system = AI_SYSTEM_BASE + nowContext() +
+      ' Summarise this task and its notes as a short meeting/progress summary, then list clear next steps. ' +
+      'Reply with ONLY JSON: {"summary":"2-4 sentences","next":["next step", "..."]}';
+    var payload = { task: t.text, due: t.due || '', location: t.location || '', notes: (t.notes || []).map(function (n) { return n.text; }) };
+    callClaude(system, [{ role: 'user', content: JSON.stringify(payload) }], 700).then(function (out) {
+      if (btn) btn.classList.remove('busy');
+      var o = extractJSON(out, '{', '}');
+      var summary = o && o.summary ? String(o.summary) : out.trim();
+      var next = o && Array.isArray(o.next) ? o.next.filter(function (x) { return typeof x === 'string' && x.trim(); }) : [];
+      var body = summary + (next.length ? '\n\n' + T('nextSteps') + '\n' + next.map(function (x) { return '• ' + x; }).join('\n') : '');
+      showSheet(T('aiSummary'), [
+        { label: T('addAsNotes'), primary: true, run: function () {
+          var tt = findTask(id);
+          if (!tt) return;
+          if (!tt.notes) tt.notes = [];
+          tt.notes.push({ id: newId(), text: ('✨ ' + summary).slice(0, 300), at: Date.now() });
+          next.forEach(function (x) { tt.notes.push({ id: newId(), text: ('→ ' + x).slice(0, 300), at: Date.now() }); });
+          saveTasks();
+          render();
+        } },
+        { label: T('copy'), run: function () {
+          if (navigator.clipboard) navigator.clipboard.writeText(body).catch(function () {});
+        } }
+      ], body);
+    }).catch(function (err) {
+      if (btn) btn.classList.remove('busy');
+      window.alert(aiErrorText(err));
+    });
+  }
+  updateAiUI();
+
   /* ---------- Due date ---------- */
   var dueWrap = document.getElementById('due-wrap');
   function syncDue() {
@@ -2485,6 +2865,7 @@
     if (btn.classList.contains('att-open')) { openAttachment(li.dataset.id, btn.closest('.att').dataset.attId); return; }
     if (btn.classList.contains('att-del')) { deleteAttachment(li.dataset.id, btn.closest('.att').dataset.attId); return; }
     if (btn.classList.contains('wa-btn')) { shareWhatsApp(li.dataset.id); return; }
+    if (btn.classList.contains('ai-sum-btn')) { summariseTask(li.dataset.id); return; }
     if (btn.classList.contains('invite-btn')) { toggleInvite(li.dataset.id); return; }
     if (btn.classList.contains('invitee-del')) { removeInvitee(li.dataset.id, btn.closest('.invitee').dataset.email); return; }
     if (btn.classList.contains('del-btn')) deleteTask(li.dataset.id, true);
