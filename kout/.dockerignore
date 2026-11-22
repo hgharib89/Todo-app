@@ -1,0 +1,9 @@
+node_modules
+dist
+server/dist
+server/.scratch
+tests
+public
+assets
+scripts
+*.md

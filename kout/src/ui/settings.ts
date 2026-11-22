@@ -9,6 +9,8 @@ export interface Settings {
   difficulty: Difficulty;
   speed: Speed;
   sound: boolean;
+  /** name shown to other players online */
+  playerName: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -17,6 +19,7 @@ export const DEFAULT_SETTINGS: Settings = {
   difficulty: 'hard',
   speed: 'normal',
   sound: true,
+  playerName: '',
 };
 
 const KEY = 'kout.settings.v2';

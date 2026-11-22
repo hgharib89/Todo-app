@@ -1,13 +1,14 @@
 # ديوانية الكوت — Diwaniya Kout
 
-A mobile-first, Arabic (RTL) web game of **Kout Bo 6** (كوت بو ٦) and **Kout Bo 4** (كوت بو ٤): you play with bot partners against bot opponents.
+A mobile-first, Arabic (RTL) game of **Kout Bo 6** (كوت بو ٦) and **Kout Bo 4** (كوت بو ٤). Play offline with bot partners against bots, or **online** with friends and other players on an authoritative game server.
 It is an original app. The name, card designs and UI are all made for this project, and it uses no branding or assets from any other Kout app.
 
 - React + TypeScript + Vite, deployable to GitHub Pages
 - A pure game engine (`src/engine`): `applyAction(state, action) → newState`, with no UI code and no hidden randomness
 - **Every rule lives in one file:** [`src/engine/rules.config.ts`](src/engine/rules.config.ts)
 - Bots: Easy (random legal moves), Medium (heuristic bidding and play) and **Hard** (the default: card counting, void inference, hand-strength bidding and Monte Carlo card play)
-- A Vitest suite covering deck building, bidding, legal moves, every joker rule and preset, the trick winner, scoring and game end
+- **Online play** ([`server/`](server/README.md)): a Colyseus game server that runs the same engine, public matchmaking and private rooms with WhatsApp invites, a turn timer, reconnection and anti-cheat
+- A Vitest suite covering the engine, every rule, the bots, and the server (with real clients)
 
 ## Run it
 
@@ -18,9 +19,10 @@ npm run dev        # http://localhost:5173
 npm test           # run the unit tests once
 npm run build      # type-check + production build into kout/dist
 npm run preview    # serve the production build
+npm run server:dev # the online game server (see server/README.md)
 ```
 
-Node 18+ is required (CI uses Node 20).
+Node 20+ is required (CI uses Node 22). Build with `VITE_KOUT_SERVER=https://your-server` to switch on online play.
 
 ## Deploy to GitHub Pages
 
@@ -138,9 +140,11 @@ kout/src/
   bots/index.ts        chooseBotAction(state, 'easy' | 'medium' | 'hard'); picks only from legalActions
   bots/hard.ts         card counting, void inference, bidding by hand strength, Monte Carlo play
   ui/                  React screens, table, hand, panels, sounds (WebAudio, no files)
-kout/tests/            Vitest suites
+  net/                 online client: join/create rooms, reconnect (loaded only when used)
+kout/server/           authoritative Colyseus game server (same engine) — see server/README.md
+kout/tests/            Vitest suites (tests/server: views, anti-cheat, rooms with real clients)
 ```
 
 - Seats run **counter-clockwise**: seat `i+1` sits to the right of seat `i`. Dealing, bidding and play all go that way, and so does the dealer rotation. Teams follow `teamLayout`: with the default `'alternate'` the even seats play the odd seats, so in Bo 6 partners alternate and in Bo 4 partners sit opposite.
-- **Online multiplayer later:** run the same engine on a server. Clients send `Action`s, the server validates them with `applyAction` (illegal actions throw) and sends each player `playerView(state, seat)`, which hides the other hands and the RNG seed.
+- **Online:** the server runs the same engine. Clients send `Action`s, the server validates them with `applyAction`, runs the bots and timers, and sends each player only their own rotated view (`server/src/view.ts`). The app rebuilds the rules from `rules.config.ts` and checks a hash to make sure they match the server's.
 - An unfinished game is saved in `localStorage` and can be resumed from the home screen. When it resumes, it is re-bound to the current `rules.config.ts`.
