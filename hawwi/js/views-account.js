@@ -177,7 +177,9 @@
         '<li class="list-row static"><span class="lr-icon" aria-hidden="true">🔔</span><label class="grow" for="sw-notif">' + esc(t('set.notifications')) + '</label>' + H.sw({ id: 'sw-notif', on: p.notifications, data: ' data-pref="notifications"' }) + '</li>' +
         '<li class="list-row static"><span class="lr-icon" aria-hidden="true">⏱️</span><span class="grow"><label for="sw-auto">' + esc(t('set.autoAdvance')) + '</label><span class="meta" id="sw-auto-hint">' + esc(t('set.autoAdvanceHint')) + '</span></span>' + H.sw({ id: 'sw-auto', on: p.autoAdvance, data: ' data-pref="autoAdvance" aria-describedby="sw-auto-hint"' }) + '</li>' +
         '<li class="list-row static col"><span class="row-inline"><span class="lr-icon" aria-hidden="true">🎨</span><span class="grow">' + esc(t('set.appearance')) + '</span></span>' + H.seg('theme', [{ value: 'light', html: esc(t('set.light')) }, { value: 'dark', html: esc(t('set.dark')) }, { value: 'auto', html: esc(t('set.auto')) }], p.theme, t('set.appearance')) + '</li>' +
-        '</ul><ul class="rows card">' +
+        '</ul>' +
+        (H.pwa && !H.pwa.isStandalone() ? '<ul class="rows card"><li><button type="button" class="list-row" data-install><span class="lr-icon" aria-hidden="true">📲</span><span class="grow"><span>' + esc(t('pwa.row')) + '</span><span class="meta">' + esc(t('pwa.rowHint')) + '</span></span>' + H.icon('chevron', 'sm') + '</button></li></ul>' : '') +
+        '<ul class="rows card">' +
         '<li><button type="button" class="list-row danger-text" data-reset><span class="lr-icon" aria-hidden="true">♻️</span><span class="grow">' + esc(t('set.reset')) + '</span></button></li>' +
         (u ? '<li><button type="button" class="list-row danger-text" data-logout><span class="lr-icon" aria-hidden="true">🚪</span><span class="grow">' + esc(t('set.logout')) + '</span></button></li>' : '') +
         '</ul><p class="center muted footer-note">' + esc(t('set.footer')) + '</p></div></main>';
@@ -193,6 +195,7 @@
           if (name === 'theme') { S.setPrefs({ theme: sg.dataset.value }); H.applyTheme(); H.rerender(); const a = ctx.el.querySelector('[data-seg="theme"] [data-value="' + sg.dataset.value + '"]'); if (a) a.focus(); }
           return;
         }
+        if (e.target.closest('[data-install]')) { H.pwa.install(); return; }
         if (e.target.closest('[data-reset]')) {
           if (await H.confirm({ title: t('set.reset'), body: t('set.resetConfirm'), ok: t('set.reset'), danger: true })) {
             S.resetDemo();
