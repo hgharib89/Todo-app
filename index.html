@@ -198,7 +198,17 @@
   }
   .loc-row { display: flex; gap: 8px; flex: 1 1 100%; }
   .due-row { display: flex; align-items: center; gap: 8px; flex: 1 1 100%; }
-  .due-label { display: inline-flex; align-items: center; gap: 6px; flex: none; font-size: 14px; color: var(--text-muted); }
+  .due-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+  .due-wrap .due-field { flex: 1; width: 100%; }
+  .due-label {
+    position: absolute; inset-inline-start: 13px; top: 0; bottom: 0;
+    display: none; align-items: center; gap: 6px;
+    font-size: 15px; color: var(--text-muted); pointer-events: none;
+  }
+  .due-wrap.is-empty .due-label { display: inline-flex; }
+  .due-wrap.is-empty .due-field { color: transparent; }
+  .due-wrap.is-empty .due-field::-webkit-datetime-edit { color: transparent; }
+  .due-wrap.is-empty .due-field:focus::-webkit-datetime-edit { color: var(--text); }
   .due-field { flex: 1; min-width: 0; height: 40px; font-size: 15px; }
   .due-clear { height: 40px; width: 40px; }
   .due {
@@ -538,8 +548,10 @@
         </button>
       </div>
       <div class="due-row">
+        <div class="due-wrap is-empty" id="due-wrap">
         <label for="due-input" class="due-label"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg><span data-i18n="due">الموعد</span></label>
         <input class="field due-field" id="due-input" type="datetime-local">
+        </div>
         <button class="mic-btn due-clear" id="due-clear" type="button" aria-label="مسح الموعد" data-i18n-aria="clearDue" hidden>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/></svg>
         </button>
@@ -1184,6 +1196,7 @@
     locInput.value = '';
     dueInput.value = '';
     dueClear.hidden = true;
+    document.getElementById('due-wrap').classList.add('is-empty');
     updateAddBtn();
     newInput.focus();
     justAddedId = t.id;
@@ -1658,9 +1671,15 @@
   applyLang();
 
   /* ---------- Due date ---------- */
-  dueInput.addEventListener('input', function () { dueClear.hidden = !dueInput.value; });
-  dueInput.addEventListener('change', function () { dueClear.hidden = !dueInput.value; });
-  dueClear.addEventListener('click', function () { dueInput.value = ''; dueClear.hidden = true; dueInput.focus(); });
+  var dueWrap = document.getElementById('due-wrap');
+  function syncDue() {
+    dueClear.hidden = !dueInput.value;
+    dueWrap.classList.toggle('is-empty', !dueInput.value);
+  }
+  dueInput.addEventListener('input', syncDue);
+  dueInput.addEventListener('change', syncDue);
+  dueInput.addEventListener('blur', syncDue);
+  dueClear.addEventListener('click', function () { dueInput.value = ''; syncDue(); dueInput.focus(); });
 
   /* ---------- Location ---------- */
   locInput.addEventListener('keydown', function (e) {
