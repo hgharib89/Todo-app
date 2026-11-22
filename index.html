@@ -616,8 +616,8 @@
       badEmail: 'تأكد من الإيميل: ', removeInvitee: function (e) { return 'إزالة ' + e; },
       mailSubject: function (t) { return 'دعوة: ' + t; }, mailTask: 'المهمة: ', mailLoc: 'الموقع: ', mailNotes: 'النقاط:',
       mailFooter: 'أُرسلت من تطبيق المهام', invited: 'تم فتح الإيميل للإرسال',
-      calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'Outlook (إيفرا)', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
-      inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'دعوة Outlook (إيفرا)', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
+      calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'تطبيق Outlook', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
+      inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'تطبيق Outlook', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
       due: 'الموعد', clearDue: 'مسح الموعد', addCal: function (d) { return 'إضافة إلى التقويم: ' + d; },
       mailWhen: 'الموعد: ', mailCal: 'أضفها إلى تقويمك:', locale: 'ar-AE',
@@ -652,8 +652,8 @@
       badEmail: 'Check this email: ', removeInvitee: function (e) { return 'Remove ' + e; },
       mailSubject: function (t) { return 'Invitation: ' + t; }, mailTask: 'Task: ', mailLoc: 'Location: ', mailNotes: 'Notes:',
       mailFooter: 'Sent from Tasks', invited: 'Email opened to send',
-      calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook (Everra)', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
-      inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook invite (Everra)', outlookInviteHome: 'Outlook.com invite (personal)',
+      calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook app', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
+      inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook app', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
       due: 'When', clearDue: 'Clear date', addCal: function (d) { return 'Add to calendar: ' + d; },
       mailWhen: 'When: ', mailCal: 'Add it to your calendar:', locale: 'en-GB',
@@ -1266,6 +1266,33 @@
     if (guests && guests.length) u += '&to=' + encodeURIComponent(guests.join(','));
     return u;
   }
+  function localStamp(d) {
+    return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' +
+      pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':00';
+  }
+  function outlookAppUrl(t, guests) {
+    var body = outlookBody(t);
+    if (!t.due) {
+      var lines = [T('mailTask') + t.text];
+      if (t.location) lines.push(T('mailLoc') + t.location);
+      if (body) { lines.push(''); lines.push(body); }
+      return 'ms-outlook://compose?to=' + encodeURIComponent((guests || []).join(',')) +
+        '&subject=' + encodeURIComponent(T('mailSubject', t.text)) +
+        '&body=' + encodeURIComponent(lines.join('\n'));
+    }
+    var start = new Date(t.due);
+    var end = new Date(start.getTime() + 60 * 60 * 1000);
+    var u = 'ms-outlook://events/new?title=' + encodeURIComponent(t.text) +
+      '&start=' + encodeURIComponent(localStamp(start)) +
+      '&end=' + encodeURIComponent(localStamp(end));
+    if (t.location) u += '&location=' + encodeURIComponent(t.location);
+    if (body) u += '&description=' + encodeURIComponent(body);
+    if (guests && guests.length) u += '&attendees=' + encodeURIComponent(guests.join(','));
+    return u;
+  }
+  function openOutlookApp(t, guests) {
+    window.location.href = outlookAppUrl(t, guests);
+  }
   function openUrl(u) {
     var w = window.open(u, '_blank');
     if (w) { try { w.opener = null; } catch (e) {} }
@@ -1315,7 +1342,7 @@
     if (!t || !t.due) return;
     var g = t.invitees || [];
     showSheet(T('calTitle'), [
-      { label: T('outlookWork'), primary: true, run: function () { openUrl(outlookUrl(t, g, 'office')); } },
+      { label: T('outlookWork'), primary: true, run: function () { openOutlookApp(t, g); } },
       { label: T('phoneCal'), run: function () { addToCalendar(id); } },
       { label: T('googleCal'), run: function () { openUrl(googleCalUrl(t, g)); } }
     ]);
@@ -1414,7 +1441,7 @@
     var href = 'mailto:' + to.map(encodeURIComponent).join(',') +
       '?subject=' + encodeURIComponent(T('mailSubject', t.text)) +
       '&body=' + encodeURIComponent(lines.join('\n'));
-    var opts = [{ label: T('outlookInvite'), primary: true, run: function () { openUrl(outlookUrl(t, to, 'office')); } }];
+    var opts = [{ label: T('outlookInvite'), primary: true, run: function () { openOutlookApp(t, to); } }];
     opts.push({ label: T('mailApp'), run: function () { announce(T('invited')); window.location.href = href; } });
     showSheet(T('inviteTitle'), opts);
   }
