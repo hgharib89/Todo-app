@@ -10,7 +10,7 @@ function restore(): GameState | null {
   const g = loadSavedGame<GameState>();
   if (!g || !g.rules || g.phase === 'gameOver') return null;
   // always play with the CURRENT rules.config.ts (keeps the saved joker preset)
-  return { ...g, tricks: g.tricks ?? [], rules: buildRules(g.rules.activeJokerPreset) };
+  return { ...g, tricks: g.tricks ?? [], reneges: g.reneges ?? [], lastCatch: g.lastCatch ?? null, rules: buildRules(g.rules.activeJokerPreset) };
 }
 
 export default function App() {
