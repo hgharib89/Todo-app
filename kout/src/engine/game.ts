@@ -98,6 +98,12 @@ export interface CatchResult {
   suit: Suit | null;
 }
 
+/** The draw for the first dealer: one face-up card per player per round; ties for lowest draw again. */
+export interface DealerDraw {
+  rounds: { player: number; card: CardId }[][];
+  dealer: number;
+}
+
 export interface HandResult {
   handNumber: number;
   dealer: number;
@@ -147,6 +153,8 @@ export interface GameState {
   lastResult: HandResult | null;
   /** number of all-pass redeals (only if forcing is disabled) */
   redeals: number;
+  /** how the first dealer was chosen this game (public: shown as an animation at the start) */
+  dealerDraw?: DealerDraw | null;
   /**
    * Every renege this hand, recorded silently. HIDDEN information: not part of playerView,
    * and bots never read it. Catches are judged only from the public cards (renegeEvidence).
@@ -238,11 +246,45 @@ function startHand(state: GameState, dealer: number, handNumber: number): GameSt
   };
 }
 
+/**
+ * Draw for the first dealer: every player draws one face-up card from the shuffled deck without jokers;
+ * the lowest rank deals (2 lowest, Ace highest). If several tie for lowest, only they draw again.
+ */
+export function drawForDealer(rules: RulesConfig, mode: ModeId, seed: number): [DealerDraw, number] {
+  const n = rules.modes[mode].players;
+  const plain = buildDeck(rules, mode).filter((c) => !isJoker(c));
+  let [deck, s] = shuffle(plain, seed);
+  const rounds: { player: number; card: CardId }[][] = [];
+  let drawing = Array.from({ length: n }, (_, i) => i);
+  for (let guard = 0; guard < 50; guard++) {
+    if (deck.length < drawing.length) [deck, s] = shuffle(plain, s); // ran out: shuffle a fresh deck
+    const round = drawing.map((player) => ({ player, card: deck.shift()! }));
+    rounds.push(round);
+    const low = Math.min(...round.map((d) => rankOf(d.card)!));
+    drawing = round.filter((d) => rankOf(d.card) === low).map((d) => d.player);
+    if (drawing.length === 1) return [{ rounds, dealer: drawing[0] }, s];
+  }
+  return [{ rounds, dealer: drawing[0] }, s];
+}
+
+/** The next hand's dealer, per rules.dealerRotation. */
+export function nextDealer(state: GameState): number {
+  if (state.rules.dealerRotation === 'alwaysRotate' || !state.lastResult) return nextSeat(state, state.dealer);
+  const dealerTeam = teamOf(state, state.dealer);
+  const dealerTeamScored = state.lastResult.points[dealerTeam] > 0;
+  // the dealer's team lost (0 points): same dealer again; it scored: pass to the right (the losing team)
+  return dealerTeamScored ? nextSeat(state, state.dealer) : state.dealer;
+}
+
 export function createGame(rules: RulesConfig, mode: ModeId, seed: number): GameState {
   const m = rules.modes[mode];
   let s = seed >>> 0;
   let dealer: number;
-  if (rules.firstDealer === 'random') {
+  let dealerDraw: DealerDraw | null = null;
+  if (rules.firstDealer === 'lowestCardDraw') {
+    [dealerDraw, s] = drawForDealer(rules, mode, s);
+    dealer = dealerDraw.dealer;
+  } else if (rules.firstDealer === 'random') {
     [dealer, s] = randomInt(m.players, s);
   } else {
     dealer = rules.firstDealer % m.players;
@@ -274,6 +316,7 @@ export function createGame(rules: RulesConfig, mode: ModeId, seed: number): Game
     redeals: 0,
     reneges: [],
     lastCatch: null,
+    dealerDraw,
   };
   return startHand(base, dealer, 1);
 }
@@ -310,8 +353,7 @@ export function bidOptions(state: GameState, player: number = state.currentPlaye
 function finishBidding(state: GameState): GameState {
   if (!state.highBid) {
     // everyone passed and forcing is disabled → redeal with the next dealer
-    const dealer = state.rules.rotateDealer ? nextSeat(state, state.dealer) : state.dealer;
-    return startHand({ ...state, redeals: state.redeals + 1 }, dealer, state.handNumber);
+    return startHand({ ...state, redeals: state.redeals + 1 }, nextSeat(state, state.dealer), state.handNumber);
   }
   const hb = state.highBid;
   return {
@@ -849,8 +891,7 @@ export function applyAction(state: GameState, action: Action): GameState {
     }
     case 'NEXT_HAND': {
       if (state.phase !== 'handOver') throw new Error('Hand not over');
-      const dealer = state.rules.rotateDealer ? nextSeat(state, state.dealer) : state.dealer;
-      return startHand(state, dealer, state.handNumber + 1);
+      return startHand(state, nextDealer(state), state.handNumber + 1);
     }
   }
 }

@@ -356,7 +356,9 @@ export class KoutRoom extends Room {
     this.clearTimer();
     const g = this.game;
     if (!g) return;
-    const pause = trickDone ? this.cfg.trickPauseMs : 0;
+    // the first deal of a game waits for the dealer-draw animation on the clients
+    const firstDeal = g.handNumber === 1 && g.phase === 'bidding' && g.bids.length === 0 && g.dealerDraw;
+    const pause = trickDone ? this.cfg.trickPauseMs : firstDeal ? g.dealerDraw!.rounds.length * this.cfg.drawRoundMs + this.cfg.dealPauseMs : 0;
 
     if (g.phase === 'gameOver') {
       this.deadline = null;

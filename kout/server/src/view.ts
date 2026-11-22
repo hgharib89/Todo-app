@@ -86,6 +86,9 @@ export function viewFor(state: GameState, seat: number): ClientGame {
     winner: state.winner === null ? null : r.team(state.winner),
     lastResult: state.lastResult ? result(state.lastResult) : null,
     reneges: [], // hidden: catches are judged from the visible cards only
+    dealerDraw: state.dealerDraw
+      ? { dealer: r.toView(state.dealerDraw.dealer), rounds: state.dealerDraw.rounds.map((rd) => rd.map((d) => ({ player: r.toView(d.player), card: d.card }))) }
+      : null,
     lastCatch: caught(state.lastCatch ?? null),
   };
 }

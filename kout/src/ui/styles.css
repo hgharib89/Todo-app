@@ -460,11 +460,19 @@ button:disabled {
   place-items: center;
 }
 .dealer-badge {
-  top: -5px;
-  right: -7px;
+  top: -9px;
+  right: 50%;
+  transform: translateX(50%);
+  width: auto;
+  height: 15px;
+  padding: 0 5px;
+  border-radius: 8px;
+  font-size: 0.55rem;
+  white-space: nowrap;
   background: var(--gold);
   color: #2a1d06;
   font-weight: 800;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 .bidder-badge {
   bottom: -5px;
@@ -1366,4 +1374,40 @@ button:disabled {
   height: 30px;
   font-size: 0.9rem;
   position: static;
+}
+
+/* ------------------------------------------------------------ first-dealer draw (سحب الخبّاص) */
+.dealer-draw {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.draw-caption {
+  position: absolute;
+  left: 50%;
+  top: 22%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  padding: 4px 14px;
+  border-radius: 12px;
+  background: var(--panel);
+  border: 1px solid var(--gold);
+  color: var(--gold);
+  font-weight: 800;
+  font-size: 0.85rem;
+  animation: pop 0.3s;
+}
+.draw-card {
+  animation-duration: 0.45s;
+}
+.draw-card.tie .card {
+  box-shadow: 0 0 0 2px var(--red), 0 0 14px 2px rgba(200, 49, 58, 0.6);
+}
+.draw-card.dim {
+  opacity: 0.45;
+}
+.pad-table .dealer-cell {
+  color: var(--gold);
+  font-size: 0.8rem;
 }

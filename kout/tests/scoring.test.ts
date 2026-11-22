@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  applyAction, buildRules, checkGameEnd, createGame, handPoints, legalActions, GameState, RULES,
+  applyAction, buildRules, checkGameEnd, createGame, handPoints, legalActions, GameState, RULES, teamOf,
 } from '../src/engine';
 import { playingState } from './helpers';
 
@@ -158,10 +158,12 @@ describe('full random games (invariants)', () => {
         const acts = legalActions(s);
         expect(acts.length).toBeGreaterThan(0);
         rnd = (rnd * 1103515245 + 12345) & 0x7fffffff;
-        const before = s.dealer;
+        const prev = s;
         s = applyAction(s, acts[rnd % acts.length]);
-        if (s.phase === 'bidding' && s.bids.length === 0 && s.handNumber > 1) {
-          expect(s.dealer).toBe((before + 1) % s.numPlayers);
+        if (prev.phase === 'handOver' && s.phase === 'bidding') {
+          // the dealer's team scored → the deal passes to the right; it lost → same dealer
+          const scored = prev.lastResult!.points[teamOf(prev, prev.dealer)] > 0;
+          expect(s.dealer).toBe(scored ? (prev.dealer + 1) % s.numPlayers : prev.dealer);
         }
         if (s.phase === 'handOver' || s.phase === 'gameOver') {
           const h = s.lastResult!;

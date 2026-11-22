@@ -266,16 +266,19 @@ describe('asking partner about the other joker (سؤال الجوكر)', () => {
   });
 
   it('Hard bots ask when it pays, and only then', () => {
-    let asks = 0;
-    for (let seed = 1; seed <= 400; seed++) {
+    const P2 = deal(ONE, P_YES).hands[2];
+    // a strong hand with one joker: an 8 is safe even if partner says no → ask
+    const strong = ['XR', 'S14', 'S13', 'S12', 'S11', 'H14', 'D14', 'C14', 'S10'];
+    expect(hardBid(deal(strong, P2.filter((c) => !strong.includes(c))))).toEqual({ type: 'JOKER_ASK', player: 0 });
+    // a weaker one: a forced 8 would be reckless → a normal bid instead
+    const weaker = ['XR', 'S14', 'S13', 'S12', 'S10', 'H14', 'D14', 'C9', 'D9'];
+    const a = hardBid(deal(weaker, P2.filter((c) => !weaker.includes(c))));
+    expect(a.type).not.toBe('JOKER_ASK');
+    // and never without exactly one joker
+    for (let seed = 1; seed <= 200; seed++) {
       const s = createGame(buildRules(), seed % 2 ? 'bo4' : 'bo6', seed);
-      const a = hardBid(s);
-      if (a.type === 'JOKER_ASK') {
-        asks++;
-        expect(canAskJoker(s, s.currentPlayer)).toBe(true);
-      }
+      if (hardBid(s).type === 'JOKER_ASK') expect(canAskJoker(s, s.currentPlayer)).toBe(true);
     }
-    expect(asks).toBeGreaterThan(0);
   });
 });
 

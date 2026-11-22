@@ -3,7 +3,7 @@ import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
-import { describeBawn, describeFirstLead, describeJokerAsk, describeJokerPlay, describeLarens, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
+import { describeBawn, describeDealer, describeFirstLead, describeJokerAsk, describeJokerPlay, describeLarens, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 import { useInstall } from '../pwa/install';
 
@@ -132,6 +132,12 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
           بو ٦: {ar(buildDeck(r, 'bo6').length)} ورقة (٥٢ + جوكرين) · بو ٤: {ar(buildDeck(r, 'bo4').length)} ورقة (بدون {ar(Math.min(...r.modes.bo4.removeRanks))}–{ar(Math.max(...r.modes.bo4.removeRanks))} و{describeRemovedCards(r, 'bo4')} + جوكرين). كل لاعب {ar(r.modes.bo6.handSize)} أوراق.
         </p>
         <p>القوة: الجوكر الأحمر › إكَه الحكم › الجوكر الأسود › باقي الحكم › باقي النقوش.</p>
+      </section>
+      <section>
+        <h3>الخبّاص</h3>
+        {describeDealer(r).map((t) => (
+          <p key={t}>{t}</p>
+        ))}
       </section>
       <section>
         <h3>المزايدة</h3>

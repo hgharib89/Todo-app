@@ -3,6 +3,7 @@ import {
   Action,
   CardId,
   CompletedTrick,
+  DealerDraw,
   GameState,
   bidOptions,
   buildRules,
@@ -11,6 +12,7 @@ import {
   canAskJoker,
   catchOptions,
   playableCards,
+  rankOf,
   teamOf,
 } from '../engine';
 import { chooseBotAction, chooseBotCatch } from '../bots';
@@ -23,6 +25,38 @@ import { SPEED_MS, Settings, saveGame } from './settings';
 import { setSoundEnabled, sfx } from './sound';
 
 const HUMAN = 0;
+/** first-dealer draw animation timing (the online server waits about as long) */
+const DRAW_ROUND_MS = 1300;
+const DRAW_RESULT_MS = 1400;
+
+/** The first-dealer draw: each player's face-up card; ties draw again; the lowest card deals. */
+function DealerDrawView({ draw, step, mode, names }: { draw: DealerDraw; step: number; mode: GameState['mode']; names: string[] }) {
+  const done = step >= draw.rounds.length;
+  const cur = Math.min(step, draw.rounds.length - 1);
+  const round = draw.rounds[cur];
+  const low = Math.min(...round.map((d) => rankOf(d.card)!));
+  return (
+    <div className="dealer-draw">
+      <div className="draw-caption">
+        {done ? `الخبّاص: ${names[draw.dealer]}` : cur === 0 ? 'سحب الخبّاص — أصغر ورقة تخبّص' : 'تعادل! المتعادلين يسحبون مرة ثانية'}
+      </div>
+      {round.map((d) => {
+        const off = trickOffset(mode, d.player);
+        const from = SEAT_POS[mode][d.player];
+        const lowest = rankOf(d.card) === low;
+        return (
+          <div
+            key={`${cur}-${d.player}`}
+            className={`trick-card draw-card ${done && d.player === draw.dealer ? 'win' : ''} ${!done && lowest && cur < draw.rounds.length - 1 ? 'tie' : ''} ${done && d.player !== draw.dealer ? 'dim' : ''}`}
+            style={{ left: `calc(50% + ${off.dx}px)`, top: `calc(48% + ${off.dy}px)`, ['--fx' as any]: `${from.x}%`, ['--fy' as any]: `${from.y}%` }}
+          >
+            <Card id={d.card} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function newGame(s: Settings): GameState {
   return createGame(buildRules(s.preset), s.mode, (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
@@ -69,9 +103,24 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
     if (!online) saveGame(game.phase === 'gameOver' ? null : game);
   }, [game, online]);
 
-  // deal animation at the start of each hand
-  const dealKey = `${game.handNumber}-${game.redeals}`;
+  // the first-dealer card draw, shown once at the start of a game (step = round shown; = rounds.length → result)
+  const draw = game.dealerDraw ?? null;
+  const [drawStep, setDrawStep] = useState<number | null>(() =>
+    draw && game.handNumber === 1 && game.phase === 'bidding' && game.bids.length === 0 ? 0 : null,
+  );
   useEffect(() => {
+    if (drawStep === null || !draw) return;
+    if (drawStep === 0) for (let i = 0; i < draw.rounds[0].length; i++) setTimeout(() => sfx.deal(), i * 120);
+    const t = setTimeout(() => setDrawStep((st) => (st === null || st >= draw.rounds.length ? null : st + 1)), drawStep < draw.rounds.length ? DRAW_ROUND_MS : DRAW_RESULT_MS);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawStep]);
+  const drawing = drawStep !== null && !!draw;
+
+  // deal animation at the start of each hand (after the dealer draw)
+  const dealKey = `${game.handNumber}-${game.redeals}${drawing ? '-draw' : ''}`;
+  useEffect(() => {
+    if (drawing) return;
     setDealing(true);
     const cards = game.rules.modes[game.mode].handSize;
     for (let i = 0; i < cards; i++) setTimeout(() => sfx.deal(), i * speed.deal);
@@ -153,7 +202,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
   }, [collecting, speed.hold]);
 
   // bots
-  const busy = collecting !== null || dealing;
+  const busy = collecting !== null || dealing || drawing;
   const humanCanCatch = game.phase === 'review' && catchOptions(game, HUMAN).length > 0;
   useEffect(() => {
     if (busy) return;
@@ -299,7 +348,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
           const team = teamOf(game, seat);
           return (
             <div key={seat} className={`seat ${team === 0 ? 'us' : 'them'} ${isTurn ? 'turn' : ''} ${seat === HUMAN ? 'me' : ''}`} style={{ left: `${p.x}%`, top: `${p.y}%` }}>
-              {seat !== HUMAN && (
+              {seat !== HUMAN && !drawing && (
                 <div className="mini-hand">
                   {game.hands[seat].slice(0, 9).map((_, i) => (
                     <Card key={`${dealKey}-${i}`} faceDown className="mini" style={{ ['--i' as any]: i, ['--deal-delay' as any]: `${i * speed.deal}ms` }} />
@@ -308,7 +357,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
               )}
               <div className="avatar">
                 <span>{seat === HUMAN ? '★' : names[seat][0]}</span>
-                {game.dealer === seat && <i className="dealer-badge" title="الموزع">م</i>}
+                {game.dealer === seat && !drawing && <i className="dealer-badge" title="الخبّاص (الموزع)">خبّاص</i>}
                 {c && c.bidder === seat && c.trump && <i className="bidder-badge"><SuitIcon suit={c.trump} /></i>}
               </div>
               <div className="seat-name">
@@ -348,6 +397,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
             );
           })}
         </div>
+        {drawing && draw && <DealerDrawView draw={draw} step={drawStep!} mode={game.mode} names={names} />}
         {toast && <div className={`toast ${toast.length > 24 ? 'wide' : ''}`}>{toast}</div>}
       </main>
 
@@ -370,7 +420,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
         {online && clock && clock.seat === HUMAN && <div className="my-clock">{clockBar(HUMAN)}</div>}
         {!busy && humanCanCatch && <ReviewPanel onCatch={() => setCatchOpen(true)} onDone={() => act({ type: 'END_REVIEW' })} />}
         <Hand
-          cards={game.hands[HUMAN]}
+          cards={drawing ? [] : game.hands[HUMAN]}
           trump={c?.trump ?? null}
           legal={legal}
           onPlay={(card) => act({ type: 'PLAY', player: HUMAN, card })}
