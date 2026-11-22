@@ -43,6 +43,7 @@ Game rules are **not** here; they stay in `src/engine/rules.config.ts`. These ar
 | `KOUT_PUBLIC_WAIT_SECONDS` | 12 | wait for humans before bots fill a public table |
 | `KOUT_RECONNECT_SECONDS` | 120 | how long a dropped player keeps the seat |
 | `KOUT_BOT_MIN_MS` / `KOUT_BOT_MAX_MS` | 700 / 1300 | bot "thinking" time |
+| `KOUT_DRAW_ROUND_MS` / `KOUT_DEAL_PAUSE_MS` | 1300 / 2900 | pause at the start of a game while clients show the first-dealer card draw and the deal |
 | `KOUT_BOT_SAMPLES` | 40 | Monte Carlo samples per Hard-bot move (lower = less CPU) |
 | `KOUT_BOT_WORKERS` | CPU cores | worker threads for bot thinking (0 = main thread) |
 | `KOUT_RATE_CAPACITY` / `KOUT_RATE_PER_SECOND` / `KOUT_FLOOD_STRIKES` | 12 / 6 / 40 | rate limit |

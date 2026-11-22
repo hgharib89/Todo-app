@@ -220,12 +220,31 @@ export interface RulesConfig {
    */
   bo4Removed6s: string[];
   /**
-   * أول موزع في اللعبة: 'random' أو رقم الكرسي (0 = أنت).
-   * First dealer of the game: 'random' or a seat index (0 = you).
+   * أول خبّاص (موزع) في بداية كل لعبة:
+   *   - 'lowestCardDraw' = كل لاعب يسحب ورقة مكشوفة من ورق مخلوط (بدون الجوكر)، وأصغر ورقة تخبّص
+   *                        (٢ أصغر شي والإكَه أكبر شي). إذا تعادلوا على الأصغر، المتعادلين بس يسحبون من جديد.
+   *   - 'random'         = عشوائي.
+   *   - رقم              = كرسي محدد (للاختبارات؛ ٠ = أنت).
+   * First dealer of every new game:
+   *   - 'lowestCardDraw' = each player draws one face-up card from a shuffled deck (no jokers); the LOWEST
+   *                        card deals (2 lowest, Ace highest). A tie for lowest: only the tied players draw again.
+   *   - 'random'         = random seat.
+   *   - a number         = that seat (tests; 0 = you).
    */
-  firstDealer: 'random' | number;
-  /** الموزع ينتقل عكس عقارب الساعة كل يد / dealer passes counter-clockwise each hand */
-  rotateDealer: boolean;
+  firstDealer: 'lowestCardDraw' | 'random' | number;
+  /**
+   * من يخبّص بعد كل يد:
+   *   - 'loserKeepsDeal' = إذا فريق الخبّاص خسر اليد (ما سجّل ولا نقطة، حتى لو انصاد بقطع) يخبّص نفس الشخص مرة ثانية؛
+   *                        وإذا فريقه سجّل نقاط، التخبيص ينتقل للي على يمينه (من الفريق الخسران).
+   *   - 'alwaysRotate'   = التخبيص ينتقل للي على اليمين كل يد.
+   * Who deals after each hand:
+   *   - 'loserKeepsDeal' = if the dealer's team LOST the hand (scored 0, including being caught reneging) the same
+   *                        player deals again; if it scored points, the deal passes to the player on the dealer's
+   *                        right (counter-clockwise), who is on the losing team.
+   *   - 'alwaysRotate'   = the deal passes to the right every hand.
+   * After an all-pass redeal (only when forceDealerIfAllPass is off) the deal always passes to the right.
+   */
+  dealerRotation: 'loserKeepsDeal' | 'alwaysRotate';
   /** إعدادات الجوكر النشطة (تُستبدل بالإعداد الجاهز المختار) / active joker rules (replaced by the chosen preset) */
   jokers: JokerRules;
   /** الإعداد الجاهز للجوكر المختار افتراضياً / default joker preset */
@@ -424,8 +443,8 @@ export const RULES: RulesConfig = {
 
   firstLead: 'rightOfBidder',
   bo4Removed6s: ['6H', '6C'],
-  firstDealer: 'random',
-  rotateDealer: true,
+  firstDealer: 'lowestCardDraw',
+  dealerRotation: 'loserKeepsDeal',
 
   activeJokerPreset: 'default',
   jokerPresets: JOKER_PRESETS,

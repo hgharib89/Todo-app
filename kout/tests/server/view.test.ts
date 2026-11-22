@@ -23,7 +23,8 @@ describe('per-player views (anti-cheat)', () => {
       }
       expect(v.seed).toBe(0);
       expect(v.rules).toBeNull();
-      const json = JSON.stringify(v);
+      // (the face-up cards drawn for the first dealer are public and went back into the deck)
+      const json = JSON.stringify({ ...v, dealerDraw: null });
       for (let k = 0; k < 6; k++) if (k !== seat) for (const c of g.hands[k]) expect(json).not.toContain(`"${c}"`);
     }
   });

@@ -86,3 +86,15 @@ describe('rules text for Larens, Bawn and the joker question', () => {
     }
   });
 });
+
+describe('rules text for the dealer (الخبّاص)', () => {
+  it('follows rules.firstDealer and rules.dealerRotation', async () => {
+    const { describeDealer } = await import('../src/ui/rulesText');
+    const t = describeDealer(RULES).join(' ');
+    expect(t).toContain('أصغر ورقة تخبّص');
+    expect(t).toContain('يخبّص نفسه مرة ثانية');
+    const other = describeDealer(buildRules('default', { firstDealer: 'random', dealerRotation: 'alwaysRotate' })).join(' ');
+    expect(other).toContain('عشوائياً');
+    expect(other).toContain('ينتقل للي على يمين الخبّاص');
+  });
+});

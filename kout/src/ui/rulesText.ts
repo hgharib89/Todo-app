@@ -128,3 +128,16 @@ export function describeJokerAsk(rules: RulesConfig): string[] {
     `إذا عنده: السائل مجبور يطلب ${bidName(rules, j.jokerAskYesBid)}. إذا ما عنده: مجبور يطلب ${bidName(rules, j.jokerAskNoBid)}. السؤال يجوز بس إذا الطلبين لسا مسموحين.`,
   ];
 }
+
+/** Who deals (الخبّاص), from rules.firstDealer and rules.dealerRotation. */
+export function describeDealer(rules: RulesConfig): string[] {
+  const first =
+    rules.firstDealer === 'lowestCardDraw'
+      ? 'أول خبّاص في كل لعبة: كل لاعب يسحب ورقة مكشوفة (بدون الجوكر)، وأصغر ورقة تخبّص (٢ أصغر شي والإكَه أكبر شي). إذا تعادلوا، المتعادلين بس يسحبون من جديد.'
+      : 'أول خبّاص في كل لعبة يتحدد عشوائياً.';
+  const after =
+    rules.dealerRotation === 'loserKeepsDeal'
+      ? 'بعد كل يد: إذا فريق الخبّاص ما سجّل ولا نقطة (خسر، حتى لو انصاد بقطع) يخبّص نفسه مرة ثانية. وإذا سجّل نقاط، التخبيص ينتقل للي على يمينه.'
+      : 'بعد كل يد: التخبيص ينتقل للي على يمين الخبّاص.';
+  return [first, after];
+}

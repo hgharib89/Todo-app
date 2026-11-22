@@ -132,6 +132,7 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
               <thead>
                 <tr>
                   <th>#</th>
+                  <th>الخبّاص</th>
                   <th>المزايد</th>
                   <th>الطلب</th>
                   <th>أكلات</th>
@@ -143,6 +144,7 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
                 {game.history.map((h: HandResult) => (
                   <tr key={h.handNumber} className={h.made ? 'made' : 'failed'}>
                     <td>{ar(h.handNumber)}</td>
+                    <td className="dealer-cell">{names[h.dealer]}</td>
                     <td className={h.team === 0 ? 'us-txt' : 'them-txt'}>{names[h.bidder]}</td>
                     <td>
                       {h.forced ? 'ملزوم' : bidLabel(game.rules, h.bid)} <SuitIcon suit={h.trump} />
