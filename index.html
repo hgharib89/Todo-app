@@ -116,6 +116,7 @@
   /* Input row */
   .new-form {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
     padding: 16px;
     border-bottom: 1px solid var(--border);
@@ -165,6 +166,25 @@
     color: var(--text-muted);
     cursor: pointer;
   }
+  .loc-row { display: flex; gap: 8px; flex: 1 1 100%; }
+  .loc-field { height: 40px; font-size: 15px; }
+  .locate-btn { height: 40px; width: 40px; }
+  .locate-btn.busy { opacity: .6; pointer-events: none; }
+  .body { flex: 1; min-width: 0; }
+  .loc {
+    display: flex;
+    width: fit-content;
+    align-items: center;
+    gap: 4px;
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--accent-text);
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+  .loc[hidden], .mic-btn[hidden] { display: none; }
+  .loc svg { width: 13px; height: 13px; flex: none; }
+  .loc:hover { text-decoration: underline; }
   .mic-btn:hover { border-color: var(--border-strong); color: var(--text); }
   .mic-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .mic-btn.listening {
@@ -291,7 +311,7 @@
   /* Edit mode */
   .edit { display: none; }
   .item.editing .check,
-  .item.editing .text,
+  .item.editing .body,
   .item.editing .icon-btn { display: none; }
   .item.editing .edit { display: block; margin-left: 34px; }
 
@@ -371,6 +391,13 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10v1a7 7 0 0 0 14 0v-1"/><line x1="12" y1="18" x2="12" y2="22"/></svg>
       </button>
       <button class="add-btn" id="add-btn" type="submit" aria-disabled="true">Add</button>
+      <div class="loc-row">
+        <label for="loc-input" class="visually-hidden">Location</label>
+        <input class="field loc-field" id="loc-input" type="text" maxlength="200" placeholder="Location (optional)" dir="auto">
+        <button class="mic-btn locate-btn" id="locate-btn" type="button" aria-label="Use my current location">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/></svg>
+        </button>
+      </div>
     </form>
 
     <div class="empty" id="empty" hidden>
@@ -415,6 +442,8 @@
   var form = document.getElementById('new-form');
   var newInput = document.getElementById('new-input');
   var addBtn = document.getElementById('add-btn');
+  var locInput = document.getElementById('loc-input');
+  var locateBtn = document.getElementById('locate-btn');
   var subtitle = document.getElementById('subtitle');
   var emptyPanel = document.getElementById('empty');
   var list = document.getElementById('list');
@@ -443,6 +472,7 @@
           id: t.id,
           text: t.text.trim().slice(0, 200),
           done: t.done === true,
+          location: typeof t.location === 'string' ? t.location.trim().slice(0, 200) : '',
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         };
       });
@@ -535,8 +565,23 @@
     check.appendChild(cb);
     check.appendChild(box);
 
+    var body = document.createElement('div');
+    body.className = 'body';
     var text = document.createElement('span');
     text.className = 'text';
+    var loc = document.createElement('a');
+    loc.className = 'loc';
+    loc.target = '_blank';
+    loc.rel = 'noopener';
+    loc.hidden = true;
+    loc.appendChild(iconSvg('0 0 24 24', '2', [
+      ['path', { d: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z' }],
+      ['circle', { cx: '12', cy: '9.5', r: '2.5' }]
+    ]));
+    var locText = document.createElement('span');
+    loc.appendChild(locText);
+    body.appendChild(text);
+    body.appendChild(loc);
 
     var edit = document.createElement('input');
     edit.type = 'text';
@@ -561,7 +606,7 @@
     ]));
 
     li.appendChild(check);
-    li.appendChild(text);
+    li.appendChild(body);
     li.appendChild(edit);
     li.appendChild(editBtn);
     li.appendChild(delBtn);
@@ -574,6 +619,12 @@
     cb.checked = t.done;
     cb.setAttribute('aria-label', t.done ? "Mark '" + t.text + "' as not done" : "Mark '" + t.text + "' as done");
     if (text.textContent !== t.text) text.textContent = t.text;
+    var loc = li.querySelector('.loc');
+    var locText = loc.querySelector('span');
+    var place = t.location || '';
+    loc.hidden = !place;
+    if (locText.textContent !== place) locText.textContent = place;
+    if (place) loc.href = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(place);
     li.querySelector('.edit-btn').setAttribute('aria-label', "Edit '" + t.text + "'");
     li.querySelector('.del-btn').setAttribute('aria-label', "Delete '" + t.text + "'");
     li.classList.toggle('done', t.done);
@@ -654,11 +705,13 @@
     var text = newInput.value.trim().slice(0, 200);
     if (!text) { newInput.focus(); return; }
     if (editingId) finishEdit(true, false);
-    var t = { id: newId(), text: text, done: false, createdAt: Date.now() };
+    var place = locInput.value.trim().slice(0, 200);
+    var t = { id: newId(), text: text, done: false, location: place, createdAt: Date.now() };
     tasks.push(t);
     saveTasks();
     if (filter === 'done') { filter = 'all'; saveFilter(); }
     newInput.value = '';
+    locInput.value = '';
     updateAddBtn();
     newInput.focus();
     justAddedId = t.id;
@@ -772,6 +825,23 @@
     addTask();
   });
   newInput.addEventListener('input', updateAddBtn);
+
+  /* ---------- Location ---------- */
+  locInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') locInput.value = '';
+  });
+  locateBtn.addEventListener('click', function () {
+    if (!navigator.geolocation) { announce('Location is not available on this device'); return; }
+    locateBtn.classList.add('busy');
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      locateBtn.classList.remove('busy');
+      locInput.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
+      announce('Current location added');
+    }, function () {
+      locateBtn.classList.remove('busy');
+      announce('Could not get your location');
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  });
 
   /* ---------- Voice input ---------- */
   (function setupMic() {
