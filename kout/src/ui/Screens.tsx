@@ -7,11 +7,13 @@ import { describeBawn, describeFirstLead, describeJokerAsk, describeJokerPlay, d
 import { bidLabel } from './panels';
 import { useInstall } from '../pwa/install';
 
-export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules }: {
+export function Home({ settings, hasSaved, onPlay, onResume, onOnline, onSettings, onRules }: {
   settings: Settings;
   hasSaved: boolean;
   onPlay: (mode: ModeId) => void;
   onResume: () => void;
+  /** shown only when a game server is configured */
+  onOnline?: () => void;
   onSettings: () => void;
   onRules: () => void;
 }) {
@@ -36,6 +38,11 @@ export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules
         <button className="btn ghost big" onClick={() => onPlay('bo4')}>
           كوت بو ٤ <small>٤ لاعبين</small>
         </button>
+        {onOnline && (
+          <button className="btn big online-btn" onClick={onOnline}>
+            🌐 العب أونلاين <small>مع ربعك أو لاعبين من كل مكان</small>
+          </button>
+        )}
         <div className="home-row">
           <button className="btn ghost" onClick={onSettings}>
             ⚙ الإعدادات

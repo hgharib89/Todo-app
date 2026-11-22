@@ -17,7 +17,8 @@ import { chooseBotAction, chooseBotCatch } from '../bots';
 import { Card } from './Card';
 import { Hand } from './Hand';
 import { BawnPanel, BidPanel, CatchModal, GameOverModal, HandResultModal, ReviewPanel, ScorePad, SuitIcon, TrumpPicker, bidLabel, catchMessage } from './panels';
-import { SEAT_NAMES, SEAT_POS, ar, trickOffset } from './layout';
+import { SEAT_NAMES, SEAT_POS, SeatNamesContext, ar, trickOffset } from './layout';
+import type { OnlineState } from '../net/online';
 import { SPEED_MS, Settings, saveGame } from './settings';
 import { setSoundEnabled, sfx } from './sound';
 
@@ -27,18 +28,31 @@ export function newGame(s: Settings): GameState {
   return createGame(buildRules(s.preset), s.mode, (Date.now() ^ Math.floor(Math.random() * 1e9)) >>> 0);
 }
 
+/** An online table: the server owns the game; we only show its view and send actions. */
+export interface OnlineTable {
+  state: OnlineState & { game: GameState };
+  send: (a: Action) => void;
+  leave: () => void;
+}
+
 interface Props {
   settings: Settings;
-  initial: GameState;
+  /** local game against bots */
+  initial?: GameState;
+  /** or an online table */
+  online?: OnlineTable;
   onExit: () => void;
   onToggleSound: () => void;
 }
 
 type Collect = { trick: CompletedTrick; stage: 'show' | 'fly' };
 
-export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) {
-  const [game, setGame] = useState<GameState>(initial);
+export function GameScreen({ settings, initial, online, onExit, onToggleSound }: Props) {
+  const [localGame, setGame] = useState<GameState>(() => (online ? online.state.game : initial!));
+  const game = online ? online.state.game : localGame;
   const gameRef = useRef(game);
+  gameRef.current = game;
+  const prevRef = useRef<GameState | null>(null);
   const [collecting, setCollecting] = useState<Collect | null>(null);
   const [padOpen, setPadOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -47,13 +61,13 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   const [dealing, setDealing] = useState(true);
   const speed = SPEED_MS[settings.speed];
   const n = game.numPlayers;
-  const names = SEAT_NAMES[game.mode];
+  const names = online ? online.state.view!.names : SEAT_NAMES[game.mode];
 
   useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
 
   useEffect(() => {
-    saveGame(game.phase === 'gameOver' ? null : game);
-  }, [game]);
+    if (!online) saveGame(game.phase === 'gameOver' ? null : game);
+  }, [game, online]);
 
   // deal animation at the start of each hand
   const dealKey = `${game.handNumber}-${game.redeals}`;
@@ -71,48 +85,60 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
     setTimeout(() => setToast((t) => (t === msg ? null : t)), ms);
   }, []);
 
+  /** Local: apply with the engine. Online: send to the server (it answers with the new view). */
   const act = useCallback(
     (a: Action) => {
-      const prev = gameRef.current;
-      let next: GameState;
-      try {
-        next = applyAction(prev, a);
-      } catch (e) {
-        console.warn(e);
+      if (online) {
+        online.send(a);
         return;
       }
-      if (a.type === 'PLAY') {
-        sfx.card();
-        if (next.lastTrick !== prev.lastTrick && next.lastTrick) setCollecting({ trick: next.lastTrick, stage: 'show' });
-      } else if (a.type === 'BID' || a.type === 'PASS') {
-        sfx.bid();
-      } else if (a.type === 'JOKER_ASK') {
-        sfx.bid();
-        const entry = next.bids[next.bids.length - 1];
-        const ans = entry.jokerAsk!;
+      try {
+        const next = applyAction(gameRef.current, a);
+        gameRef.current = next;
+        setGame(next);
+      } catch (e) {
+        console.warn(e);
+      }
+    },
+    [online],
+  );
+
+  // sounds, messages and the trick animation follow the state, whoever changed it (us, a bot or the server)
+  useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = game;
+    if (!prev || prev.handNumber !== game.handNumber) return;
+    if (game.playedCards.length > prev.playedCards.length) sfx.card();
+    if (game.tricksPlayed > prev.tricksPlayed && game.lastTrick) setCollecting({ trick: game.lastTrick, stage: 'show' });
+    if (game.bids.length > prev.bids.length) {
+      sfx.bid();
+      const entry = game.bids[game.bids.length - 1];
+      if (entry.jokerAsk) {
+        const ans = entry.jokerAsk;
         showToast(
-          `${names[a.player]}: عندك الجوكر الثاني؟ — ${ans.answer ? `${names[ans.holder!]}: عندي ✓` : 'ما عندي ✗'} ← ${bidLabel(next.rules, entry.value!)}`,
+          `${names[entry.player]}: عندك الجوكر الثاني؟ — ${ans.answer ? `${names[ans.holder!]}: عندي ✓` : 'ما عندي ✗'} ← ${bidLabel(game.rules, entry.value!)}`,
           3200,
         );
-      } else if (a.type === 'BAWN') {
-        sfx.bid();
-        showToast(`${names[a.player]}: ${a.accept ? 'باون! 🔥' : 'بدون باون'}`, 2200);
-      } else if (a.type === 'CATCH' && next.lastCatch) {
-        const c = next.lastCatch;
-        if (c.success) sfx.collect();
-        showToast(`${c.success ? '🎯 صيد! ' : ''}${catchMessage(next, c, c.success ? next.lastResult?.points : undefined)}`, 3200);
-      } else if (a.type === 'CHOOSE_TRUMP' && next.contract) {
-        const c = next.contract;
-        showToast(`${names[c.bidder]}: ${c.forced ? 'ملزوم' : bidLabel(next.rules, c.value)} — الحكم ${'♠♥♦♣'['SHDC'.indexOf(a.suit)]}`);
       }
-      if (next.phase === 'gameOver' && prev.phase !== 'gameOver') {
-        setTimeout(() => (next.winner === 0 ? sfx.win() : sfx.lose()), speed.hold + 500);
-      }
-      gameRef.current = next;
-      setGame(next);
-    },
-    [names, showToast, speed.hold],
-  );
+    }
+    const c = game.contract;
+    if (c?.trump && !prev.contract?.trump) {
+      showToast(`${names[c.bidder]}: ${c.forced ? 'ملزوم' : bidLabel(game.rules, c.value)} — الحكم ${'♠♥♦♣'['SHDC'.indexOf(c.trump)]}`);
+    }
+    if (c && typeof c.bawn === 'boolean' && (prev.contract?.bawn ?? null) === null) {
+      sfx.bid();
+      showToast(`${names[c.bidder]}: ${c.bawn ? 'باون! 🔥' : 'بدون باون'}`, 2200);
+    }
+    const lc = game.lastCatch;
+    if (lc && JSON.stringify(lc) !== JSON.stringify(prev.lastCatch)) {
+      if (lc.success) sfx.collect();
+      showToast(`${lc.success ? '🎯 صيد! ' : ''}${catchMessage(game, lc, lc.success ? game.lastResult?.points : undefined, names)}`, 3200);
+    }
+    if (game.phase === 'gameOver' && prev.phase !== 'gameOver') {
+      setTimeout(() => (game.winner === 0 ? sfx.win() : sfx.lose()), speed.hold + 500);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [game]);
 
   // trick collection animation
   useEffect(() => {
@@ -131,6 +157,10 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   const humanCanCatch = game.phase === 'review' && catchOptions(game, HUMAN).length > 0;
   useEffect(() => {
     if (busy) return;
+    if (online) {
+      if (game.currentPlayer === HUMAN && ['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(game.phase)) sfx.turn();
+      return; // the server runs the bots
+    }
     // صيد: any bot that has seen evidence against an opponent may call it (never peeking)
     if (game.phase === 'playing' || game.phase === 'review' || game.phase === 'bawnAsk') {
       for (let seat = 0; seat < game.numPlayers; seat++) {
@@ -155,7 +185,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
     }
     const t = setTimeout(() => act(chooseBotAction(game, settings.difficulty)), speed.bot);
     return () => clearTimeout(t);
-  }, [game, busy, act, settings.difficulty, speed.bot, humanCanCatch]);
+  }, [game, busy, act, settings.difficulty, speed.bot, humanCanCatch, online]);
 
   const myTurn = !busy && game.currentPlayer === HUMAN;
   const legal = useMemo<CardId[] | null>(
@@ -164,6 +194,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
   );
 
   const restart = () => {
+    if (online) return onExit();
     const g = newGame(settings);
     gameRef.current = g;
     setCollecting(null);
@@ -191,8 +222,17 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
     return null;
   };
 
+  // online: the server's turn clock (whose turn and how long is left), bots and connection status
+  const view = online?.state.view ?? null;
+  const clock = view?.deadline ? { seat: view.deadline.seat, ms: Math.max(0, view.deadline.ms - (Date.now() - online!.state.receivedAt)), key: online!.state.receivedAt } : null;
+  const clockBar = (seat: number) =>
+    clock && clock.seat === seat && clock.ms > 0 ? <div key={clock.key} className="turn-clock" style={{ animationDuration: `${clock.ms}ms` }} /> : null;
+
   return (
+    <SeatNamesContext.Provider value={online ? names : null}>
     <div className="game">
+      {online && !online.state.connected && <div className="net-banner">انقطع الاتصال… نحاول نرجعك لنفس الكرسي</div>}
+      {online?.state.outdated && <div className="net-banner warn">في تحديث جديد للعبة — حدّث الصفحة</div>}
       {/* ---------- HUD ---------- */}
       <header className="hud">
         <div className="hud-score us">
@@ -271,7 +311,12 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
                 {game.dealer === seat && <i className="dealer-badge" title="الموزع">م</i>}
                 {c && c.bidder === seat && c.trump && <i className="bidder-badge"><SuitIcon suit={c.trump} /></i>}
               </div>
-              <div className="seat-name">{names[seat]}</div>
+              <div className="seat-name">
+                {names[seat]}
+                {view?.bots[seat] && seat !== HUMAN && <i className="seat-flag">🤖</i>}
+                {view && !view.online[seat] && <i className="seat-flag">📵</i>}
+              </div>
+              {clockBar(seat)}
               {bid && <div className={`bubble ${bid === 'طاف' ? 'pass' : ''}`}>{bid}</div>}
               {ask && <div className={`ask-tag ${ask.yes ? '' : 'no'}`}>{ask.text}</div>}
               {isTurn && seat !== HUMAN && <div className="thinking">•••</div>}
@@ -322,6 +367,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         {myTurn && game.phase === 'bawnAsk' && <BawnPanel rules={game.rules} onAnswer={(accept) => act({ type: 'BAWN', player: HUMAN, accept })} />}
         {myTurn && game.phase === 'choosingTrump' && <TrumpPicker onPick={(s) => act({ type: 'CHOOSE_TRUMP', player: HUMAN, suit: s })} />}
         {myTurn && game.phase === 'playing' && <div className="your-turn">دورك — اضغط الورقة مرتين للعب</div>}
+        {online && clock && clock.seat === HUMAN && <div className="my-clock">{clockBar(HUMAN)}</div>}
         {!busy && humanCanCatch && <ReviewPanel onCatch={() => setCatchOpen(true)} onDone={() => act({ type: 'END_REVIEW' })} />}
         <Hand
           cards={game.hands[HUMAN]}
@@ -347,7 +393,21 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
       )}
       {showResult && !padOpen && <HandResultModal game={game} onPad={() => setPadOpen(true)} onNext={() => act({ type: 'NEXT_HAND' })} />}
       {showGameOver && !padOpen && <GameOverModal game={game} onPad={() => setPadOpen(true)} onAgain={restart} onHome={onExit} />}
-      {menuOpen && (
+      {menuOpen && online && (
+        <div className="modal-back" onClick={() => setMenuOpen(false)}>
+          <div className="modal menu" onClick={(e) => e.stopPropagation()}>
+            <h2>القائمة</h2>
+            {view?.code && <p className="muted small center">كود الطاولة: <b className="code">{view.code}</b></p>}
+            <button className="btn primary" onClick={() => setMenuOpen(false)}>
+              متابعة اللعب
+            </button>
+            <button className="btn ghost" onClick={() => online.leave()}>
+              مغادرة الطاولة (بوت يكمّل عنك)
+            </button>
+          </div>
+        </div>
+      )}
+      {menuOpen && !online && (
         <div className="modal-back" onClick={() => setMenuOpen(false)}>
           <div className="modal menu" onClick={(e) => e.stopPropagation()}>
             <h2>القائمة</h2>
@@ -370,5 +430,6 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
         </div>
       )}
     </div>
+    </SeatNamesContext.Provider>
   );
 }

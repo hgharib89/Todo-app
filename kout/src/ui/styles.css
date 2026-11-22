@@ -1242,3 +1242,128 @@ button:disabled {
   padding: 1px 6px;
   font-weight: 800;
 }
+
+/* ------------------------------------------------------------ online play */
+.turn-clock {
+  height: 4px;
+  width: 54px;
+  margin: 3px auto 0;
+  border-radius: 3px;
+  background: var(--gold);
+  transform-origin: right center;
+  animation-name: clockRun;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+.my-clock .turn-clock {
+  width: 60%;
+}
+@keyframes clockRun {
+  from {
+    transform: scaleX(1);
+    background: var(--gold);
+  }
+  75% {
+    background: var(--gold);
+  }
+  to {
+    transform: scaleX(0);
+    background: var(--red);
+  }
+}
+.seat-flag {
+  font-style: normal;
+  font-size: 0.7rem;
+  margin-inline-start: 3px;
+}
+.net-banner {
+  position: fixed;
+  top: env(safe-area-inset-top);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  text-align: center;
+  padding: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  background: var(--red);
+  color: #fff;
+}
+.net-banner.warn {
+  background: var(--gold);
+  color: var(--ink);
+}
+.code {
+  font-family: ui-monospace, monospace;
+  letter-spacing: 0.15em;
+  color: var(--gold);
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+.online-btn {
+  border-color: var(--gold);
+  background: linear-gradient(180deg, rgba(224, 177, 90, 0.22), rgba(224, 177, 90, 0.08));
+}
+.text-in {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--gold-soft);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+  font: inherit;
+  font-size: 1rem;
+}
+.text-in.code {
+  text-transform: uppercase;
+  text-align: center;
+}
+.err {
+  color: #ffb4b8;
+  font-weight: 700;
+}
+.online .field .btn {
+  width: 100%;
+  margin-top: 6px;
+}
+.invite {
+  text-align: center;
+  margin: 8px 0 14px;
+}
+.big-code {
+  font-size: 2.1rem;
+  font-weight: 800;
+  margin: 2px 0 10px;
+}
+.invite .btn {
+  flex: 1;
+  text-decoration: none;
+  text-align: center;
+}
+.lobby-seats {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0 18px;
+}
+.lobby-seat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px dashed var(--gold-soft);
+  opacity: 0.6;
+}
+.lobby-seat.taken {
+  border-style: solid;
+  opacity: 1;
+}
+.lobby-seat .muted {
+  margin-inline-start: auto;
+}
+.avatar.small {
+  width: 30px;
+  height: 30px;
+  font-size: 0.9rem;
+  position: static;
+}

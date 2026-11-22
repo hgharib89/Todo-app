@@ -1,0 +1,39 @@
+# Fly.io config for the Kout game server. Deploy from the kout/ folder:  fly deploy
+# Change `app` to the name you create with `fly apps create` (it must be unique on Fly).
+app = "diwaniya-kout"
+primary_region = "bom"          # Mumbai: the closest Fly region to the Gulf. Alternatives: "fra" (Frankfurt)
+kill_signal = "SIGTERM"
+kill_timeout = 30               # seconds to finish up on deploys
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "2567"
+  # web origins allowed to connect (comma-separated). Add your own domain / the mobile app later.
+  KOUT_ALLOWED_ORIGINS = "https://hgharib89.github.io,http://localhost:5173,http://localhost:4173"
+
+[http_service]
+  internal_port = 2567
+  force_https = true
+  # games live in memory: keep the machine running
+  auto_stop_machines = "off"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "connections"
+    soft_limit = 3000
+    hard_limit = 4000
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "15s"
+    method = "GET"
+    path = "/healthz"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-2x"
+  memory = "1gb"

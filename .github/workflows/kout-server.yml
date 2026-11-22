@@ -1,0 +1,45 @@
+# Tests and deploys the Kout game server to Fly.io when the server or the game engine changes on main.
+# Needs one repository secret: FLY_API_TOKEN (Settings → Secrets and variables → Actions).
+# Without the secret, only the tests run.
+name: Kout game server
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'kout/server/**'
+      - 'kout/src/engine/**'
+      - 'kout/src/bots/**'
+      - 'kout/Dockerfile'
+      - 'kout/fly.toml'
+      - 'kout/package-lock.json'
+  workflow_dispatch:
+
+concurrency:
+  group: kout-server
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+    defaults:
+      run:
+        working-directory: kout
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: kout/package-lock.json
+      - run: npm ci
+      - run: npm test
+      - run: npm run server:build
+      - name: Set up flyctl
+        if: env.FLY_API_TOKEN != ''
+        uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to Fly.io
+        if: env.FLY_API_TOKEN != ''
+        run: flyctl deploy --remote-only

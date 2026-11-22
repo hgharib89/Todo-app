@@ -1,7 +1,7 @@
 import { BidOptions, CatchResult, CompletedTrick, GameState, HandResult, RulesConfig, SUIT_NAME_AR, SUIT_SYMBOL, Suit, Trick, isRedSuit, teamOf } from '../engine';
 import { useState } from 'react';
 import { Card } from './Card';
-import { SEAT_NAMES, ar } from './layout';
+import { SEAT_NAMES, ar, useSeatNames } from './layout';
 
 export function bidLabel(rules: RulesConfig, value: number, forced = false): string {
   if (forced) return 'ملزوم';
@@ -103,7 +103,7 @@ export function TrumpPicker({ onPick }: { onPick: (s: Suit) => void }) {
 }
 
 export function ScorePad({ game, onClose }: { game: GameState; onClose: () => void }) {
-  const names = SEAT_NAMES[game.mode];
+  const names = useSeatNames(game.mode);
   return (
     <div className="modal-back" onClick={onClose}>
       <div className="modal scorepad" onClick={(e) => e.stopPropagation()}>
@@ -181,7 +181,7 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
 
 export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNext: () => void; onPad: () => void }) {
   const r = game.lastResult!;
-  const names = SEAT_NAMES[game.mode];
+  const names = useSeatNames(game.mode);
   const ours = r.team === 0;
   const good = r.caught ? r.points[0] > 0 : ours === r.made;
   const caughtUs = r.caught ? teamOf(game, r.caught.accused) === 0 : false;
@@ -190,7 +190,7 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
       <div className={`modal result ${good ? 'good' : 'bad'}`}>
         <div className="result-badge">{r.caught ? '🎯' : r.made ? '✓' : '✗'}</div>
         <h2>{r.caught ? (caughtUs ? 'انصدنا!' : 'صدناهم!') : r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
-        {r.caught && <p className="catch-line">{catchMessage(game, r.caught, r.points)}</p>}
+        {r.caught && <p className="catch-line">{catchMessage(game, r.caught, r.points, names)}</p>}
         {!r.caught && r.bawn && <p className="catch-line">{r.made ? `باون! أخذوا كل الأكلات بعد الإعلان: +${ar(r.points[r.team])}` : `انكسر الباون: +${ar(r.points[1 - r.team])} للخصم`}</p>}
         <p className="result-line">
           {names[r.bidder]} — {r.forced ? 'ملزوم' : `طلب ${bidLabel(game.rules, r.bid)}`} · الحكم <SuitIcon suit={r.trump} />
@@ -232,6 +232,7 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
   const won = game.winner === 0;
   const r = game.lastResult;
   const larensWin = !!r?.larensWin;
+  const names = useSeatNames(game.mode);
   const shut = game.scores[0] === 0 || game.scores[1] === 0;
   return (
     <div className="modal-back">
@@ -239,7 +240,7 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
         <div className="result-badge big">{won ? '🏆' : '☕'}</div>
         <h2>{won ? 'مبروك! فزتوا' : 'خسرتوا هالمرة'}</h2>
         <p className="result-line">
-          {larensWin ? `لارنس! ${SEAT_NAMES[game.mode][r!.bidder]} أخذ كل الأكلات — قيم` : shut ? 'فوز بدون ما يسجل الخصم' : 'وصلوا للهدف'}
+          {larensWin ? `لارنس! ${names[r!.bidder]} أخذ كل الأكلات — قيم` : shut ? 'فوز بدون ما يسجل الخصم' : 'وصلوا للهدف'}
         </p>
         <div className="score-big">
           <span className="us-txt">لنا {ar(game.scores[0])}</span>
@@ -263,8 +264,7 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
 }
 
 /** "خالد قطع في الأكلة ٣ (ما لحق الهاص) — صاده سالم: +١٢ لنا" */
-export function catchMessage(game: GameState, c: CatchResult, points?: [number, number]): string {
-  const names = SEAT_NAMES[game.mode];
+export function catchMessage(game: GameState, c: CatchResult, points?: [number, number], names: string[] = SEAT_NAMES[game.mode]): string {
   if (!c.success) return `${names[c.catcher]} صاد غلط على ${names[c.accused]} — ما في شي`;
   const suit = c.suit ? ` (ما لحق ${SUIT_NAME_AR[c.suit]})` : '';
   let pts = '';
@@ -277,7 +277,7 @@ export function catchMessage(game: GameState, c: CatchResult, points?: [number, 
 
 /** The human's صيد picker: choose an opponent, then the trick where they reneged. */
 export function CatchModal({ game, me, onCatch, onClose }: { game: GameState; me: number; onCatch: (accused: number, trick: number) => void; onClose: () => void }) {
-  const names = SEAT_NAMES[game.mode];
+  const names = useSeatNames(game.mode);
   const myTeam = teamOf(game, me);
   const opponents = Array.from({ length: game.numPlayers }, (_, i) => i).filter((i) => teamOf(game, i) !== myTeam);
   const [accused, setAccused] = useState<number | null>(null);

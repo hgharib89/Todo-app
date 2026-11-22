@@ -1,3 +1,4 @@
+import { createContext, useContext } from 'react';
 import type { ModeId } from '../engine';
 
 /** Seat positions in % of the table box. Seat 0 = you (bottom); seats go counter-clockwise (right side first). */
@@ -48,4 +49,10 @@ export function trickOffset(mode: ModeId, seat: number) {
 const AR_DIGITS = '٠١٢٣٤٥٦٧٨٩';
 export function ar(n: number | string): string {
   return String(n).replace(/[0-9]/g, (d) => AR_DIGITS[Number(d)]);
+}
+
+/** Seat names for the current table (online: the real players, rotated so index 0 = you). */
+export const SeatNamesContext = createContext<string[] | null>(null);
+export function useSeatNames(mode: ModeId): string[] {
+  return useContext(SeatNamesContext) ?? SEAT_NAMES[mode];
 }
