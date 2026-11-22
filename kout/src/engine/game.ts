@@ -302,12 +302,25 @@ function applyBid(state: GameState, player: number, value: number | null): GameS
 // trump & joker-lead rules
 // ---------------------------------------------------------------------------
 
+/** Who leads the first trick of the hand, per rules.firstLead. */
+export function firstLeader(state: GameState, bidder: number): number {
+  switch (state.rules.firstLead) {
+    case 'bidder':
+      return bidder;
+    case 'rightOfDealer':
+      return nextSeat(state, state.dealer);
+    case 'rightOfBidder':
+    default:
+      return nextSeat(state, bidder);
+  }
+}
+
 function applyChooseTrump(state: GameState, player: number, suit: Suit): GameState {
   if (state.phase !== 'choosingTrump' || !state.contract) throw new Error('Not choosing trump');
   if (player !== state.contract.bidder) throw new Error('Only the bidder chooses trump');
   const lacks = state.rules.jokers.leadUnlockedIfBidderLacks;
   const held = lacks ? state.hands[player].includes(cardId(suit, RANK_NAME_TO_RANK[lacks])) : false;
-  const leader = state.rules.firstLeader === 'bidder' ? player : nextSeat(state, state.dealer);
+  const leader = firstLeader(state, player);
   return {
     ...state,
     phase: 'playing',

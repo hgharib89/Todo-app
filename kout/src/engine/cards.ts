@@ -42,14 +42,27 @@ export function rankOf(id: CardId): Rank | null {
 }
 
 /** Build the (unshuffled) deck for a mode, entirely from the rules config. */
+/** Accepts a card id as 'H6' (suit + rank) or '6H' (rank + suit) and returns the engine form 'H6'. */
+export function normalizeCardId(x: string): CardId {
+  const m = /^(\d+)([SHDC])$/.exec(x);
+  return m ? `${m[2]}${m[1]}` : x;
+}
+
+/** Specific cards removed from a mode's deck (modes[mode].removeCards, plus bo4Removed6s for Bo 4). */
+export function removedCards(rules: RulesConfig, mode: ModeId): CardId[] {
+  const extra = mode === 'bo4' ? rules.bo4Removed6s ?? [] : [];
+  return [...rules.modes[mode].removeCards, ...extra].map(normalizeCardId);
+}
+
 export function buildDeck(rules: RulesConfig, mode: ModeId): CardId[] {
   const m = rules.modes[mode];
+  const removed = new Set(removedCards(rules, mode));
   const deck: CardId[] = [];
   for (const s of SUITS) {
     for (const r of ALL_RANKS) {
       if (m.removeRanks.includes(r)) continue;
       const id = cardId(s, r);
-      if (m.removeCards.includes(id)) continue;
+      if (removed.has(id)) continue;
       deck.push(id);
     }
   }

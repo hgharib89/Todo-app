@@ -1,6 +1,6 @@
 // Arabic rule descriptions generated from the rules config, so the UI text always
 // matches what the engine actually does. No rule values live here.
-import { JokerPresetId, JokerRules, RulesConfig, TrumpRankName } from '../engine';
+import { JokerPresetId, JokerRules, RulesConfig, SUIT_NAME_AR, TrumpRankName, parseCard, removedCards } from '../engine';
 import { ar } from './layout';
 
 export const TRUMP_RANK_AR: Record<TrumpRankName, string> = { A: 'إكَه', K: 'شايب', Q: 'بنت', J: 'ولد' };
@@ -54,4 +54,27 @@ export function describeJokerPlay(jr: JokerRules): string[] {
 
 export function presetDescription(preset: JokerPresetId, rules: RulesConfig): string {
   return describeJokerLead(rules.jokerPresets[preset], rules);
+}
+
+/** Who leads the first card, as a sentence. */
+export function describeFirstLead(rules: RulesConfig): string {
+  switch (rules.firstLead) {
+    case 'bidder':
+      return 'صاحب أعلى طلب يختار الحكم ويبدأ أول ورقة.';
+    case 'rightOfDealer':
+      return 'صاحب أعلى طلب يختار الحكم، واللي على يمين الموزع يبدأ أول ورقة.';
+    case 'rightOfBidder':
+    default:
+      return 'صاحب أعلى طلب يختار الحكم، واللي على يمينه يبدأ أول ورقة.';
+  }
+}
+
+/** Arabic list of the specific cards removed from a mode's deck, e.g. "٦ هاص و٦ سبيت". */
+export function describeRemovedCards(rules: RulesConfig, mode: 'bo4' | 'bo6'): string {
+  return removedCards(rules, mode)
+    .map((id) => {
+      const c = parseCard(id);
+      return c.suit && c.rank ? `${ar(c.rank)} ${SUIT_NAME_AR[c.suit]}` : id;
+    })
+    .join(' و');
 }

@@ -51,14 +51,18 @@ function biddingState(hands: string[][], dealer = 0, rules: RulesConfig = buildR
   return { ...g, hands: hands.map((h) => h.slice()) };
 }
 
-const WEAK = ['H6', 'H7', 'C6', 'C7', 'D7', 'D8', 'S6', 'S7', 'C8'];
+// Bo 4 deck: S6–A, H7–A, D6–A, C7–A + both jokers
+const WEAK = ['S6', 'S7', 'H7', 'H8', 'C7', 'C8', 'D6', 'D7', 'D8'];
 const MONSTER = ['XR', 'XB', 'S14', 'S13', 'S12', 'S11', 'S10', 'H14', 'D14'];
-const GOOD = ['XR', 'S14', 'S13', 'S9', 'S8', 'H14', 'H13', 'C7', 'D8'];
-const FILL = [
-  ['H8', 'H9', 'H10', 'C9', 'C10', 'D9', 'D10', 'S8', 'C11'],
-  ['H11', 'H12', 'C12', 'C13', 'D11', 'D12', 'S9', 'C14', 'D13'],
-  ['H13', 'C6', 'D7', 'S6', 'S7', 'D6', 'H6', 'H7', 'C7'],
-];
+const GOOD = ['XR', 'S14', 'S13', 'S9', 'S8', 'H14', 'H13', 'C9', 'D9'];
+
+/** A full Bo 4 deal: `hand` at `seat`, the rest of the deck dealt to the other seats in order. */
+function table(seat: number, hand: string[]): string[][] {
+  const rest = buildDeck(buildRules(), 'bo4').filter((c) => !hand.includes(c));
+  const hands: string[][] = [];
+  for (let p = 0, k = 0; p < 4; p++) hands.push(p === seat ? hand.slice() : rest.slice(k * 9, ++k * 9));
+  return hands;
+}
 
 describe('hard bot — card counting', () => {
   it('tracks which jokers and high cards are still out', () => {
@@ -145,7 +149,7 @@ describe('hard bot — hand evaluation, trump and bidding', () => {
   it('chooses the trump suit that suits its hand', () => {
     const s = createGame(buildRules(), 'bo4', 1);
     expect(chooseTrump(s, ['XR', 'XB', 'H14', 'H13', 'H10', 'H9', 'S7', 'C8', 'D6']).suit).toBe('H');
-    expect(chooseTrump(s, ['C14', 'C13', 'C12', 'C9', 'C8', 'H6', 'S7', 'D8', 'D9']).suit).toBe('C');
+    expect(chooseTrump(s, ['C14', 'C13', 'C12', 'C9', 'C8', 'H7', 'S7', 'D8', 'D9']).suit).toBe('C');
   });
 
   it('values jokers, the trump Ace, trump length and side winners', () => {
@@ -159,20 +163,20 @@ describe('hard bot — hand evaluation, trump and bidding', () => {
   });
 
   it('passes with a weak hand and bids with a strong one', () => {
-    expect(hardBid(biddingState([FILL[0], WEAK, FILL[1], FILL[2]]))).toEqual({ type: 'PASS', player: 1 });
-    const strong = hardBid(biddingState([FILL[0], GOOD, FILL[1], FILL[2]]));
+    expect(hardBid(biddingState(table(1, WEAK)))).toEqual({ type: 'PASS', player: 1 });
+    const strong = hardBid(biddingState(table(1, GOOD)));
     expect(strong.type).toBe('BID');
   });
 
   it('never bids below the minimum voluntary bid, and takes Malzoom when forced with a weak hand', () => {
-    let s = biddingState([WEAK, FILL[0], FILL[1], FILL[2]]);
+    let s = biddingState(table(0, WEAK));
     for (const p of [1, 2, 3]) s = applyAction(s, { type: 'PASS', player: p });
     expect(hardBid(s)).toEqual({ type: 'BID', player: 0, value: 5 });
   });
 
   it('only bids Bawan with a monster hand', () => {
-    expect(hardBid(biddingState([FILL[0], MONSTER, FILL[1], FILL[2]]))).toMatchObject({ type: 'BID', value: 9 });
-    const good = hardBid(biddingState([FILL[0], GOOD, FILL[1], FILL[2]]));
+    expect(hardBid(biddingState(table(1, MONSTER)))).toMatchObject({ type: 'BID', value: 9 });
+    const good = hardBid(biddingState(table(1, GOOD)));
     expect(good.type === 'BID' && good.value).not.toBe(9);
   });
 
@@ -188,7 +192,7 @@ describe('hard bot — hand evaluation, trump and bidding', () => {
   });
 
   it('does not outbid its partner without a much stronger hand', () => {
-    let s = biddingState([FILL[0], FILL[1], FILL[2], GOOD], 0);
+    let s = biddingState(table(3, GOOD), 0);
     s = applyAction(s, { type: 'BID', player: 1, value: 6 }); // partner of seat 3
     s = applyAction(s, { type: 'PASS', player: 2 });
     const a = hardBid(s);
@@ -212,18 +216,18 @@ describe('hard bot — card play', () => {
   it('plays low as last player when partner already has the trick', () => {
     let s = consistent({
       trump: 'S', bidder: 0, bid: 6, leader: 1,
-      hands: [['H14', 'H13', 'H7'], ['H10', 'C9', 'D9'], ['H12', 'C8', 'D8'], ['H6', 'C7', 'D7']],
+      hands: [['H14', 'H13', 'H7'], ['H10', 'C9', 'D9'], ['H12', 'C8', 'D8'], ['H8', 'C7', 'D7']],
     });
-    s = play(s, 'H10', 'H12', 'H6');
+    s = play(s, 'H10', 'H12', 'H8');
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'H7' });
   });
 
   it('wins as cheaply as possible', () => {
     let s = consistent({
       trump: 'S', bidder: 0, bid: 6, leader: 1,
-      hands: [['H14', 'H13', 'H7', 'XR'], ['H10', 'C9', 'D9', 'D10'], ['H6', 'C8', 'D8', 'C10'], ['H12', 'C7', 'D7', 'C11']],
+      hands: [['H14', 'H13', 'H7', 'XR'], ['H10', 'C9', 'D9', 'D10'], ['H8', 'C8', 'D8', 'C10'], ['H12', 'C7', 'D7', 'C11']],
     });
-    s = play(s, 'H10', 'H6', 'H12');
+    s = play(s, 'H10', 'H8', 'H12');
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'H13' });
   });
 
@@ -260,7 +264,7 @@ describe('hard bot — card play', () => {
   it('Monte Carlo is reproducible with a seeded RNG and skips interchangeable cards', () => {
     const s = consistent({
       trump: 'S', bidder: 0, bid: 6,
-      hands: [['H14', 'H13', 'H12', 'C7'], ['H9', 'C9', 'D9', 'S6'], ['H8', 'C8', 'D8', 'S7'], ['H6', 'C6', 'D7', 'S8']],
+      hands: [['H14', 'H13', 'H12', 'C7'], ['H9', 'C9', 'D9', 'S6'], ['H8', 'C8', 'D8', 'S7'], ['H7', 'C10', 'D7', 'S8']],
     });
     const a = monteCarloScores(s, seeded(9), 12);
     const b = monteCarloScores(s, seeded(9), 12);

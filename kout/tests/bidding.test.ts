@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, bidOptions, buildRules, createGame, GameState, nextSeat } from '../src/engine';
+import { applyAction, bidOptions, buildRules, createGame, GameState, legalPlays, nextSeat } from '../src/engine';
 
 function game(mode: 'bo4' | 'bo6' = 'bo4', dealer = 0): GameState {
   return createGame(buildRules('default', { firstDealer: dealer }), mode, 3);
@@ -93,17 +93,54 @@ describe('bidding', () => {
     expect(g.contract?.bidder).toBe(1);
   });
 
-  it('highest bidder chooses trump and leads the first trick', () => {
+  it('the highest bidder chooses trump; the player to their right leads the first card', () => {
+    expect(buildRules().firstLead).toBe('rightOfBidder');
     let g = game('bo4', 0);
     g = applyAction(g, { type: 'PASS', player: 1 });
     g = applyAction(g, { type: 'BID', player: 2, value: 6 });
     g = applyAction(g, { type: 'PASS', player: 3 });
     g = applyAction(g, { type: 'PASS', player: 0 });
     expect(() => applyAction(g, { type: 'CHOOSE_TRUMP', player: 1, suit: 'S' })).toThrow();
+    expect(() => applyAction(g, { type: 'CHOOSE_TRUMP', player: 3, suit: 'S' })).toThrow();
     g = applyAction(g, { type: 'CHOOSE_TRUMP', player: 2, suit: 'H' });
     expect(g.phase).toBe('playing');
     expect(g.contract?.trump).toBe('H');
+    expect(g.currentPlayer).toBe(3); // seat to the bidder's right (counter-clockwise next)
+    expect(g.trick.leader).toBe(3);
+    // the bidder may not lead
+    expect(() => applyAction(g, { type: 'PLAY', player: 2, card: g.hands[2][0] })).toThrow();
+  });
+
+  it('first lead wraps around the table (Bo 6, bidder in the last seat)', () => {
+    let g = game('bo6', 4); // seat 5 speaks first
+    g = applyAction(g, { type: 'BID', player: 5, value: 9 });
+    g = applyAction(g, { type: 'CHOOSE_TRUMP', player: 5, suit: 'S' });
+    expect(g.currentPlayer).toBe(0);
+  });
+
+  it('after the first trick, the trick winner leads', () => {
+    let g = game('bo4', 0);
+    g = applyAction(g, { type: 'BID', player: 1, value: 9 });
+    g = applyAction(g, { type: 'CHOOSE_TRUMP', player: 1, suit: 'S' });
     expect(g.currentPlayer).toBe(2);
+    for (let i = 0; i < 4; i++) g = applyAction(g, { type: 'PLAY', player: g.currentPlayer, card: legalPlays(g)[0] });
+    expect(g.tricks).toHaveLength(1);
+    expect(g.currentPlayer).toBe(g.tricks[0].winner);
+    expect(g.trick.leader).toBe(g.tricks[0].winner);
+  });
+
+  it.each([
+    ['bidder', 2],
+    ['rightOfDealer', 1],
+    ['rightOfBidder', 3],
+  ] as const)('firstLead = %s → seat %i leads (dealer 0, bidder 2)', (firstLead, leader) => {
+    let g = createGame(buildRules('default', { firstDealer: 0, firstLead }), 'bo4', 3);
+    g = applyAction(g, { type: 'PASS', player: 1 });
+    g = applyAction(g, { type: 'BID', player: 2, value: 6 });
+    g = applyAction(g, { type: 'PASS', player: 3 });
+    g = applyAction(g, { type: 'PASS', player: 0 });
+    g = applyAction(g, { type: 'CHOOSE_TRUMP', player: 2, suit: 'H' });
+    expect(g.currentPlayer).toBe(leader);
   });
 
   it('without forcing, all-pass redeals with the next dealer', () => {

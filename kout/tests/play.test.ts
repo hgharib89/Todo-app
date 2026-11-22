@@ -81,7 +81,7 @@ describe('trick winner', () => {
     expect(trickWinner(rules, t('H', ['H14', 'XB', 'H13', 'H12']), 'S')).toBe(1);
   });
   it('cancelled jokers never win', () => {
-    expect(trickWinner(rules, t('H', ['XR', 'H6', 'H7', 'D14'], [true]), 'S')).toBe(2);
+    expect(trickWinner(rules, t('H', ['XR', 'H7', 'H8', 'D14'], [true]), 'S')).toBe(2);
   });
   it('trump order comes from the config', () => {
     const r2 = buildRules('default', { trumpPowerOrder: [14, 'XR', 'XB', 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2] });
@@ -95,9 +95,9 @@ describe('trick flow', () => {
       trump: 'S',
       bidder: 0,
       bid: 5,
-      hands: [['H10', 'C7'], ['H12', 'D9'], ['H14', 'D7'], ['H6', 'C9']],
+      hands: [['H10', 'C7'], ['H12', 'D9'], ['H14', 'D7'], ['H8', 'C9']],
     });
-    s = play(s, 'H10', 'H12', 'H14', 'H6');
+    s = play(s, 'H10', 'H12', 'H14', 'H8');
     expect(s.lastTrick?.winner).toBe(2);
     expect(s.currentPlayer).toBe(2);
     expect(s.tricksWon).toEqual([1, 0]);
