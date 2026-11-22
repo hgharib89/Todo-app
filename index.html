@@ -616,8 +616,8 @@
       badEmail: 'تأكد من الإيميل: ', removeInvitee: function (e) { return 'إزالة ' + e; },
       mailSubject: function (t) { return 'دعوة: ' + t; }, mailTask: 'المهمة: ', mailLoc: 'الموقع: ', mailNotes: 'النقاط:',
       mailFooter: 'أُرسلت من تطبيق المهام', invited: 'تم فتح الإيميل للإرسال',
-      calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'Outlook (حساب العمل)', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
-      inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'دعوة Outlook (حساب العمل)', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
+      calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'Outlook (إيفرا)', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
+      inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'دعوة Outlook (إيفرا)', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
       due: 'الموعد', clearDue: 'مسح الموعد', addCal: function (d) { return 'إضافة إلى التقويم: ' + d; },
       mailWhen: 'الموعد: ', mailCal: 'أضفها إلى تقويمك:', locale: 'ar-AE',
@@ -652,8 +652,8 @@
       badEmail: 'Check this email: ', removeInvitee: function (e) { return 'Remove ' + e; },
       mailSubject: function (t) { return 'Invitation: ' + t; }, mailTask: 'Task: ', mailLoc: 'Location: ', mailNotes: 'Notes:',
       mailFooter: 'Sent from Tasks', invited: 'Email opened to send',
-      calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook (work account)', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
-      inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook invite (work account)', outlookInviteHome: 'Outlook.com invite (personal)',
+      calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook (Everra)', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
+      inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook invite (Everra)', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
       due: 'When', clearDue: 'Clear date', addCal: function (d) { return 'Add to calendar: ' + d; },
       mailWhen: 'When: ', mailCal: 'Add it to your calendar:', locale: 'en-GB',
@@ -1315,9 +1315,8 @@
     if (!t || !t.due) return;
     var g = t.invitees || [];
     showSheet(T('calTitle'), [
-      { label: T('phoneCal'), run: function () { addToCalendar(id); } },
       { label: T('outlookWork'), primary: true, run: function () { openUrl(outlookUrl(t, g, 'office')); } },
-      { label: T('outlookHome'), run: function () { openUrl(outlookUrl(t, g, 'live')); } },
+      { label: T('phoneCal'), run: function () { addToCalendar(id); } },
       { label: T('googleCal'), run: function () { openUrl(googleCalUrl(t, g)); } }
     ]);
   }
@@ -1415,9 +1414,8 @@
     var href = 'mailto:' + to.map(encodeURIComponent).join(',') +
       '?subject=' + encodeURIComponent(T('mailSubject', t.text)) +
       '&body=' + encodeURIComponent(lines.join('\n'));
-    var opts = [{ label: T('mailApp'), run: function () { announce(T('invited')); window.location.href = href; } }];
-    opts.push({ label: T('outlookInvite'), primary: true, run: function () { openUrl(outlookUrl(t, to, 'office')); } });
-    opts.push({ label: T('outlookInviteHome'), run: function () { openUrl(outlookUrl(t, to, 'live')); } });
+    var opts = [{ label: T('outlookInvite'), primary: true, run: function () { openUrl(outlookUrl(t, to, 'office')); } }];
+    opts.push({ label: T('mailApp'), run: function () { announce(T('invited')); window.location.href = href; } });
     showSheet(T('inviteTitle'), opts);
   }
 
