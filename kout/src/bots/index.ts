@@ -113,7 +113,7 @@ function mediumBid(state: GameState): Action {
     const v = opts.values.filter((x) => x <= Math.max(target, opts.values[0]));
     return { type: 'BID', player: p, value: v[0] };
   }
-  const partnerHigh = state.highBid && teamOf(state.highBid.player) === teamOf(p);
+  const partnerHigh = state.highBid && teamOf(state, state.highBid.player) === teamOf(state, p);
   const possible = opts.values.filter((v) => v <= target);
   if (possible.length === 0 || (partnerHigh && target < (state.highBid!.value as number) + 2)) {
     return { type: 'PASS', player: p };
@@ -174,7 +174,7 @@ function mediumPlay(state: GameState): CardId {
   const c = state.contract!;
   const trump = c.trump as Suit;
   const byCost = [...legal].sort((a, b) => cost(state, a, trump) - cost(state, b, trump));
-  const weBid = teamOf(me) === c.team;
+  const weBid = teamOf(state, me) === c.team;
   const trick = state.trick;
 
   // ---- leading ----
@@ -205,7 +205,7 @@ function mediumPlay(state: GameState): CardId {
   const wi = winningPlayIndex(state.rules, trick, trump);
   const winner = wi >= 0 ? trick.plays[wi].player : -1;
   const remaining = state.numPlayers - trick.plays.length - 1;
-  const partnerWinning = winner >= 0 && teamOf(winner) === teamOf(me);
+  const partnerWinning = winner >= 0 && teamOf(state, winner) === teamOf(state, me);
   const cheapNonJoker = byCost.find((x) => !isJoker(x)) ?? byCost[0];
 
   if (partnerWinning) {

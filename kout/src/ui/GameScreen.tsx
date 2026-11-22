@@ -198,7 +198,7 @@ export function GameScreen({ settings, initial, onExit, onToggleSound }: Props) 
           const p = SEAT_POS[game.mode][seat];
           const isTurn = !busy && game.currentPlayer === seat && ['bidding', 'choosingTrump', 'playing'].includes(game.phase);
           const bid = game.phase === 'bidding' || game.phase === 'choosingTrump' ? seatBid(seat) : null;
-          const team = teamOf(seat);
+          const team = teamOf(game, seat);
           return (
             <div key={seat} className={`seat ${team === 0 ? 'us' : 'them'} ${isTurn ? 'turn' : ''} ${seat === HUMAN ? 'me' : ''}`} style={{ left: `${p.x}%`, top: `${p.y}%` }}>
               {seat !== HUMAN && (

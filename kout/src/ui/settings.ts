@@ -65,11 +65,12 @@ export const SPEED_MS: Record<Speed, { bot: number; hold: number; deal: number }
   fast: { bot: 320, hold: 500, deal: 35 },
 };
 
-export const PRESET_LABELS: Record<JokerPresetId, { name: string; desc: string }> = {
-  default: { name: 'افتراضي', desc: 'بوان: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم' },
-  strict: { name: 'صارم', desc: 'البدء بالجوكر فقط لمن زايد ٨ أو بوان' },
-  stricter: { name: 'أصرم', desc: 'لازم تنزل كل أوراق الحكم أولاً، إلا مزايدة ٨ أو بوان' },
-  relaxed: { name: 'مرن', desc: 'يكفي نزول إكَه الحكم · وإذا المزايد ما عنده الإكَه يجوز أي وقت' },
+/** Display names only; the descriptions are generated from rules.config.ts (see rulesText.ts). */
+export const PRESET_NAMES: Record<JokerPresetId, string> = {
+  default: 'افتراضي',
+  strict: 'صارم',
+  stricter: 'أصرم',
+  relaxed: 'مرن',
 };
 
 export const DIFFICULTY_LABELS: Record<Difficulty, string> = { easy: 'سهل', medium: 'متوسط' };

@@ -2,7 +2,8 @@ import { JokerPresetId, ModeId, RULES, buildDeck } from '../engine';
 import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
-import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_LABELS, SPEED_LABELS, Settings, Speed } from './settings';
+import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
+import { describeJokerPlay, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 
 export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules }: {
@@ -44,7 +45,7 @@ export function Home({ settings, hasSaved, onPlay, onResume, onSettings, onRules
         </div>
       </div>
       <p className="home-meta muted small">
-        الجوكر: {PRESET_LABELS[settings.preset].name} · البوتات: {DIFFICULTY_LABELS[settings.difficulty]} · السرعة: {SPEED_LABELS[settings.speed]}
+        الجوكر: {PRESET_NAMES[settings.preset]} · البوتات: {DIFFICULTY_LABELS[settings.difficulty]} · السرعة: {SPEED_LABELS[settings.speed]}
       </p>
     </div>
   );
@@ -79,10 +80,10 @@ export function SettingsScreen({ settings, onChange, onBack }: { settings: Setti
       <div className="field">
         <label>قوانين الجوكر</label>
         <div className="preset-list">
-          {(Object.keys(PRESET_LABELS) as JokerPresetId[]).map((p) => (
+          {(Object.keys(RULES.jokerPresets) as JokerPresetId[]).map((p) => (
             <button key={p} className={`preset ${settings.preset === p ? 'on' : ''}`} onClick={() => set('preset', p)}>
-              <b>{PRESET_LABELS[p].name}</b>
-              <span>{PRESET_LABELS[p].desc}</span>
+              <b>{PRESET_NAMES[p]}</b>
+              <span>{presetDescription(p, RULES)}</span>
             </button>
           ))}
         </div>
@@ -131,10 +132,13 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
       </section>
       <section>
         <h3>اللعب</h3>
-        <p>لازم تلحق النقش إذا عندك. إذا ما عندك تلعب أي ورقة. الجوكر ينلعب على أكلة غيرك في أي وقت. اللعب عكس عقارب الساعة.</p>
+        <p>لازم تلحق النقش إذا عندك. إذا ما عندك تلعب أي ورقة. اللعب عكس عقارب الساعة.</p>
         <p>
-          <b>الجوكر ({PRESET_LABELS[settings.preset].name}):</b> {PRESET_LABELS[settings.preset].desc}. إذا اضطر لاعب يبدأ بجوكر وهو آخر ورقة عنده بدون ما يحق له، يُلغى الجوكر والورقة اللي بعده تحدد النقش.
+          <b>البدء بالجوكر ({PRESET_NAMES[settings.preset]}):</b> {presetDescription(settings.preset, r)}.
         </p>
+        {describeJokerPlay(r.jokerPresets[settings.preset]).map((t) => (
+          <p key={t}>{t}</p>
+        ))}
       </section>
       <section>
         <h3>النقاط</h3>

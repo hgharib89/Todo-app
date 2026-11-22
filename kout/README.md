@@ -39,7 +39,7 @@ The engine reads every rule value from this file, and each option has a comment 
 
 | Section | What it controls |
 |---|---|
-| `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`), jokers, dealing chunk size |
+| `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
 | `suitRankOrder` | rank order inside a suit (A K Q J 10 … 2) |
 | `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
 | `bidding` | bid values (5–9), names (باب / بوان), single round, minimum raise, end on max bid, forced dealer (ملزوم) value, whether the forced dealer may raise |
@@ -69,7 +69,7 @@ The engine reads every rule value from this file, and each option has a comment 
 | `stricter` | all trump cards have been played, unless team bid 8/9 |
 | `relaxed` | trump Ace has been played; or any time if the bidder didn't hold the trump Ace; plus bid 8/9 |
 
-Players pick the preset in the in-game **Settings** screen. To change what a preset does, edit `JOKER_PRESETS` in `rules.config.ts`. To try a one-off change in code or in a test, use `buildRules(preset, overrides)`:
+Players pick the preset in the in-game **Settings** screen. The preset descriptions in Settings and the joker text on the Rules screen are generated from the config (`src/ui/rulesText.ts`), so they always match what the engine does. To change what a preset does, edit `JOKER_PRESETS` in `rules.config.ts`. To try a one-off change in code or in a test, use `buildRules(preset, overrides)`:
 
 ```ts
 buildRules('default', { endHandEarly: false, jokers: { illegalForcedLead: 'asTrump' } });
@@ -89,6 +89,6 @@ kout/src/
 kout/tests/            Vitest suites
 ```
 
-- Seats run **counter-clockwise**: seat `i+1` sits to the right of seat `i`. Dealing, bidding and play all go that way, and so does the dealer rotation. Teams are the even seats against the odd seats, so in Bo 6 partners alternate and in Bo 4 partners sit opposite.
+- Seats run **counter-clockwise**: seat `i+1` sits to the right of seat `i`. Dealing, bidding and play all go that way, and so does the dealer rotation. Teams follow `teamLayout`: with the default `'alternate'` the even seats play the odd seats, so in Bo 6 partners alternate and in Bo 4 partners sit opposite.
 - **Online multiplayer later:** run the same engine on a server. Clients send `Action`s, the server validates them with `applyAction` (illegal actions throw) and sends each player `playerView(state, seat)`, which hides the other hands and the RNG seed.
 - An unfinished game is saved in `localStorage` and can be resumed from the home screen. When it resumes, it is re-bound to the current `rules.config.ts`.

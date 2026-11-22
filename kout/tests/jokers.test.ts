@@ -167,3 +167,32 @@ describe('joker presets', () => {
     expect(legalPlays(playingState({ rules, trump: 'S', bidder: 0, bid: 5, hands: HANDS, played: ['S14', 'S13'] }))).toContain('XR');
   });
 });
+
+describe('joker option — ledJokerCountsAsTrump', () => {
+  const off = () => playingState({ rules: buildRules('default', { jokers: { ledJokerCountsAsTrump: false } }), trump: 'S', bidder: 0, bid: 9, hands: HANDS });
+
+  it('true (default): a legally led joker sets trump as the led suit', () => {
+    const s = play(st({ bid: 9 }), 'XB');
+    expect(s.trick.ledSuit).toBe('S');
+    expect(legalPlays(s)).toEqual(['S6']);
+  });
+
+  it('false: a legally led joker sets no suit, so the next player may play anything', () => {
+    const s = play(off(), 'XB');
+    expect(s.trick.ledSuit).toBeNull();
+    expect(s.trick.plays[0].cancelled).toBe(false);
+    expect([...legalPlays(s)].sort()).toEqual([...HANDS[1]].sort());
+  });
+
+  it('false: the first normal card after the joker sets the led suit', () => {
+    const s = play(off(), 'XB', 'H12');
+    expect(s.trick.ledSuit).toBe('H');
+    expect(legalPlays(s)).toEqual(['H8']); // seat 2 must follow hearts, not trump
+  });
+
+  it('false: the led joker still keeps its trump power and wins', () => {
+    const s = play(off(), 'XB', 'H12', 'H8', 'H9');
+    expect(s.lastTrick?.winner).toBe(0);
+    expect(s.lastTrick?.plays[0].cancelled).toBe(false);
+  });
+});

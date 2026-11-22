@@ -114,9 +114,15 @@ export type Action =
 // helpers
 // ---------------------------------------------------------------------------
 
-export function teamOf(seat: number): Team {
-  // rules.modes[*].teamLayout === 'alternate' → partners on every other seat
-  return (seat % 2) as Team;
+/** Team of a seat, following rules.modes[mode].teamLayout. */
+export function teamOf(state: Pick<GameState, 'rules' | 'mode'>, seat: number): Team {
+  const m = state.rules.modes[state.mode];
+  switch (m.teamLayout) {
+    case 'alternate':
+      return (seat % 2) as Team;
+    case 'halves':
+      return (seat < m.players / 2 ? 0 : 1) as Team;
+  }
 }
 
 export function nextSeat(state: Pick<GameState, 'numPlayers'>, seat: number): number {
@@ -247,7 +253,7 @@ function finishBidding(state: GameState): GameState {
     currentPlayer: hb.player,
     contract: {
       bidder: hb.player,
-      team: teamOf(hb.player),
+      team: teamOf(state, hb.player),
       value: hb.value as number,
       forced: hb.forced,
       trump: null,
@@ -313,7 +319,7 @@ export function canLeadJoker(state: GameState, player: number, joker: CardId): b
   if (!c || !c.trump) return false;
   const jr = state.rules.jokers;
   // a) / b) bid-based permission for the bidding team
-  if (teamOf(player) === c.team) {
+  if (teamOf(state, player) === c.team) {
     const perm = jr.leadAllowedByBid[c.value];
     if (perm && (joker === BLACK_JOKER ? perm.black : perm.red)) return true;
   }
@@ -432,7 +438,7 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
   // trick complete
   const winner = trickWinner(s.rules, newTrick, trump);
   const tricksWon: [number, number] = [...s.tricksWon];
-  tricksWon[teamOf(winner)]++;
+  tricksWon[teamOf(state, winner)]++;
   const tricksPlayed = s.tricksPlayed + 1;
   s = {
     ...s,

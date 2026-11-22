@@ -28,7 +28,7 @@ export function playingState(o: Setup): GameState {
     hands: o.hands.map((h) => h.slice()),
     contract: {
       bidder: o.bidder,
-      team: teamOf(o.bidder),
+      team: teamOf(g, o.bidder),
       value: o.bid,
       forced: o.forced ?? false,
       trump: o.trump,

@@ -25,6 +25,8 @@ export type Rank = 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12 | 13 | 14;
 export type ModeId = 'bo6' | 'bo4';
 export type JokerPresetId = 'default' | 'strict' | 'stricter' | 'relaxed';
 
+export type TeamLayout = 'alternate' | 'halves';
+
 export interface ModeRules {
   /** عدد اللاعبين / number of players */
   players: number;
@@ -39,10 +41,12 @@ export interface ModeRules {
   /**
    * ترتيب الفرق: 'alternate' = الشريك يجلس بالتناوب (كل ثاني كرسي).
    * في بو ٤ هذا يعني أن الشريك مقابلك، وفي بو ٦ الشركاء بالتناوب.
+   * 'halves' = الشركاء متجاورين: النصف الأول من الكراسي فريق والنصف الثاني فريق.
    * Team layout: 'alternate' = partners on every other seat
    * (Bo4 → partner sits opposite; Bo6 → partners alternate).
+   * 'halves' = partners sit side by side: the first half of the seats is one team, the rest the other.
    */
-  teamLayout: 'alternate';
+  teamLayout: TeamLayout;
   /** حجم دفعة التوزيع (كم ورقة لكل لاعب في كل لفة) / cards per player per dealing pass */
   dealChunk: number;
 }
