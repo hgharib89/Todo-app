@@ -23,14 +23,17 @@ import {
   suitPower,
   winningPlayIndex,
 } from '../engine';
+import { HARD_DEFAULT_SAMPLES, HardOptions, Rng, chooseTrump, hardBid, hardPlay } from './hard';
 
-export type Difficulty = 'easy' | 'medium';
-export type Rng = () => number;
+export type Difficulty = 'easy' | 'medium' | 'hard';
+export type { Rng };
+export * from './hard';
 
-export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: Rng = Math.random): Action {
+export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: Rng = Math.random, opts: HardOptions = {}): Action {
   const acts = legalActions(state);
   if (acts.length === 0) throw new Error('No legal action');
   if (difficulty === 'easy') return easyAction(state, acts, rng);
+  if (difficulty === 'hard') return hardAction(state, acts, rng, opts);
   switch (state.phase) {
     case 'bidding':
       return mediumBid(state);
@@ -38,6 +41,20 @@ export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: R
       return { type: 'CHOOSE_TRUMP', player: state.currentPlayer, suit: bestTrump(state, state.hands[state.currentPlayer]).suit };
     case 'playing':
       return { type: 'PLAY', player: state.currentPlayer, card: mediumPlay(state) };
+    default:
+      return acts[0];
+  }
+}
+
+function hardAction(state: GameState, acts: Action[], rng: Rng, opts: HardOptions): Action {
+  const me = state.currentPlayer;
+  switch (state.phase) {
+    case 'bidding':
+      return hardBid(state);
+    case 'choosingTrump':
+      return { type: 'CHOOSE_TRUMP', player: me, suit: chooseTrump(state, state.hands[me]).suit };
+    case 'playing':
+      return { type: 'PLAY', player: me, card: hardPlay(state, rng, opts.samples ?? HARD_DEFAULT_SAMPLES) };
     default:
       return acts[0];
   }

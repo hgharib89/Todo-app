@@ -91,6 +91,8 @@ export interface GameState {
   contract: Contract | null;
   trick: Trick;
   lastTrick: CompletedTrick | null;
+  /** every completed trick of the current hand, in order (public information) */
+  tricks: CompletedTrick[];
   tricksWon: [number, number];
   tricksPlayed: number;
   playedCards: CardId[];
@@ -168,6 +170,7 @@ function startHand(state: GameState, dealer: number, handNumber: number): GameSt
     contract: null,
     trick: emptyTrick(nextSeat(state, dealer)),
     lastTrick: null,
+    tricks: [],
     tricksWon: [0, 0],
     tricksPlayed: 0,
     playedCards: [],
@@ -199,6 +202,7 @@ export function createGame(rules: RulesConfig, mode: ModeId, seed: number): Game
     contract: null,
     trick: emptyTrick(0),
     lastTrick: null,
+    tricks: [],
     tricksWon: [0, 0],
     tricksPlayed: 0,
     playedCards: [],
@@ -233,10 +237,10 @@ export function bidOptions(state: GameState, player: number = state.currentPlaye
   if (state.phase !== 'bidding' || player !== state.currentPlayer) return { canPass: false, values: [], forced: false };
   const b = state.rules.bidding;
   if (isForcedBidder(state, player)) {
-    const values = b.forcedDealerMayRaise ? b.values.filter((v) => v >= b.forcedBidValue) : [b.forcedBidValue];
-    return { canPass: false, values, forced: true };
+    const raises = b.forcedDealerMayRaise ? b.values.filter((v) => v > b.malzoomBid && v >= b.minVoluntaryBid) : [];
+    return { canPass: false, values: [b.malzoomBid, ...raises], forced: true };
   }
-  const min = state.highBid ? (state.highBid.value as number) + b.minRaise : b.values[0];
+  const min = Math.max(b.minVoluntaryBid, state.highBid ? (state.highBid.value as number) + b.minRaise : b.minVoluntaryBid);
   return { canPass: true, values: b.values.filter((v) => v >= min), forced: false };
 }
 
@@ -267,7 +271,7 @@ function applyBid(state: GameState, player: number, value: number | null): GameS
   if (value === null && !opts.canPass) throw new Error('Pass not allowed');
   if (value !== null && !opts.values.includes(value)) throw new Error(`Bid ${value} not allowed`);
   const b = state.rules.bidding;
-  const forced = opts.forced && value === b.forcedBidValue;
+  const forced = opts.forced && value === b.malzoomBid;
   const entry: BidEntry = { player, value, forced };
   const passed = state.passed.slice();
   if (value === null) passed[player] = true;
@@ -445,6 +449,7 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
     tricksWon,
     tricksPlayed,
     lastTrick: { ...newTrick, winner },
+    tricks: [...(s.tricks ?? []), { ...newTrick, winner }],
     trick: emptyTrick(winner),
     currentPlayer: winner,
   };
@@ -480,9 +485,9 @@ export function checkGameEnd(
   }
   const [a, b] = scores;
   if (a >= g.targetScore || b >= g.targetScore) return a >= b ? 0 : 1;
-  if (g.shutoutScore !== null) {
-    if (a >= g.shutoutScore && b === 0) return 0;
-    if (b >= g.shutoutScore && a === 0) return 1;
+  if (g.shutoutTarget !== null) {
+    if (a >= g.shutoutTarget && b === 0) return 0;
+    if (b >= g.shutoutTarget && a === 0) return 1;
   }
   return null;
 }

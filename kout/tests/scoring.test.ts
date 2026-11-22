@@ -79,16 +79,37 @@ describe('early hand end', () => {
 
 describe('game end', () => {
   const r = buildRules();
-  it('a team reaching 101+ wins', () => {
-    expect(checkGameEnd(r, [101, 40])).toBe(0);
-    expect(checkGameEnd(r, [60, 120])).toBe(1);
-    expect(checkGameEnd(r, [100, 99])).toBeNull();
+  it('config: target 54, shutout 36', () => {
+    expect(RULES.gameEnd.targetScore).toBe(54);
+    expect(RULES.gameEnd.shutoutTarget).toBe(36);
   });
-  it('51+ while the other team has 0 wins', () => {
-    expect(checkGameEnd(r, [51, 0])).toBe(0);
-    expect(checkGameEnd(r, [0, 56])).toBe(1);
-    expect(checkGameEnd(r, [51, 5])).toBeNull();
-    expect(checkGameEnd(r, [50, 0])).toBeNull();
+  it('a team reaching 54+ wins', () => {
+    expect(checkGameEnd(r, [54, 40])).toBe(0);
+    expect(checkGameEnd(r, [30, 54])).toBe(1);
+    expect(checkGameEnd(r, [60, 20])).toBe(0);
+    expect(checkGameEnd(r, [53, 50])).toBeNull();
+    expect(checkGameEnd(r, [53, 53])).toBeNull();
+  });
+  it('36+ while the other team has 0 wins', () => {
+    expect(checkGameEnd(r, [36, 0])).toBe(0);
+    expect(checkGameEnd(r, [0, 40])).toBe(1);
+    expect(checkGameEnd(r, [36, 5])).toBeNull();
+    expect(checkGameEnd(r, [35, 0])).toBeNull();
+    expect(checkGameEnd(r, [0, 35])).toBeNull();
+  });
+  it('a hand that takes a team to 54 ends the game', () => {
+    const base = playingState({ trump: 'S', bidder: 0, bid: 6, hands: [['S14'], ['H7'], ['H8'], ['H9']], tricksWon: [5, 3], tricksPlayed: 8 });
+    const s = play({ ...base, scores: [48, 20] }, 'S14', 'H7', 'H8', 'H9');
+    expect(s.phase).toBe('gameOver');
+    expect(s.scores).toEqual([54, 20]);
+    expect(s.winner).toBe(0);
+  });
+  it('a hand that takes a team to 36 while the other has 0 ends the game', () => {
+    const base = playingState({ trump: 'S', bidder: 1, bid: 6, leader: 1, hands: [['H7'], ['S14'], ['H8'], ['H9']], tricksWon: [3, 5], tricksPlayed: 8 });
+    const s = play({ ...base, scores: [0, 30] }, 'S14', 'H8', 'H9', 'H7');
+    expect(s.phase).toBe('gameOver');
+    expect(s.scores).toEqual([0, 36]);
+    expect(s.winner).toBe(1);
   });
   it('Bawan made on the first hand is an instant win', () => {
     expect(checkGameEnd(r, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0);
@@ -96,11 +117,11 @@ describe('game end', () => {
     expect(checkGameEnd(r, [36, 10], { handNumber: 2, made: true, bid: 9, team: 0 })).toBeNull();
   });
   it('thresholds are configurable', () => {
-    const r2 = buildRules('default', { gameEnd: { targetScore: 31, shutoutScore: null, bawanFirstHandInstantWin: false } });
+    const r2 = buildRules('default', { gameEnd: { targetScore: 31, shutoutTarget: null, bawanFirstHandInstantWin: false } });
     expect(checkGameEnd(r2, [31, 0])).toBe(0);
     expect(checkGameEnd(r2, [30, 0])).toBeNull();
     expect(checkGameEnd(r2, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBe(0); // via 31 target
-    const r3 = buildRules('default', { gameEnd: { targetScore: 101, shutoutScore: null, bawanFirstHandInstantWin: false } });
+    const r3 = buildRules('default', { gameEnd: { targetScore: 101, shutoutTarget: null, bawanFirstHandInstantWin: false } });
     expect(checkGameEnd(r3, [51, 0])).toBeNull();
     expect(checkGameEnd(r3, [36, 0], { handNumber: 1, made: true, bid: 9, team: 0 })).toBeNull();
   });

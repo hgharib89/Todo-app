@@ -52,8 +52,17 @@ export interface ModeRules {
 }
 
 export interface BidRules {
-  /** قيم المزايدة المسموحة بالترتيب / allowed bid values, ascending */
+  /**
+   * كل قيم العقد الممكنة بالترتيب (تشمل قيمة الملزوم). المزايدة الاختيارية تبدأ من minVoluntaryBid.
+   * Every possible contract value, ascending (including the Malzoom value).
+   * Voluntary bids start at minVoluntaryBid.
+   */
   values: number[];
+  /**
+   * أقل مزايدة اختيارية. أي قيمة أقل منها (مثل ٥) مسموحة فقط كملزوم.
+   * Minimum voluntary bid. Lower values (e.g. 5) are only allowed as the forced Malzoom bid.
+   */
+  minVoluntaryBid: number;
   /** أسماء المزايدات / display names of the bids */
   names: Record<number, string>;
   /** قيمة "بوان" (كل الأكلات) / the Bawan value (all tricks) */
@@ -72,8 +81,11 @@ export interface BidRules {
    * If everyone passes, the dealer is forced to bid (Malzoom).
    */
   forceDealerIfAllPass: boolean;
-  /** قيمة الملزوم / the forced (Malzoom) bid value */
-  forcedBidValue: number;
+  /**
+   * قيمة الملزوم: الموزع يُجبر عليها إذا طاف الكل.
+   * The Malzoom value: the dealer is forced to it when everyone passes.
+   */
+  malzoomBid: number;
   /**
    * هل يقدر الموزع الملزوم يرفع فوق قيمة الملزوم؟
    * May the forced dealer bid higher than the Malzoom value instead?
@@ -183,7 +195,7 @@ export interface RulesConfig {
      * الفوز إذا وصل فريق لهذا الرقم والخصم صفر (null = تعطيل).
      * Win when a team reaches this score while the other team has 0 (null = disabled).
      */
-    shutoutScore: number | null;
+    shutoutTarget: number | null;
     /** الفوز فوراً إذا جاب فريق بوان في أول يد / instant win for making Bawan on the first hand */
     bawanFirstHandInstantWin: boolean;
   };
@@ -289,13 +301,14 @@ export const RULES: RulesConfig = {
 
   bidding: {
     values: [5, 6, 7, 8, 9],
-    names: { 5: 'باب', 6: '٦', 7: '٧', 8: '٨', 9: 'بوان' },
+    minVoluntaryBid: 6,
+    names: { 5: 'ملزوم', 6: '٦', 7: '٧', 8: '٨', 9: 'بوان' },
     bawan: 9,
     singleRound: true,
     minRaise: 1,
     endOnMaxBid: true,
     forceDealerIfAllPass: true,
-    forcedBidValue: 5,
+    malzoomBid: 5,
     forcedDealerMayRaise: true,
   },
 
@@ -310,6 +323,8 @@ export const RULES: RulesConfig = {
   endHandEarly: true,
 
   // | Bid | made | failed (to opponents) |
+  // صف ٥ يُستخدم فقط إذا minVoluntaryBid ≤ ٥ (الملزوم يستخدم malzoomScoring).
+  // Row 5 only applies if minVoluntaryBid ≤ 5 (the Malzoom bid uses malzoomScoring).
   scoring: {
     5: { made: 5, failed: 10 },
     6: { made: 6, failed: 12 },
@@ -320,8 +335,8 @@ export const RULES: RulesConfig = {
   malzoomScoring: { made: 5, failed: 5 },
 
   gameEnd: {
-    targetScore: 101,
-    shutoutScore: 51,
+    targetScore: 54,
+    shutoutTarget: 36,
     bawanFirstHandInstantWin: true,
   },
 };

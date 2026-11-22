@@ -6,7 +6,7 @@ It is an original app. The name, card designs and UI are all made for this proje
 - React + TypeScript + Vite, deployable to GitHub Pages
 - A pure game engine (`src/engine`): `applyAction(state, action) → newState`, with no UI code and no hidden randomness
 - **Every rule lives in one file:** [`src/engine/rules.config.ts`](src/engine/rules.config.ts)
-- Bots: Easy (random legal moves) and Medium (heuristic bidding and play)
+- Bots: Easy (random legal moves), Medium (heuristic bidding and play) and **Hard** (the default: card counting, void inference, hand-strength bidding and Monte Carlo card play)
 - A Vitest suite covering deck building, bidding, legal moves, every joker rule and preset, the trick winner, scoring and game end
 
 ## Run it
@@ -42,12 +42,12 @@ The engine reads every rule value from this file, and each option has a comment 
 | `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
 | `suitRankOrder` | rank order inside a suit (A K Q J 10 … 2) |
 | `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
-| `bidding` | bid values (5–9), names (باب / بوان), single round, minimum raise, end on max bid, forced dealer (ملزوم) value, whether the forced dealer may raise |
+| `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / بوان), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
 | `firstLeader`, `firstDealer`, `rotateDealer` | who leads the first trick, who deals first, dealer rotation |
 | `jokerPresets` + `activeJokerPreset` | the four joker presets (see below) |
 | `endHandEarly` | stop the hand as soon as the bid is made or can no longer be made |
 | `scoring`, `malzoomScoring` | points table |
-| `gameEnd` | target score (101), shutout score (51 vs 0), Bawan-on-first-hand instant win |
+| `gameEnd` | `targetScore` (54: first team to 54+ wins), `shutoutTarget` (36: 36+ while the other team has 0 wins; `null` disables it), Bawan-on-first-hand instant win |
 
 ### Joker options (inside each preset)
 
@@ -75,6 +75,18 @@ Players pick the preset in the in-game **Settings** screen. The preset descripti
 buildRules('default', { endHandEarly: false, jokers: { illegalForcedLead: 'asTrump' } });
 ```
 
+## Bots
+
+All bots choose only from `legalActions` / `legalPlays`, so they follow whatever `rules.config.ts` says. They read only their own hand plus public information.
+
+| Level | Bidding | Play |
+|---|---|---|
+| Easy | mostly passes, otherwise a low bid | random legal card |
+| Medium | rough trick estimate | simple rules: draw trumps, cash winners, play low behind a winning partner |
+| **Hard** (default) | hand strength per trump suit (jokers, trump Ace, length, side winners, ruffs) plus what the bidding says about partners, turned into a chance of making each bid; it bids only when that chance is at least 70% and the expected score is positive, and only bids Bawan with a monster hand | **Monte Carlo**: tracks every played card, infers who is out of which suit, then samples hidden hands that fit (40 by default), plays each candidate card out to the end of the hand and picks the best average result; ties go to the cheaper card, so jokers and the trump Ace are kept for when they matter, and it doesn't overtake a winning partner |
+
+In simulated games (Hard team against Medium team) Hard won 21 of 30 Bo 4 games and 13 of 16 Bo 6 games. A Hard move takes about 10 ms in Bo 4 and 17 ms in Bo 6 on average.
+
 ## Architecture
 
 ```
@@ -84,7 +96,8 @@ kout/src/
     cards.ts           card ids ('S14' = A♠, 'H10', 'XR'/'XB' jokers), deck building, power
     rng.ts             seeded RNG (the seed is kept in GameState, so the engine stays pure)
     game.ts            state machine: createGame, applyAction, legalActions, legalPlays, playerView
-  bots/index.ts        chooseBotAction(state, 'easy' | 'medium'); picks only from legalActions
+  bots/index.ts        chooseBotAction(state, 'easy' | 'medium' | 'hard'); picks only from legalActions
+  bots/hard.ts         card counting, void inference, bidding by hand strength, Monte Carlo play
   ui/                  React screens, table, hand, panels, sounds (WebAudio, no files)
 kout/tests/            Vitest suites
 ```

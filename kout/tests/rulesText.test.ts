@@ -19,3 +19,16 @@ describe('UI rule text is generated from rules.config.ts', () => {
     on.forEach((t, i) => expect(changed[i]).not.toBe(t));
   });
 });
+
+describe('bidding panel and settings', () => {
+  it('the bid panel shows 6–9 normally and adds Malzoom 5 only when forced', async () => {
+    const { bidButtons } = await import('../src/ui/panels');
+    expect(bidButtons(RULES, false)).toEqual([6, 7, 8, 9]);
+    expect(bidButtons(RULES, true)).toEqual([5, 6, 7, 8, 9]);
+  });
+  it('Hard is the default bot difficulty', async () => {
+    const { DEFAULT_SETTINGS, DIFFICULTY_LABELS } = await import('../src/ui/settings');
+    expect(DEFAULT_SETTINGS.difficulty).toBe('hard');
+    expect(Object.keys(DIFFICULTY_LABELS)).toEqual(['easy', 'medium', 'hard']);
+  });
+});
