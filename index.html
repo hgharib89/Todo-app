@@ -199,7 +199,7 @@
   .loc-row { display: flex; gap: 8px; flex: 1 1 100%; }
   .loc-field { height: 40px; font-size: 15px; }
   .locate-btn { height: 40px; width: 40px; }
-  .locate-btn.busy { opacity: .6; pointer-events: none; }
+  .locate-btn.busy, .edit-locate.busy { opacity: .6; pointer-events: none; }
   .body { flex: 1; min-width: 0; }
   .loc {
     display: flex;
@@ -382,6 +382,11 @@
   .item.editing .notes,
   .item.editing .icon-btn { display: none; }
   .item.editing .edit { display: block; margin-inline-start: 34px; }
+  .edit-loc-row { display: none; gap: 8px; width: calc(100% - 34px); margin-inline-start: 34px; }
+  .item.editing .edit-loc-row { display: flex; }
+  .edit-loc-row .field { flex: 1; min-width: 0; height: 40px; font-size: 15px; }
+  .edit-loc-row .mic-btn { width: 40px; height: 40px; }
+  .edit-loc-row .mic-btn svg { width: 18px; height: 18px; }
 
   /* Filter bar */
   .filter-bar {
@@ -739,6 +744,23 @@
       ['path', { d: 'M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z' }]
     ]));
 
+    var editLocRow = document.createElement('div');
+    editLocRow.className = 'edit-loc-row';
+    var editLoc = document.createElement('input');
+    editLoc.type = 'text';
+    editLoc.className = 'field edit-loc';
+    editLoc.maxLength = 200;
+    editLoc.dir = 'auto';
+    var editLocate = document.createElement('button');
+    editLocate.type = 'button';
+    editLocate.className = 'mic-btn edit-locate';
+    editLocate.appendChild(iconSvg('0 0 24 24', '2', [
+      ['path', { d: 'M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z' }],
+      ['circle', { cx: '12', cy: '9.5', r: '2.5' }]
+    ]));
+    editLocRow.appendChild(editLoc);
+    editLocRow.appendChild(editLocate);
+
     var notesBtn = document.createElement('button');
     notesBtn.type = 'button';
     notesBtn.className = 'icon-btn notes-btn';
@@ -800,6 +822,7 @@
     li.appendChild(check);
     li.appendChild(body);
     li.appendChild(edit);
+    li.appendChild(editLocRow);
     li.appendChild(notesBtn);
     li.appendChild(editBtn);
     li.appendChild(delBtn);
@@ -813,6 +836,10 @@
     cb.checked = t.done;
     cb.setAttribute('aria-label', t.done ? T('markUndone', t.text) : T('markDone', t.text));
     li.querySelector('.edit').setAttribute('aria-label', T('editTask'));
+    var el = li.querySelector('.edit-loc');
+    el.placeholder = T('locPh');
+    el.setAttribute('aria-label', T('location'));
+    li.querySelector('.edit-locate').setAttribute('aria-label', T('useLoc'));
     if (text.textContent !== t.text) text.textContent = t.text;
     var loc = li.querySelector('.loc');
     var locText = loc.querySelector('span');
@@ -1111,6 +1138,7 @@
     editingId = id;
     var input = li.querySelector('.edit');
     input.value = t.text;
+    li.querySelector('.edit-loc').value = t.location || '';
     li.classList.add('editing');
     input.focus();
     input.select();
@@ -1124,12 +1152,17 @@
     var t = findTask(id);
     var input = li ? li.querySelector('.edit') : null;
     var value = input ? input.value.trim().slice(0, 200) : '';
+    var locField = li ? li.querySelector('.edit-loc') : null;
+    var locValue = locField ? locField.value.trim().slice(0, 200) : '';
     if (refocus) focusCheckbox(id);
     if (li) li.classList.remove('editing');
     if (!t) { render(); return; }
     if (save) {
       if (!value) { deleteTask(id, refocus); return; }
-      if (value !== t.text) { t.text = value; saveTasks(); }
+      var changed = false;
+      if (value !== t.text) { t.text = value; changed = true; }
+      if (locField && locValue !== (t.location || '')) { t.location = locValue; changed = true; }
+      if (changed) saveTasks();
     }
     render();
     if (refocus) focusCheckbox(id);
@@ -1264,6 +1297,34 @@
     else if (btn.classList.contains('edit-btn')) startEdit(li.dataset.id);
   });
 
+  list.addEventListener('pointerdown', function (e) {
+    if (e.target.closest('.edit-locate')) e.preventDefault();
+  });
+  list.addEventListener('mousedown', function (e) {
+    if (e.target.closest('.edit-locate')) e.preventDefault();
+  });
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest('.edit-locate');
+    if (!btn) return;
+    var li = btn.closest('.item');
+    var field = li.querySelector('.edit-loc');
+    if (!navigator.geolocation) { announce(T('locNA')); return; }
+    btn.classList.add('busy');
+    navigator.geolocation.getCurrentPosition(function (pos) {
+      btn.classList.remove('busy');
+      field.value = pos.coords.latitude.toFixed(5) + ', ' + pos.coords.longitude.toFixed(5);
+      if (editingId === li.dataset.id) field.focus();
+      else {
+        var t = findTask(li.dataset.id);
+        if (t) { t.location = field.value; saveTasks(); render(); }
+      }
+      announce(T('locAdded'));
+    }, function () {
+      btn.classList.remove('busy');
+      announce(T('locFail'));
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 });
+  });
+
   list.addEventListener('submit', function (e) {
     if (!e.target.matches('.note-form')) return;
     e.preventDefault();
@@ -1314,7 +1375,7 @@
         e.preventDefault();
         deleteTask(id, true);
       }
-    } else if (el.matches('.edit')) {
+    } else if (el.matches('.edit, .edit-loc')) {
       if (e.key === 'Enter') {
         e.preventDefault();
         finishEdit(true, true);
@@ -1327,8 +1388,10 @@
 
   list.addEventListener('focusout', function (e) {
     var el = e.target;
-    if (!el.matches || !el.matches('.edit')) return;
+    if (!el.matches || !el.matches('.edit, .edit-loc, .edit-locate')) return;
     var li = el.closest('.item');
+    var to = e.relatedTarget;
+    if (to && li && li.contains(to) && to.matches && to.matches('.edit, .edit-loc, .edit-locate')) return;
     if (li && editingId === li.dataset.id) finishEdit(true, false);
   });
 
