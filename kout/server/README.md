@@ -15,9 +15,10 @@ It imports the same `src/engine` and `src/engine/rules.config.ts` as the app, so
 | **Turn timer** | 20 s to bid or play. On timeout a Hard bot plays for that seat. After 2 timeouts in a row the player counts as away, and a bot plays at once until they act again. |
 | **Reconnect** | A dropped player keeps their seat for 120 s while a bot covers their turns. They come back with the reconnection token: the app does this automatically, even after a page refresh. A player who leaves for good is replaced by a bot. |
 | **Anti-cheat** | Hidden cards are never sent. Every message passes a token-bucket rate limit (12 burst, 6/s); flooders are logged and then disconnected, with a hard cap of 40 messages/s. Malformed, out-of-turn and illegal actions are rejected, logged and the client is re-synced. Repeated wrong catches or rejected actions are logged as `suspicious`. Browser origins can be allow-listed. |
+| **Bots don't slow players down** | Hard bots think in a pool of worker threads (`src/botPool.ts`), so the main thread stays free for players' moves. Under heavy load they use fewer samples instead of queuing. |
 | **Logs** | One JSON line per event (`fly logs`): `room_created`, `join`, `game_start`, `turn_timeout`, `rejected_action`, `suspicious`, `game_over`, … With `KOUT_METRICS=10`, rooms, players, CPU, memory and event-loop delay are logged every 10 s. |
 
-Files: `src/KoutRoom.ts` (the room), `src/view.ts` (per-player views and action mapping), `src/rateLimit.ts`, `src/codes.ts`, `src/config.ts` (timings), `src/app.ts` (server and `/healthz`), `loadtest/loadtest.ts`.
+Files: `src/KoutRoom.ts` (the room), `src/botPool.ts` + `src/botWorker.ts` (bots in worker threads), `src/view.ts` (per-player views and action mapping), `src/rateLimit.ts`, `src/codes.ts`, `src/config.ts` (timings), `src/app.ts` (server and `/healthz`), `loadtest/loadtest.ts`.
 
 ## Run it locally
 
@@ -43,6 +44,7 @@ Game rules are **not** here; they stay in `src/engine/rules.config.ts`. These ar
 | `KOUT_RECONNECT_SECONDS` | 120 | how long a dropped player keeps the seat |
 | `KOUT_BOT_MIN_MS` / `KOUT_BOT_MAX_MS` | 700 / 1300 | bot "thinking" time |
 | `KOUT_BOT_SAMPLES` | 40 | Monte Carlo samples per Hard-bot move (lower = less CPU) |
+| `KOUT_BOT_WORKERS` | CPU cores | worker threads for bot thinking (0 = main thread) |
 | `KOUT_RATE_CAPACITY` / `KOUT_RATE_PER_SECOND` / `KOUT_FLOOD_STRIKES` | 12 / 6 / 40 | rate limit |
 | `KOUT_ALLOWED_ORIGINS` | (all) | comma-separated web origins allowed to connect |
 | `KOUT_METRICS` | (off) | seconds between metrics log lines |
@@ -74,11 +76,11 @@ You need a Fly.io account with a payment card (Fly bills per use). Never share y
 
 ## Costs (rough estimates; check <https://fly.io/docs/about/pricing/>)
 
-- One `shared-cpu-2x` machine with 1 GB of RAM, running all month, costs roughly **US$10–15 per month**. The load test below shows it handles **500+ concurrent players**.
+- One `shared-cpu-2x` machine with 1 GB of RAM, running all month, costs roughly **US$10–15 per month**. The load test shows it handles **600+ concurrent players** at 5.5 ms p99, or about 300 tables where everyone plays alone with bots.
 - Traffic is small: a full game sends a few hundred small JSON messages per player, which comes to a few dollars of bandwidth even at thousands of games per day.
 - To grow beyond one machine: Colyseus supports several processes or machines with Redis presence and driver (`@colyseus/redis-presence`, `@colyseus/redis-driver`, for example Upstash Redis). This is not needed at launch. The first step is a bigger machine (`performance-2x`).
 
 ## Load test
 
 `npm run loadtest -- --url http://localhost:2567 --players 500 --duration 240` runs simulated players against a running server. Each one joins public matchmaking, takes 0.3–1.5 s per decision, plays with the Easy bot from its own view (so it sometimes reneges and gets caught), votes for the next hand, and starts a new game when one ends.
-Results are in [`LOADTEST.md`](LOADTEST.md).
+Results are in [`LOADTEST.md`](LOADTEST.md). In short, on 2 cores: 600 concurrent players answered in 0.6 ms (p50) and 5.5 ms (p99), with 0 errors and 0 drops.
