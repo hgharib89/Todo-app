@@ -121,6 +121,42 @@
   }
   .lang-btn:hover { border-color: var(--border-strong); }
   .lang-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .header-actions { display: flex; gap: 8px; flex: none; }
+  .inbox-btn { position: relative; display: inline-flex; align-items: center; justify-content: center; padding: 0 10px; }
+  .inbox-btn[aria-expanded="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft); }
+  .inbox-badge {
+    position: absolute; top: -6px; inset-inline-end: -6px;
+    min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box;
+    border-radius: 999px; background: var(--danger); color: #fff;
+    font-size: 11px; font-weight: 700; line-height: 18px; text-align: center;
+  }
+  .inbox { margin-bottom: 16px; }
+  .inbox-head { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .inbox-title { flex: 1; margin: 0; font-size: 16px; font-weight: 600; }
+  .inbox-head .icon-btn { display: grid; }
+  .inbox-head .icon-btn:hover { color: var(--accent); background: var(--surface-hover); }
+  .inbox-head .icon-btn.spin svg { animation: spin 0.9s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .inbox-setup { padding: 16px; display: grid; gap: 10px; }
+  .inbox-setup label { font-size: 13px; color: var(--text-muted); display: grid; gap: 4px; }
+  .inbox-setup .field { height: 40px; font-size: 15px; }
+  .inbox-setup .add-btn { justify-self: start; }
+  .inbox-help { margin: 0; font-size: 13px; color: var(--text-muted); }
+  .inbox-status { margin: 0; padding: 16px; font-size: 14px; color: var(--text-muted); text-align: center; }
+  .inbox-status.error { color: var(--danger); }
+  .mail-list { list-style: none; margin: 0; padding: 0; max-height: 60vh; overflow-y: auto; }
+  .mail { display: flex; gap: 10px; align-items: flex-start; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .mail:last-child { border-bottom: 0; }
+  .mail-body { flex: 1; min-width: 0; }
+  .mail-top { display: flex; gap: 8px; align-items: baseline; }
+  .mail-from { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mail-date { flex: none; font-size: 12px; color: var(--text-muted); }
+  .mail-subject { font-size: 14px; overflow-wrap: anywhere; }
+  .mail-snippet { font-size: 13px; color: var(--text-muted); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+  .mail-actions { display: flex; flex-direction: column; gap: 6px; flex: none; }
+  .mail-add { height: 32px; padding: 0 10px; font-size: 13px; }
+  .mail-skip { height: 28px; padding: 0 8px; border: 0; background: none; color: var(--text-muted); font-size: 12px; cursor: pointer; }
+  .mail.converted .mail-add { background: var(--success); }
   h1 {
     margin: 0;
     font-size: 28px;
@@ -519,8 +555,28 @@
       <h1 data-i18n="title">المهام</h1>
       <p class="subtitle" id="subtitle">لا توجد مهام</p>
     </div>
-    <button type="button" class="lang-btn" id="lang-btn" lang="en" aria-label="Switch to English">EN</button>
+    <div class="header-actions">
+      <button type="button" class="lang-btn inbox-btn" id="inbox-btn" aria-expanded="false" aria-controls="inbox" aria-label="الوارد من إيفرا" data-i18n-aria="inboxTitle"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/></svg><span class="inbox-badge" id="inbox-badge" hidden></span></button>
+      <button type="button" class="lang-btn" id="lang-btn" lang="en" aria-label="Switch to English">EN</button>
+    </div>
   </header>
+
+  <section class="card inbox" id="inbox" hidden>
+    <div class="inbox-head">
+      <p class="inbox-title" data-i18n="inboxTitle">الوارد من إيفرا</p>
+      <button type="button" class="icon-btn" id="inbox-refresh" aria-label="تحديث" data-i18n-aria="refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg></button>
+      <button type="button" class="icon-btn" id="inbox-settings" aria-label="إعدادات الربط" data-i18n-aria="inboxSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+    </div>
+    <form class="inbox-setup" id="inbox-setup" hidden autocomplete="off">
+      <p class="inbox-help" data-i18n="inboxHelp">الصق بيانات الربط اللي جهزناها لك.</p>
+      <label><span data-i18n="scriptUrl">رابط السكربت</span><input class="field" id="inbox-url" type="url" dir="ltr" placeholder="https://script.google.com/macros/s/.../exec"></label>
+      <label><span data-i18n="secretCode">الرمز السري</span><input class="field" id="inbox-key" type="text" dir="ltr" autocapitalize="off" spellcheck="false"></label>
+      <label><span data-i18n="everraEmail">إيميل إيفرا</span><input class="field" id="inbox-addr" type="email" dir="ltr" autocapitalize="off"></label>
+      <button type="submit" class="add-btn" data-i18n="save">حفظ</button>
+    </form>
+    <p class="inbox-status" id="inbox-status" hidden></p>
+    <ul class="mail-list" id="mail-list"></ul>
+  </section>
 
   <section class="card">
     <form class="new-form" id="new-form" autocomplete="off">
@@ -619,6 +675,11 @@
       calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'تطبيق Outlook', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
       inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'تطبيق Outlook', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
+      inboxTitle: 'الوارد من إيفرا', refresh: 'تحديث', inboxSettings: 'إعدادات الربط', inboxHelp: 'الصق بيانات الربط اللي جهزناها لك.',
+      scriptUrl: 'رابط السكربت', secretCode: 'الرمز السري', everraEmail: 'إيميل إيفرا', save: 'حفظ',
+      inboxLoading: 'جاري التحميل...', inboxEmpty: 'ما فيه إيميلات جديدة.', inboxError: 'تعذّر جلب الإيميلات. تأكد من الرابط والرمز.',
+      inboxBadKey: 'الرمز السري غير صحيح.', toTask: 'مهمة', added2: 'تمت ✓', skip: 'تجاهل', fromLbl: 'من: ', noSubject: '(بدون عنوان)',
+      inboxNeedAll: 'عبّ الخانات الثلاث.',
       due: 'الموعد', clearDue: 'مسح الموعد', addCal: function (d) { return 'إضافة إلى التقويم: ' + d; },
       mailWhen: 'الموعد: ', mailCal: 'أضفها إلى تقويمك:', locale: 'ar-AE',
       speech: 'ar-AE', switchTo: 'EN', switchLabel: 'Switch to English', switchLang: 'en'
@@ -655,6 +716,11 @@
       calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook app', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
       inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook app', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
+      inboxTitle: 'Everra inbox', refresh: 'Refresh', inboxSettings: 'Connection settings', inboxHelp: 'Paste the connection details we set up.',
+      scriptUrl: 'Script link', secretCode: 'Secret code', everraEmail: 'Everra email', save: 'Save',
+      inboxLoading: 'Loading...', inboxEmpty: 'No new emails.', inboxError: 'Could not load emails. Check the link and code.',
+      inboxBadKey: 'The secret code is wrong.', toTask: 'Task', added2: 'Added ✓', skip: 'Skip', fromLbl: 'From: ', noSubject: '(no subject)',
+      inboxNeedAll: 'Fill in all three fields.',
       due: 'When', clearDue: 'Clear date', addCal: function (d) { return 'Add to calendar: ' + d; },
       mailWhen: 'When: ', mailCal: 'Add it to your calendar:', locale: 'en-GB',
       speech: 'en-US', switchTo: 'ع', switchLabel: 'التبديل إلى العربية', switchLang: 'ar'
@@ -1649,6 +1715,7 @@
     langBtn.setAttribute('aria-label', T('switchLabel'));
     nodes.forEach(function (li, id) { var t = findTask(id); if (t) updateItem(li, t); });
     render();
+    if (inboxEl) renderInbox();
   }
   langBtn.addEventListener('click', function () {
     lang = lang === 'ar' ? 'en' : 'ar';
@@ -1656,6 +1723,195 @@
     applyLang();
   });
   applyLang();
+
+  /* ---------- Everra inbox ---------- */
+  var INBOX_CFG_KEY = 'todo-app.inbox.cfg';
+  var INBOX_SEEN_KEY = 'todo-app.inbox.handled';
+  var INBOX_CACHE_KEY = 'todo-app.inbox.cache';
+  var inboxBtn = document.getElementById('inbox-btn');
+  var inboxBadge = document.getElementById('inbox-badge');
+  var inboxEl = document.getElementById('inbox');
+  var inboxSetup = document.getElementById('inbox-setup');
+  var inboxStatus = document.getElementById('inbox-status');
+  var mailList = document.getElementById('mail-list');
+  var inboxRefresh = document.getElementById('inbox-refresh');
+  function readJSON(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v == null ? d : v; } catch (e) { return d; } }
+  function writeJSON(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} }
+  var inboxCfg = readJSON(INBOX_CFG_KEY, null);
+  var handled = readJSON(INBOX_SEEN_KEY, {});
+  var mails = readJSON(INBOX_CACHE_KEY, []);
+  var inboxLoading = false;
+
+  function inboxConfigured() { return !!(inboxCfg && inboxCfg.url && inboxCfg.key && inboxCfg.addr); }
+  function setStatus(msg, isErr) {
+    inboxStatus.hidden = !msg;
+    inboxStatus.textContent = msg || '';
+    inboxStatus.classList.toggle('error', !!isErr);
+  }
+  function pendingMails() { return mails.filter(function (m) { return !handled[m.id]; }); }
+  function updateBadge() {
+    var n = pendingMails().length;
+    inboxBadge.hidden = !n;
+    inboxBadge.textContent = n > 99 ? '99+' : String(n);
+  }
+  function mailDate(ms) {
+    var d = new Date(ms);
+    if (isNaN(d)) return '';
+    var today = new Date();
+    try {
+      if (d.toDateString() === today.toDateString()) return d.toLocaleTimeString(T('locale'), { hour: 'numeric', minute: '2-digit' });
+      return d.toLocaleDateString(T('locale'), { day: 'numeric', month: 'short' });
+    } catch (e) { return ''; }
+  }
+  function renderInbox() {
+    updateBadge();
+    if (inboxEl.hidden) return;
+    var configured = inboxConfigured();
+    if (!configured) inboxSetup.hidden = false;
+    mailList.textContent = '';
+    if (!configured) { setStatus(''); return; }
+    var list = pendingMails();
+    if (!inboxLoading && !inboxStatus.classList.contains('error')) setStatus(list.length ? '' : T('inboxEmpty'));
+    list.forEach(function (m) {
+      var li = document.createElement('li');
+      li.className = 'mail';
+      li.dataset.id = m.id;
+      var body = document.createElement('div');
+      body.className = 'mail-body';
+      var top = document.createElement('div');
+      top.className = 'mail-top';
+      var from = document.createElement('span');
+      from.className = 'mail-from';
+      from.dir = 'auto';
+      from.textContent = m.fromName || m.from || '';
+      var date = document.createElement('span');
+      date.className = 'mail-date';
+      date.textContent = mailDate(m.date);
+      top.appendChild(from);
+      top.appendChild(date);
+      var subj = document.createElement('div');
+      subj.className = 'mail-subject';
+      subj.dir = 'auto';
+      subj.textContent = m.subject || T('noSubject');
+      var snip = document.createElement('div');
+      snip.className = 'mail-snippet';
+      snip.dir = 'auto';
+      snip.textContent = m.snippet || '';
+      body.appendChild(top);
+      body.appendChild(subj);
+      body.appendChild(snip);
+      var actions = document.createElement('div');
+      actions.className = 'mail-actions';
+      var add = document.createElement('button');
+      add.type = 'button';
+      add.className = 'add-btn mail-add';
+      add.textContent = '+ ' + T('toTask');
+      var skip = document.createElement('button');
+      skip.type = 'button';
+      skip.className = 'mail-skip';
+      skip.textContent = T('skip');
+      actions.appendChild(add);
+      actions.appendChild(skip);
+      li.appendChild(body);
+      li.appendChild(actions);
+      mailList.appendChild(li);
+    });
+  }
+  function fetchInbox() {
+    if (!inboxConfigured() || inboxLoading) return;
+    inboxLoading = true;
+    inboxRefresh.classList.add('spin');
+    if (!mails.length) setStatus(T('inboxLoading'));
+    var url = inboxCfg.url + (inboxCfg.url.indexOf('?') === -1 ? '?' : '&') +
+      'key=' + encodeURIComponent(inboxCfg.key) + '&addr=' + encodeURIComponent(inboxCfg.addr) + '&t=' + Date.now();
+    fetch(url, { method: 'GET', redirect: 'follow' }).then(function (r) { return r.json(); }).then(function (data) {
+      inboxLoading = false;
+      inboxRefresh.classList.remove('spin');
+      if (!data || data.ok !== true) {
+        setStatus(data && data.error === 'bad-key' ? T('inboxBadKey') : T('inboxError'), true);
+        renderInbox();
+        return;
+      }
+      mails = (data.items || []).filter(function (m) { return m && m.id; }).slice(0, 50);
+      writeJSON(INBOX_CACHE_KEY, mails);
+      // forget handled ids that are no longer returned, so storage stays small
+      var keep = {};
+      mails.forEach(function (m) { if (handled[m.id]) keep[m.id] = 1; });
+      handled = keep;
+      writeJSON(INBOX_SEEN_KEY, handled);
+      setStatus('');
+      renderInbox();
+    }).catch(function () {
+      inboxLoading = false;
+      inboxRefresh.classList.remove('spin');
+      setStatus(T('inboxError'), true);
+      renderInbox();
+    });
+  }
+  function mailToTask(id) {
+    var m = mails.find(function (x) { return x.id === id; });
+    if (!m) return;
+    var notes = [];
+    var who = m.fromName && m.from ? m.fromName + ' <' + m.from + '>' : (m.from || m.fromName || '');
+    if (who) notes.push({ id: newId(), text: T('fromLbl') + who, at: Date.now() });
+    if (m.snippet) notes.push({ id: newId(), text: m.snippet.slice(0, 300), at: Date.now() });
+    var t = { id: newId(), text: (m.subject || T('noSubject')).slice(0, 200), done: false, location: '', due: '', notes: notes, invitees: [], createdAt: Date.now() };
+    tasks.push(t);
+    saveTasks();
+    if (filter === 'done') { filter = 'all'; saveFilter(); }
+    justAddedId = t.id;
+    render();
+    justAddedId = null;
+    announce(T('added', t.text));
+    handled[id] = 1;
+    writeJSON(INBOX_SEEN_KEY, handled);
+    renderInbox();
+  }
+  inboxBtn.addEventListener('click', function () {
+    var open = inboxEl.hidden;
+    inboxEl.hidden = !open;
+    inboxBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) {
+      if (inboxConfigured()) {
+        inboxSetup.hidden = true;
+        document.getElementById('inbox-url').value = inboxCfg.url;
+        document.getElementById('inbox-key').value = inboxCfg.key;
+        document.getElementById('inbox-addr').value = inboxCfg.addr;
+      }
+      renderInbox();
+      fetchInbox();
+    }
+  });
+  inboxRefresh.addEventListener('click', function () { setStatus(''); fetchInbox(); });
+  document.getElementById('inbox-settings').addEventListener('click', function () {
+    inboxSetup.hidden = !inboxSetup.hidden;
+    if (!inboxSetup.hidden) document.getElementById('inbox-url').focus();
+  });
+  inboxSetup.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var u = document.getElementById('inbox-url').value.trim();
+    var k = document.getElementById('inbox-key').value.trim();
+    var a = document.getElementById('inbox-addr').value.trim();
+    if (!u || !k || !a || !/^https:\/\//.test(u)) { setStatus(T('inboxNeedAll'), true); return; }
+    inboxCfg = { url: u, key: k, addr: a };
+    writeJSON(INBOX_CFG_KEY, inboxCfg);
+    inboxSetup.hidden = true;
+    mails = [];
+    setStatus('');
+    renderInbox();
+    fetchInbox();
+  });
+  mailList.addEventListener('click', function (e) {
+    var li = e.target.closest('.mail');
+    if (!li) return;
+    if (e.target.closest('.mail-add')) mailToTask(li.dataset.id);
+    else if (e.target.closest('.mail-skip')) { handled[li.dataset.id] = 1; writeJSON(INBOX_SEEN_KEY, handled); renderInbox(); }
+  });
+  updateBadge();
+  if (inboxConfigured()) fetchInbox();
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && inboxConfigured()) fetchInbox();
+  });
 
   /* ---------- Due date ---------- */
   dueInput.addEventListener('input', function () { dueClear.hidden = !dueInput.value; });
