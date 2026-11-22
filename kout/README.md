@@ -85,7 +85,7 @@ All bots choose only from `legalActions` / `legalPlays`, so they follow whatever
 | Medium | rough trick estimate | simple rules: draw trumps, cash winners, play low behind a winning partner |
 | **Hard** (default) | hand strength per trump suit (jokers, trump Ace, length, side winners, ruffs) plus what the bidding says about partners, turned into a chance of making each bid; it bids only when that chance is at least 70% and the expected score is positive, and only bids Bawan with a monster hand | **Monte Carlo**: tracks every played card, infers who is out of which suit, then samples hidden hands that fit (40 by default), plays each candidate card out to the end of the hand and picks the best average result; ties go to the cheaper card, so jokers and the trump Ace are kept for when they matter, and it doesn't overtake a winning partner |
 
-In simulated games Hard beats Medium in about two games out of three. A Hard decision takes about 10–20 ms.
+In simulated games (Hard team against Medium team) Hard won 21 of 30 Bo 4 games and 13 of 16 Bo 6 games. A Hard move takes about 10 ms in Bo 4 and 17 ms in Bo 6 on average.
 
 ## Architecture
 
