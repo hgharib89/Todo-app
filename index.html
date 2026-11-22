@@ -462,6 +462,62 @@
   .edit-loc-row .mic-btn svg { width: 18px; height: 18px; }
 
   /* Filter bar */
+  .toolbar { display: flex; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+  .search-wrap { position: relative; flex: 1; min-width: 0; display: flex; }
+  .search-wrap svg { position: absolute; inset-inline-start: 11px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+  .search-field { flex: 1; width: 100%; height: 38px; font-size: 15px; padding-inline-start: 34px; }
+  .search-field::-webkit-search-cancel-button { cursor: pointer; }
+  .view-btn { width: 38px; height: 38px; }
+  .view-btn[aria-pressed="true"] { background: var(--accent-soft); color: var(--accent-text); border-color: var(--accent-soft); }
+  .cal { padding: 12px 12px 4px; }
+  .cal[hidden] { display: none; }
+  .cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .cal-title { flex: 1; margin: 0; text-align: center; font-size: 16px; font-weight: 600; }
+  .cal-nav { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text); cursor: pointer; font-size: 16px; }
+  .cal-nav:hover { background: var(--surface-hover); }
+  [dir="rtl"] .cal-nav { transform: scaleX(-1); }
+  .cal-today { height: 34px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); color: var(--text-muted); font-size: 13px; cursor: pointer; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+  .cal-wd { text-align: center; font-size: 11px; color: var(--text-muted); padding: 4px 0; }
+  .cal-day {
+    position: relative; aspect-ratio: 1 / 1; min-height: 38px; border: 0; border-radius: var(--radius-sm);
+    background: transparent; color: var(--text); font-size: 14px; cursor: pointer; font-variant-numeric: tabular-nums;
+  }
+  .cal-day:hover { background: var(--surface-hover); }
+  .cal-day.other { color: var(--text-muted); opacity: .45; }
+  .cal-day.today { font-weight: 700; color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--accent); }
+  .cal-day[aria-pressed="true"] { background: var(--accent); color: var(--on-accent); }
+  .cal-dots { position: absolute; left: 0; right: 0; bottom: 4px; display: flex; justify-content: center; gap: 2px; }
+  .cal-dots i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .cal-dots i.done { background: var(--success); }
+  .cal-dots i.late { background: var(--danger); }
+  .cal-day[aria-pressed="true"] .cal-dots i { background: var(--on-accent); }
+  .cal-day-title { margin: 12px 4px 6px; font-size: 14px; font-weight: 600; }
+  .cal-list { list-style: none; margin: 0; padding: 0 0 8px; }
+  .cal-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 8px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text); text-align: start; cursor: pointer; font-size: 15px; }
+  .cal-item:hover { background: var(--surface-hover); }
+  .cal-time { flex: none; min-width: 52px; font-size: 13px; color: var(--accent-text); font-variant-numeric: tabular-nums; }
+  .cal-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .cal-item.done .cal-text { color: var(--text-muted); text-decoration: line-through; }
+  .cal-empty { margin: 0; padding: 12px 4px; font-size: 14px; color: var(--text-muted); }
+  .cal-nodate { margin: 0; padding: 4px 4px 10px; font-size: 12px; color: var(--text-muted); }
+  .item.flash { animation: flash 1.2s ease-out; }
+  @keyframes flash { 0%, 40% { background: var(--accent-soft); } 100% { background: transparent; } }
+  .att-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 8px; padding: 0; list-style: none; }
+  .att-row:empty { display: none; }
+  .att { position: relative; width: 64px; height: 64px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--border); background: var(--surface-hover); }
+  .att-open { display: grid; place-items: center; width: 100%; height: 100%; padding: 2px; border: 0; background: none; color: var(--text-muted); cursor: pointer; font-size: 10px; text-align: center; overflow: hidden; overflow-wrap: anywhere; }
+  .att-open img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .att-del { position: absolute; top: 2px; inset-inline-end: 2px; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 50%; background: rgba(0,0,0,.55); color: #fff; display: grid; place-items: center; cursor: pointer; }
+  .att-del svg { width: 11px; height: 11px; }
+  .detail-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip-btn { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface); color: var(--text); font-size: 13px; cursor: pointer; }
+  .chip-btn:hover { background: var(--surface-hover); }
+  .chip-btn svg { width: 15px; height: 15px; flex: none; }
+  .chip-btn.wa { color: #128C7E; border-color: #25D36655; }
+  .att-input { display: none; }
+  .meta-att { display: inline-flex; align-items: center; gap: 3px; margin-top: 2px; font-size: 12px; color: var(--text-muted); }
+  .meta-att svg { width: 12px; height: 12px; }
   .filter-bar {
     display: flex;
     flex-wrap: wrap;
@@ -567,6 +623,24 @@
       <p class="empty-text" data-i18n="emptyText">أضف أول مهمة في الأعلى للبدء.</p>
     </div>
 
+    <div class="toolbar" id="toolbar" hidden>
+      <div class="search-wrap"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+        <input class="field search-field" id="search" type="search" dir="auto" placeholder="بحث" data-i18n-ph="search" aria-label="بحث" data-i18n-aria="search" autocomplete="off">
+      </div>
+      <button type="button" class="mic-btn view-btn" id="view-btn" aria-pressed="false" aria-label="عرض التقويم" data-i18n-aria="calView"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg></button>
+    </div>
+    <div class="cal" id="cal" hidden>
+      <div class="cal-head">
+        <button type="button" class="cal-nav" id="cal-prev" aria-label="الشهر السابق" data-i18n-aria="prevMonth">‹</button>
+        <p class="cal-title" id="cal-title"></p>
+        <button type="button" class="cal-today" id="cal-today" data-i18n="todayBtn">اليوم</button>
+        <button type="button" class="cal-nav" id="cal-next" aria-label="الشهر التالي" data-i18n-aria="nextMonth">›</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+      <p class="cal-day-title" id="cal-day-title"></p>
+      <ul class="cal-list" id="cal-list"></ul>
+      <p class="cal-nodate" id="cal-nodate" hidden></p>
+    </div>
     <ul class="list" id="list" aria-label="المهام" data-i18n-aria="title"></ul>
     <p class="filter-empty" id="filter-empty" hidden></p>
 
@@ -631,6 +705,11 @@
       calTitle: 'إضافة الموعد إلى', phoneCal: 'تقويم الجوال', outlookWork: 'تطبيق Outlook', outlookHome: 'Outlook.com (حساب شخصي)', googleCal: 'Google Calendar',
       inviteTitle: 'إرسال الدعوة عبر', mailApp: 'تطبيق البريد', outlookInvite: 'تطبيق Outlook', outlookInviteHome: 'دعوة Outlook.com (حساب شخصي)',
       cancel: 'إلغاء',
+      search: 'بحث في المهام والنقاط والمواقع', noResults: 'ما فيه نتائج.', calView: 'عرض التقويم', listView: 'عرض القائمة',
+      prevMonth: 'الشهر السابق', nextMonth: 'الشهر التالي', todayBtn: 'اليوم', calNoTasks: 'ما فيه مهام في هذا اليوم.',
+      calNoDate: function (n) { return 'مهام بدون موعد (تظهر في عرض القائمة): ' + n; }, allDay: '—',
+      attach: 'إرفاق صورة أو ملف', attachShort: 'إرفاق', delAtt: 'حذف المرفق', attTooBig: 'الملف أكبر من 25 ميغابايت.', attFail: 'تعذّر حفظ المرفق.',
+      waShare: 'واتساب', waShareLabel: 'مشاركة عبر واتساب',
       due: 'الموعد', clearDue: 'مسح الموعد', addCal: function (d) { return 'إضافة إلى التقويم: ' + d; },
       mailWhen: 'الموعد: ', mailCal: 'أضفها إلى تقويمك:', locale: 'ar-AE',
       speech: 'ar-AE', switchTo: 'EN', switchLabel: 'Switch to English', switchLang: 'en'
@@ -667,6 +746,11 @@
       calTitle: 'Add this to', phoneCal: 'Phone calendar', outlookWork: 'Outlook app', outlookHome: 'Outlook.com (personal)', googleCal: 'Google Calendar',
       inviteTitle: 'Send the invite with', mailApp: 'Mail app', outlookInvite: 'Outlook app', outlookInviteHome: 'Outlook.com invite (personal)',
       cancel: 'Cancel',
+      search: 'Search tasks, notes and places', noResults: 'No results.', calView: 'Calendar view', listView: 'List view',
+      prevMonth: 'Previous month', nextMonth: 'Next month', todayBtn: 'Today', calNoTasks: 'No tasks on this day.',
+      calNoDate: function (n) { return n + (n === 1 ? ' task has' : ' tasks have') + ' no date and show in list view.'; }, allDay: '—',
+      attach: 'Attach a photo or file', attachShort: 'Attach', delAtt: 'Delete attachment', attTooBig: 'The file is larger than 25 MB.', attFail: 'Could not save the attachment.',
+      waShare: 'WhatsApp', waShareLabel: 'Share on WhatsApp',
       due: 'When', clearDue: 'Clear date', addCal: function (d) { return 'Add to calendar: ' + d; },
       mailWhen: 'When: ', mailCal: 'Add it to your calendar:', locale: 'en-GB',
       speech: 'en-US', switchTo: 'ع', switchLabel: 'التبديل إلى العربية', switchLang: 'ar'
@@ -683,6 +767,15 @@
   var newInput = document.getElementById('new-input');
   var addBtn = document.getElementById('add-btn');
   var locInput = document.getElementById('loc-input');
+  var toolbar = document.getElementById('toolbar');
+  var searchInput = document.getElementById('search');
+  var viewBtn = document.getElementById('view-btn');
+  var calEl = document.getElementById('cal');
+  var calMode = false;
+  var urlCache = {};
+  var dbPromise = null;
+  var calMonth = (function () { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1); })();
+  var calSel = (function () { var d = new Date(); return new Date(d.getFullYear(), d.getMonth(), d.getDate()); })();
   var locateBtn = document.getElementById('locate-btn');
   var dueInput = document.getElementById('due-input');
   var dueClear = document.getElementById('due-clear');
@@ -721,6 +814,9 @@
             return { id: typeof n.id === 'string' ? n.id : newId(), text: n.text.trim().slice(0, 300), at: typeof n.at === 'number' ? n.at : Date.now() };
           }) : [],
           due: typeof t.due === 'string' && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(t.due) ? t.due.slice(0, 16) : '',
+          attachments: Array.isArray(t.attachments) ? t.attachments.filter(function (a) { return a && typeof a.id === 'string'; }).map(function (a) {
+            return { id: a.id, name: String(a.name || '').slice(0, 120), type: String(a.type || ''), size: +a.size || 0 };
+          }) : [],
           invitees: Array.isArray(t.invitees) ? t.invitees.filter(function (e) { return typeof e === 'string' && e; }).slice(0, 50) : [],
           createdAt: typeof t.createdAt === 'number' ? t.createdAt : Date.now()
         };
@@ -757,8 +853,21 @@
     for (var i = 0; i < tasks.length; i++) if (tasks[i].id === id) return tasks[i];
     return null;
   }
+  var query = '';
+  function norm(v) {
+    return String(v || '').toLowerCase()
+      .replace(/[\u064B-\u0652\u0640]/g, '')
+      .replace(/[أإآ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه');
+  }
+  function matchesQuery(t) {
+    if (!query) return true;
+    var hay = [t.text, t.location].concat((t.notes || []).map(function (n) { return n.text; }))
+      .concat((t.attachments || []).map(function (a) { return a.name; })).join(' ');
+    hay = norm(hay);
+    return norm(query).split(/\s+/).filter(Boolean).every(function (w) { return hay.indexOf(w) !== -1; });
+  }
   function matches(t) {
-    return filter === 'all' || (filter === 'active' ? !t.done : t.done);
+    return (filter === 'all' || (filter === 'active' ? !t.done : t.done)) && matchesQuery(t);
   }
   function reducedMotion() { return !!(reducedMQ && reducedMQ.matches); }
 
@@ -842,9 +951,15 @@
       ['line', { x1: '16', y1: '2.5', x2: '16', y2: '6.5' }]
     ]));
     due.appendChild(document.createElement('span'));
+    var metaAtt = document.createElement('span');
+    metaAtt.className = 'meta-att';
+    metaAtt.hidden = true;
+    metaAtt.appendChild(iconSvg('0 0 24 24', '2', [['path', { d: 'M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48' }]]));
+    metaAtt.appendChild(document.createElement('span'));
     body.appendChild(text);
     body.appendChild(due);
     body.appendChild(loc);
+    body.appendChild(metaAtt);
 
     var edit = document.createElement('input');
     edit.type = 'text';
@@ -932,8 +1047,35 @@
     noteAdd.type = 'submit';
     noteAdd.className = 'add-btn note-add';
     noteForm.appendChild(noteAdd);
+    var attRow = document.createElement('ul');
+    attRow.className = 'att-row';
+    var actionsRow = document.createElement('div');
+    actionsRow.className = 'detail-actions';
+    var attBtn = document.createElement('button');
+    attBtn.type = 'button';
+    attBtn.className = 'chip-btn att-btn';
+    attBtn.appendChild(iconSvg('0 0 24 24', '2', [['path', { d: 'M21.44 11.05 12.25 20.24a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48' }]]));
+    attBtn.appendChild(document.createElement('span'));
+    var attInput = document.createElement('input');
+    attInput.type = 'file';
+    attInput.className = 'att-input';
+    attInput.multiple = true;
+    attInput.tabIndex = -1;
+    var waBtn = document.createElement('button');
+    waBtn.type = 'button';
+    waBtn.className = 'chip-btn wa wa-btn';
+    waBtn.appendChild(iconSvg('0 0 24 24', '2', [
+      ['path', { d: 'M3 21l1.65-4.95A8.5 8.5 0 1 1 7.9 19.4L3 21Z' }],
+      ['path', { d: 'M9 9.5c0 3 2.5 5.5 5.5 5.5l1-1.3-1.8-.9-.8.8c-.9-.4-1.9-1.4-2.3-2.3l.8-.8-.9-1.8L9 9.5Z' }]
+    ]));
+    waBtn.appendChild(document.createElement('span'));
+    actionsRow.appendChild(attBtn);
+    actionsRow.appendChild(waBtn);
+    actionsRow.appendChild(attInput);
     notes.appendChild(noteList);
     notes.appendChild(noteForm);
+    notes.appendChild(attRow);
+    notes.appendChild(actionsRow);
 
     var inviteBtn = document.createElement('button');
     inviteBtn.type = 'button';
@@ -1025,7 +1167,7 @@
     var open = openNotes.has(t.id);
     var n = t.notes ? t.notes.length : 0;
     notesBtn.querySelector('.count').textContent = n ? String(n) : '';
-    notesBtn.classList.toggle('has-notes', n > 0);
+    notesBtn.classList.toggle('has-notes', n > 0 || (t.attachments || []).length > 0);
     notesBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
     notesBtn.setAttribute('aria-label', T('notes', t.text));
     notesPanel.hidden = !open;
@@ -1071,6 +1213,52 @@
         chip.appendChild(lbl);
         chip.appendChild(x);
         invList.appendChild(chip);
+      });
+    }
+    var atts = t.attachments || [];
+    var ma = li.querySelector('.meta-att');
+    ma.hidden = !atts.length;
+    ma.querySelector('span').textContent = String(atts.length);
+    var ab = notesPanel.querySelector('.att-btn');
+    ab.querySelector('span').textContent = T('attachShort');
+    ab.setAttribute('aria-label', T('attach'));
+    var wb = notesPanel.querySelector('.wa-btn');
+    wb.querySelector('span').textContent = T('waShare');
+    wb.setAttribute('aria-label', T('waShareLabel'));
+    var ar = notesPanel.querySelector('.att-row');
+    var attSig = lang + '|' + atts.map(function (a) { return a.id; }).join(',');
+    if (ar.dataset.sig !== attSig) {
+      ar.dataset.sig = attSig;
+      ar.textContent = '';
+      atts.forEach(function (a) {
+        var cell = document.createElement('li');
+        cell.className = 'att';
+        cell.dataset.attId = a.id;
+        var open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'att-open';
+        open.setAttribute('aria-label', a.name);
+        open.title = a.name;
+        if (/^image\//.test(a.type)) {
+          var img = document.createElement('img');
+          img.alt = '';
+          open.appendChild(img);
+          getFileUrl(a.id).then(function (u) { if (u) img.src = u; });
+        } else {
+          open.textContent = (a.name.split('.').pop() || 'FILE').toUpperCase().slice(0, 5) + '\n' + a.name.slice(0, 18);
+          open.style.whiteSpace = 'pre-line';
+        }
+        var del = document.createElement('button');
+        del.type = 'button';
+        del.className = 'att-del';
+        del.setAttribute('aria-label', T('delAtt'));
+        del.appendChild(iconSvg('0 0 24 24', '3', [
+          ['line', { x1: '6', y1: '6', x2: '18', y2: '18' }],
+          ['line', { x1: '18', y1: '6', x2: '6', y2: '18' }]
+        ]));
+        cell.appendChild(open);
+        cell.appendChild(del);
+        ar.appendChild(cell);
       });
     }
     var sig = lang + '|' + (t.notes || []).map(function (x) { return x.id + ':' + x.text; }).join('\n');
@@ -1126,7 +1314,8 @@
     hint.textContent = touchMQ && touchMQ.matches ? T('hintTouch') : T('hintMouse');
 
     emptyPanel.hidden = hasTasks;
-    filterBar.hidden = !hasTasks;
+    filterBar.hidden = !hasTasks || calMode;
+    toolbar.hidden = !hasTasks;
     clearBtn.classList.toggle('is-hidden', done === 0);
     if (done === 0) clearBtn.setAttribute('aria-hidden', 'true');
     else clearBtn.removeAttribute('aria-hidden');
@@ -1139,11 +1328,14 @@
     var visible = tasks.filter(matches);
     list.hidden = visible.length === 0;
     if (hasTasks && visible.length === 0) {
-      filterEmpty.textContent = filter === 'active' ? T('allDone') : T('noDone');
+      filterEmpty.textContent = query ? T('noResults') : (filter === 'active' ? T('allDone') : T('noDone'));
       filterEmpty.hidden = false;
     } else {
       filterEmpty.hidden = true;
     }
+    if (calMode) { list.hidden = true; filterEmpty.hidden = true; }
+    calEl.hidden = !calMode || !hasTasks;
+    if (calMode && hasTasks) renderCal();
 
     // Keyed reconciliation keeps elements (and focus) stable.
     var wanted = new Set(visible.map(function (t) { return t.id; }));
@@ -1188,7 +1380,7 @@
     if (editingId) finishEdit(true, false);
     var place = locInput.value.trim().slice(0, 200);
     var dueVal = dueInput.value ? dueInput.value.slice(0, 16) : '';
-    var t = { id: newId(), text: text, done: false, location: place, due: dueVal, notes: [], invitees: [], createdAt: Date.now() };
+    var t = { id: newId(), text: text, done: false, location: place, due: dueVal, notes: [], attachments: [], invitees: [], createdAt: Date.now() };
     tasks.push(t);
     saveTasks();
     if (filter === 'done') { filter = 'all'; saveFilter(); }
@@ -1546,6 +1738,7 @@
     var t = findTask(id);
     if (!t) return;
     var target = refocus ? neighborId(id) : null;
+    (t.attachments || []).forEach(function (a) { removeFile(a.id); });
     tasks = tasks.filter(function (x) { return x.id !== id; });
     saveTasks();
     if (editingId === id) editingId = null;
@@ -1578,6 +1771,7 @@
       var et = findTask(editingId);
       if (et && et.done) editingId = null;
     }
+    tasks.forEach(function (t) { if (t.done) (t.attachments || []).forEach(function (a) { removeFile(a.id); }); });
     tasks = tasks.filter(function (t) { return !t.done; });
     saveTasks();
     if (hadFocus) newInput.focus();
@@ -1661,6 +1855,7 @@
     langBtn.lang = T('switchLang');
     langBtn.setAttribute('aria-label', T('switchLabel'));
     nodes.forEach(function (li, id) { var t = findTask(id); if (t) updateItem(li, t); });
+    if (viewBtn) viewBtn.setAttribute('aria-label', calMode ? T('listView') : T('calView'));
     render();
   }
   langBtn.addEventListener('click', function () {
@@ -1669,6 +1864,257 @@
     applyLang();
   });
   applyLang();
+
+  /* ---------- Attachments (IndexedDB) ---------- */
+  function db() {
+    if (dbPromise) return dbPromise;
+    dbPromise = new Promise(function (resolve) {
+      if (!window.indexedDB) { resolve(null); return; }
+      var req;
+      try { req = indexedDB.open('todo-app-files', 1); } catch (e) { resolve(null); return; }
+      req.onupgradeneeded = function () { req.result.createObjectStore('files'); };
+      req.onsuccess = function () { resolve(req.result); };
+      req.onerror = function () { resolve(null); };
+    });
+    return dbPromise;
+  }
+  function idbGet(id) {
+    return db().then(function (d) {
+      if (!d) return null;
+      return new Promise(function (resolve) {
+        try {
+          var r = d.transaction('files', 'readonly').objectStore('files').get(id);
+          r.onsuccess = function () { resolve(r.result || null); };
+          r.onerror = function () { resolve(null); };
+        } catch (e) { resolve(null); }
+      });
+    });
+  }
+  function idbWrite(fn) {
+    return db().then(function (d) {
+      if (!d) return false;
+      return new Promise(function (resolve) {
+        try {
+          var tx = d.transaction('files', 'readwrite');
+          fn(tx.objectStore('files'));
+          tx.oncomplete = function () { resolve(true); };
+          tx.onerror = tx.onabort = function () { resolve(false); };
+        } catch (e) { resolve(false); }
+      });
+    });
+  }
+  function getFileUrl(id) {
+    if (urlCache[id]) return Promise.resolve(urlCache[id]);
+    return idbGet(id).then(function (blob) {
+      if (!blob) return null;
+      urlCache[id] = URL.createObjectURL(blob);
+      return urlCache[id];
+    });
+  }
+  function removeFile(id) {
+    if (urlCache[id]) { URL.revokeObjectURL(urlCache[id]); delete urlCache[id]; }
+    idbWrite(function (st) { st.delete(id); });
+  }
+  function addAttachments(taskId, files) {
+    var t = findTask(taskId);
+    if (!t || !files || !files.length) return;
+    Array.prototype.forEach.call(files, function (f) {
+      if (f.size > 25 * 1024 * 1024) { announce(T('attTooBig')); window.alert(T('attTooBig')); return; }
+      var id = newId();
+      var blob = new Blob([f], { type: f.type || 'application/octet-stream' });
+      idbWrite(function (st) { st.put(blob, id); }).then(function (ok) {
+        if (!ok) { announce(T('attFail')); window.alert(T('attFail')); return; }
+        var tt = findTask(taskId);
+        if (!tt) { removeFile(id); return; }
+        if (!tt.attachments) tt.attachments = [];
+        tt.attachments.push({ id: id, name: (f.name || 'file').slice(0, 120), type: f.type || '', size: f.size });
+        saveTasks();
+        render();
+      });
+    });
+  }
+  function openAttachment(taskId, attId) {
+    getFileUrl(attId).then(function (u) {
+      if (!u) { announce(T('attFail')); return; }
+      var t = findTask(taskId);
+      var a = t && (t.attachments || []).find(function (x) { return x.id === attId; });
+      var link = document.createElement('a');
+      link.href = u;
+      link.target = '_blank';
+      link.rel = 'noopener';
+      if (a && !/^image\//.test(a.type) && !/pdf/.test(a.type)) link.download = a.name;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    });
+  }
+  function deleteAttachment(taskId, attId) {
+    var t = findTask(taskId);
+    if (!t || !t.attachments) return;
+    t.attachments = t.attachments.filter(function (a) { return a.id !== attId; });
+    removeFile(attId);
+    saveTasks();
+    render();
+  }
+
+  /* ---------- WhatsApp ---------- */
+  function shareWhatsApp(id) {
+    var t = findTask(id);
+    if (!t) return;
+    var lines = ['*' + t.text + '*'];
+    if (t.due) lines.push('🗓 ' + formatDue(t.due));
+    if (t.location) {
+      lines.push('📍 ' + t.location);
+      lines.push('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(t.location));
+    }
+    if (t.notes && t.notes.length) {
+      lines.push('');
+      t.notes.forEach(function (n) { lines.push('• ' + n.text); });
+    }
+    var url = 'https://wa.me/?text=' + encodeURIComponent(lines.join('\n'));
+    var w = window.open(url, '_blank');
+    if (w) { try { w.opener = null; } catch (e) {} } else window.location.href = url;
+  }
+
+  /* ---------- Search ---------- */
+  searchInput.addEventListener('input', function () { query = searchInput.value.trim(); render(); });
+  searchInput.addEventListener('search', function () { query = searchInput.value.trim(); render(); });
+  searchInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') { searchInput.value = ''; query = ''; render(); }
+  });
+
+  /* ---------- Calendar view ---------- */
+  var calGrid = document.getElementById('cal-grid');
+  var calTitle = document.getElementById('cal-title');
+  var calDayTitle = document.getElementById('cal-day-title');
+  var calList = document.getElementById('cal-list');
+  var calNoDate = document.getElementById('cal-nodate');
+  function dayKey(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+  function renderCal() {
+    var loc = T('locale');
+    try { calTitle.textContent = calMonth.toLocaleDateString(loc, { month: 'long', year: 'numeric' }); }
+    catch (e) { calTitle.textContent = calMonth.getFullYear() + '-' + pad(calMonth.getMonth() + 1); }
+    var byDay = {};
+    var noDate = 0;
+    tasks.forEach(function (t) {
+      if (!matchesQuery(t)) return;
+      if (!t.due) { noDate++; return; }
+      var k = t.due.slice(0, 10);
+      (byDay[k] = byDay[k] || []).push(t);
+    });
+    calGrid.textContent = '';
+    var ref = new Date(2024, 0, 1); // a Monday
+    for (var i = 0; i < 7; i++) {
+      var wd = document.createElement('div');
+      wd.className = 'cal-wd';
+      var dd = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + i);
+      try { wd.textContent = dd.toLocaleDateString(loc, { weekday: 'short' }); } catch (e) { wd.textContent = ''; }
+      calGrid.appendChild(wd);
+    }
+    var first = new Date(calMonth.getFullYear(), calMonth.getMonth(), 1);
+    var offset = (first.getDay() + 6) % 7;
+    var start = new Date(first.getFullYear(), first.getMonth(), 1 - offset);
+    var todayK = dayKey(new Date());
+    var selK = dayKey(calSel);
+    var now = Date.now();
+    for (var c = 0; c < 42; c++) {
+      var d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + c);
+      if (c >= 35 && d.getMonth() !== calMonth.getMonth()) break;
+      var k = dayKey(d);
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'cal-day' + (d.getMonth() !== calMonth.getMonth() ? ' other' : '') + (k === todayK ? ' today' : '');
+      b.dataset.day = k;
+      b.setAttribute('aria-pressed', k === selK ? 'true' : 'false');
+      b.textContent = String(d.getDate());
+      try { b.setAttribute('aria-label', d.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }) + (byDay[k] ? ' · ' + byDay[k].length : '')); } catch (e) {}
+      if (byDay[k]) {
+        var dots = document.createElement('span');
+        dots.className = 'cal-dots';
+        byDay[k].slice(0, 3).forEach(function (t) {
+          var dot = document.createElement('i');
+          if (t.done) dot.className = 'done';
+          else if (new Date(t.due).getTime() < now) dot.className = 'late';
+          dots.appendChild(dot);
+        });
+        b.appendChild(dots);
+      }
+      calGrid.appendChild(b);
+    }
+    try { calDayTitle.textContent = calSel.toLocaleDateString(loc, { weekday: 'long', day: 'numeric', month: 'long' }); }
+    catch (e) { calDayTitle.textContent = selK; }
+    calList.textContent = '';
+    var items = (byDay[selK] || []).slice().sort(function (a, b) { return a.due < b.due ? -1 : 1; });
+    if (!items.length) {
+      var em = document.createElement('li');
+      em.className = 'cal-empty';
+      em.textContent = T('calNoTasks');
+      calList.appendChild(em);
+    }
+    items.forEach(function (t) {
+      var li = document.createElement('li');
+      var bt = document.createElement('button');
+      bt.type = 'button';
+      bt.className = 'cal-item' + (t.done ? ' done' : '');
+      bt.dataset.id = t.id;
+      var tm = document.createElement('span');
+      tm.className = 'cal-time';
+      try { tm.textContent = new Date(t.due).toLocaleTimeString(loc, { hour: 'numeric', minute: '2-digit' }); } catch (e) { tm.textContent = t.due.slice(11); }
+      var tx = document.createElement('span');
+      tx.className = 'cal-text';
+      tx.dir = 'auto';
+      tx.textContent = t.text;
+      bt.appendChild(tm);
+      bt.appendChild(tx);
+      li.appendChild(bt);
+      calList.appendChild(li);
+    });
+    calNoDate.hidden = !noDate;
+    calNoDate.textContent = noDate ? T('calNoDate', noDate) : '';
+  }
+  function setCalMode(on) {
+    calMode = on;
+    viewBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    viewBtn.setAttribute('aria-label', on ? T('listView') : T('calView'));
+    viewBtn.innerHTML = on ? '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="3.5" cy="6" r="1"/><circle cx="3.5" cy="12" r="1"/><circle cx="3.5" cy="18" r="1"/></svg>' : '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4.5" width="18" height="16" rx="2"/><line x1="3" y1="9.5" x2="21" y2="9.5"/><line x1="8" y1="2.5" x2="8" y2="6.5"/><line x1="16" y1="2.5" x2="16" y2="6.5"/></svg>';
+    render();
+  }
+  viewBtn.addEventListener('click', function () { setCalMode(!calMode); });
+  document.getElementById('cal-prev').addEventListener('click', function () {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() - 1, 1); renderCal();
+  });
+  document.getElementById('cal-next').addEventListener('click', function () {
+    calMonth = new Date(calMonth.getFullYear(), calMonth.getMonth() + 1, 1); renderCal();
+  });
+  document.getElementById('cal-today').addEventListener('click', function () {
+    var d = new Date();
+    calMonth = new Date(d.getFullYear(), d.getMonth(), 1);
+    calSel = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    renderCal();
+  });
+  calGrid.addEventListener('click', function (e) {
+    var b = e.target.closest('.cal-day');
+    if (!b) return;
+    var p = b.dataset.day.split('-');
+    calSel = new Date(+p[0], +p[1] - 1, +p[2]);
+    if (calSel.getMonth() !== calMonth.getMonth()) calMonth = new Date(calSel.getFullYear(), calSel.getMonth(), 1);
+    renderCal();
+  });
+  calList.addEventListener('click', function (e) {
+    var b = e.target.closest('.cal-item');
+    if (!b) return;
+    var id = b.dataset.id;
+    var t = findTask(id);
+    if (t && !matches(t)) { filter = 'all'; saveFilter(); }
+    setCalMode(false);
+    var li = nodes.get(id);
+    if (li) {
+      li.scrollIntoView({ block: 'center', behavior: reducedMotion() ? 'auto' : 'smooth' });
+      li.classList.remove('flash');
+      void li.offsetWidth;
+      li.classList.add('flash');
+    }
+  });
 
   /* ---------- Due date ---------- */
   var dueWrap = document.getElementById('due-wrap');
@@ -1755,6 +2201,12 @@
   });
 
   list.addEventListener('change', function (e) {
+    if (e.target.matches('.att-input')) {
+      var al = e.target.closest('.item');
+      if (al) addAttachments(al.dataset.id, e.target.files);
+      e.target.value = '';
+      return;
+    }
     var cb = e.target;
     if (!cb.matches('.check input')) return;
     var li = cb.closest('.item');
@@ -1775,6 +2227,10 @@
     }
     if (btn.classList.contains('due')) { calendarMenu(li.dataset.id); return; }
     if (btn.classList.contains('notes-btn')) { toggleNotes(li.dataset.id); return; }
+    if (btn.classList.contains('att-btn')) { li.querySelector('.att-input').click(); return; }
+    if (btn.classList.contains('att-open')) { openAttachment(li.dataset.id, btn.closest('.att').dataset.attId); return; }
+    if (btn.classList.contains('att-del')) { deleteAttachment(li.dataset.id, btn.closest('.att').dataset.attId); return; }
+    if (btn.classList.contains('wa-btn')) { shareWhatsApp(li.dataset.id); return; }
     if (btn.classList.contains('invite-btn')) { toggleInvite(li.dataset.id); return; }
     if (btn.classList.contains('invitee-del')) { removeInvitee(li.dataset.id, btn.closest('.invitee').dataset.email); return; }
     if (btn.classList.contains('del-btn')) deleteTask(li.dataset.id, true);
