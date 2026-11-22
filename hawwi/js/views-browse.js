@@ -220,13 +220,14 @@
   function searchResults(st) {
     const q = U.norm(st.q);
     const prefs = S.prefs();
-    const noFilters = !q && !st.cat && !st.open && !st.delivery && st.emirate === 'all';
+    // the emirate dropdown defaults to the user's emirate, so it does not count as an active filter here
+    const noFilters = !q && !st.cat && !st.open && !st.delivery;
     if (noFilters) {
       const pop = H.SEED.popular[H.lang()];
       const recent = H.mem.recentSearches;
       return (recent.length ? '<h2 class="h3">' + esc(t('search.recent')) + '</h2><div class="chip-wrap">' + recent.map((r) => '<button type="button" class="chip" data-pop="' + esc(r) + '">🕘 ' + esc(r) + '</button>').join('') + '</div>' : '') +
         '<h2 class="h3">' + esc(t('search.popular')) + '</h2><div class="chip-wrap">' + pop.map((r) => '<button type="button" class="chip" data-pop="' + esc(r) + '">' + esc(r) + '</button>').join('') + '</div>' +
-        '<h2 class="h3 mt">' + esc(t('home.nearby')) + '</h2><ul class="list">' + S.businesses().sort(byOpenThenRating).map(H.bizRow).join('') + '</ul>';
+        '<h2 class="h3 mt">' + esc(t('home.nearby')) + '</h2><ul class="list">' + S.businesses().filter((b) => st.emirate === 'all' || b.emirate === st.emirate).sort(byOpenThenRating).map(H.bizRow).join('') + '</ul>';
     }
     let bizs = S.businesses().filter((b) => {
       if (st.cat && b.category !== st.cat) return false;

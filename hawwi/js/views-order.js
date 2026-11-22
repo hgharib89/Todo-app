@@ -171,7 +171,7 @@
         if (sl) {
           const list = viewDay === 'today' ? rs.today : rs.tom;
           const s = list.find((x) => x.start === sl.dataset.slot && x.date === sl.dataset.date);
-          if (s) { const c = S.cart(); c.slot = rs.sched(s, viewDay); S.saveCart(c); H.rerender(); const again = ctx.el.querySelector('[data-slot="' + s.start + '"]'); if (again) again.focus(); }
+          if (s) { const c = S.cart(); c.slot = rs.sched(s, viewDay); S.saveCart(c); H.rerender(); const again = ctx.el.querySelector('[data-slot="' + s.start + '"][data-date="' + s.date + '"]'); if (again) again.focus(); }
           return;
         }
         if (e.target.closest('[data-promo-remove]')) { const c = S.cart(); c.promo = null; S.saveCart(c); H.rerender(); return; }
@@ -276,7 +276,8 @@
       // address form syncing
       form.addEventListener('input', (e) => {
         const k = e.target.dataset.k;
-        if (k) { f[k] = e.target.value; if (e.target.getAttribute('aria-invalid') === 'true' && e.target.value.trim()) { e.target.removeAttribute('aria-invalid'); const er = ctx.el.querySelector('#' + e.target.id + '-err'); if (er) er.hidden = true; } }
+        if (k) f[k] = e.target.value;
+        if (e.target.getAttribute('aria-invalid') === 'true' && e.target.value.trim()) { e.target.removeAttribute('aria-invalid'); const er = ctx.el.querySelector('#' + e.target.id + '-err'); if (er) er.hidden = true; }
       });
       form.addEventListener('change', (e) => {
         if (e.target.dataset.k === 'emirate') { f.emirate = e.target.value; const cr = ctx.el.querySelector('[data-cross]'); if (cr) cr.hidden = f.emirate === biz.emirate; }
@@ -470,7 +471,7 @@
         '<h2 class="h2">' + esc(heroText(o, b)) + '</h2>' +
         (!terminalBad ? '<p class="muted">' + esc(t('trk.eta', { time: (o.slot && o.slot.type === 'scheduled' ? U.dayLabel(new Date(o.etaAt)) + ' ' : '') + U.fmtTime(o.etaAt) })) + '</p>' +
           '<div class="progress' + (o.status !== 'completed' ? ' active' : '') + '" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + pct + '" aria-label="' + esc(H.statusLabel(o)) + '"><span data-bar style="width:' + (animate ? prevPct : pct) + '%"></span></div>' : '') +
-        (o.status === 'rejected' && o.rejectReason ? '<p class="info-strip">' + esc(t('trk.reason', { reason: o.rejectReason })) + '</p>' : '') +
+        (o.status === 'rejected' && o.rejectReason ? '<p class="info-strip">' + esc(t('trk.reason', { reason: H.reasonText(o) })) + '</p>' : '') +
         '</div>' +
         (!terminalBad ? '<ol class="vstep">' + STEPS.map((s, i) => {
           const done = i < curIdx || (o.status === 'completed' && i === curIdx);
@@ -481,7 +482,7 @@
         (b ? '<div class="card biz-contact"><a class="grow biz-mini" href="#/business/' + esc(b.id) + '">' + H.bizLogo(b, 'logo-40') + '<strong dir="auto">' + esc(H.L(b, 'name')) + '</strong></a>' +
           '<button type="button" class="icon-btn" data-contact aria-label="' + esc(t('trk.call')) + '">' + H.icon('phone') + '</button><button type="button" class="icon-btn" data-contact aria-label="' + esc(t('trk.chat')) + '">' + H.icon('chat') + '</button></div>' : '') +
         '<details class="card summary"><summary><span>' + esc(t('trk.orderLine', { n: items, total: U.fmtPrice(o.total) })) + '</span>' + H.icon('chevDown', 'sm chev') + '</summary>' +
-        '<ul class="sum-lines">' + o.lines.map((l) => '<li><span><bdi dir="ltr">' + l.qty + '×</bdi> ' + esc(H.lineName(l)) + (H.lineOpts(l) ? '<span class="line-opts">' + esc(H.lineOpts(l)) + '</span>' : '') + (l.notes ? '<span class="line-notes">"' + esc(l.notes) + '"</span>' : '') + '</span>' + U.price(l.lineTotal) + '</li>').join('') + '</ul>' +
+        '<ul class="sum-lines">' + o.lines.map((l) => '<li><span><bdi dir="ltr">' + l.qty + '×</bdi> ' + esc(H.lineName(l)) + (H.lineOpts(l) ? '<span class="line-opts">' + esc(H.lineOpts(l)) + '</span>' : '') + (l.notes ? '<span class="line-notes"><bdi>"' + esc(l.notes) + '"</bdi></span>' : '') + '</span>' + U.price(l.lineTotal) + '</li>').join('') + '</ul>' +
         '<dl class="totals"><div><dt>' + esc(t('cart.subtotal')) + '</dt><dd>' + U.price(o.subtotal) + '</dd></div>' +
         (o.fulfilment === 'delivery' ? '<div><dt>' + esc(t('cart.deliveryFee')) + '</dt><dd>' + U.price(o.deliveryFee) + '</dd></div>' : '') +
         (o.discount ? '<div class="disc"><dt>' + esc(t('cart.discount', { code: o.promo })) + '</dt><dd>' + U.minus(o.discount) + '</dd></div>' : '') +

@@ -9,7 +9,7 @@
     'nav.home': ['الرئيسية', 'Home'],
     'nav.explore': ['استكشف', 'Explore'],
     'nav.cart': ['السلة', 'Cart'],
-    'nav.cartCount': ['السلة، {n} منتج', 'Cart, {n} items'],
+    'nav.cartCount': ['السلة، {n} منتج', 'Cart, {n} items', ['السلة، منتج واحد', 'Cart, 1 item']],
     'nav.orders': ['طلباتي', 'Orders'],
     'nav.account': ['حسابي', 'Account'],
     'nav.main': ['التنقل الرئيسي', 'Main navigation'],
@@ -136,7 +136,7 @@
     'biz.today': ['اليوم', 'Today'],
     'biz.tomorrow': ['بكرة', 'Tomorrow'],
     'biz.hours': ['ساعات العمل', 'Opening hours'],
-    'biz.reviewsCount': ['{n} تقييم', '{n} reviews'],
+    'biz.reviewsCount': ['{n} تقييم', '{n} reviews', ['تقييم واحد', '1 review']],
     'biz.pickup': ['استلام', 'Pickup'],
     'biz.delivery': ['توصيل', 'Delivery'],
     'biz.deliveryFee': ['توصيل {fee}', 'Delivery {fee}'],
@@ -173,7 +173,7 @@
     'rev.thanks': ['شكراً على تقييمك! ', 'Thanks for your review!'],
     'rev.none': ['ما في تقييمات بعد، كن أول من يقيّم', 'No reviews yet. Be the first!'],
     'rev.rateOrder': ['قيّم طلبك', 'Rate your order'],
-    'rev.stars': ['{n} نجوم', '{n} stars'],
+    'rev.stars': ['{n} نجوم', '{n} stars', ['نجمة واحدة', '1 star']],
     'rev.rated': ['التقييم {r} من 5، {n} تقييم', 'Rated {r} out of 5, {n} reviews'],
     'rev.textError': ['اكتب من 10 إلى 300 حرف', 'Write 10 to 300 characters'],
     'rev.starsError': ['اختر عدد النجوم', 'Choose a star rating'],
@@ -236,7 +236,7 @@
     'cart.onlyDelivery': ['هذا المشروع يوفّر التوصيل فقط', 'This business offers delivery only'],
 
     'co.title': ['إتمام الطلب', 'Checkout'],
-    'co.summary': ['ملخّص: {business} · {n} منتج', 'Summary: {business} · {n} items'],
+    'co.summary': ['ملخّص: {business} · {n} منتج', 'Summary: {business} · {n} items', ['ملخّص: {business} · منتج واحد', 'Summary: {business} · 1 item']],
     'co.address': ['عنوان التوصيل', 'Delivery address'],
     'co.area': ['المنطقة', 'Area'],
     'co.street': ['الشارع / المبنى', 'Street / building'],
@@ -306,7 +306,7 @@
     'trk.call': ['اتصال', 'Call'],
     'trk.chat': ['محادثة', 'Chat'],
     'trk.reason': ['السبب: {reason}', 'Reason: {reason}'],
-    'trk.orderLine': ['الطلب: {n} منتج · {total}', 'Order: {n} items · {total}'],
+    'trk.orderLine': ['الطلب: {n} منتج · {total}', 'Order: {n} items · {total}', ['الطلب: منتج واحد · {total}', 'Order: 1 item · {total}']],
     'ord.title': ['طلباتي', 'My orders'],
     'ord.active': ['الحالية ({n})', 'Active ({n})'],
     'ord.past': ['السابقة ({n})', 'Past ({n})'],
@@ -316,7 +316,7 @@
     'ord.emptyPast': ['ما عندك طلبات سابقة', 'No past orders'],
     'ord.orderNow': ['اطلب الآن', 'Order now'],
     'ord.loginPrompt': ['سجّل دخولك عشان تشوف طلباتك', 'Log in to see your orders'],
-    'ord.items': ['{n} منتج', '{n} items'],
+    'ord.items': ['{n} منتج', '{n} items', ['منتج واحد', '1 item']],
     'ord.scheduled': ['مجدول', 'Scheduled'],
     'ord.reviewed': ['تم التقييم ✓', 'Reviewed ✓'],
 
@@ -448,6 +448,7 @@
     'own.f.groupName': ['اسم المجموعة', 'Group name'],
     'own.f.groupNameAr': ['اسم المجموعة (عربي)', 'Group name (Arabic)'],
     'own.f.groupNameEn': ['اسم المجموعة (إنجليزي)', 'Group name (English)'],
+    'own.f.groupType': ['نوع الاختيار', 'Choice type'],
     'own.f.single': ['اختيار واحد', 'Single choice'],
     'own.f.multi': ['اختيار متعدد', 'Multiple choice'],
     'own.f.max': ['الحد الأقصى', 'Maximum'],
@@ -516,7 +517,9 @@
   H.setLangInternal = (l) => { current = l === 'en' ? 'en' : 'ar'; };
   H.t = function (key, vars) {
     const row = S[key];
-    let s = row ? row[current === 'en' ? 1 : 0] : key;
+    const li = current === 'en' ? 1 : 0;
+    // optional third entry: [arOne, enOne] used when vars.n === 1
+    let s = row ? (row[2] && vars && Number(vars.n) === 1 ? row[2][li] : row[li]) : key;
     if (vars) {
       s = s.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined && vars[k] !== null ? String(vars[k]) : m));
     }

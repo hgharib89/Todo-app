@@ -8,6 +8,14 @@
   const t = (k, v) => H.t(k, v);
   const clone = (x) => JSON.parse(JSON.stringify(x));
 
+  /* hide a field's inline error once the user edits it (it is re-validated on save) */
+  function clearErr(el) {
+    if (!el || el.getAttribute('aria-invalid') !== 'true') return;
+    el.setAttribute('aria-invalid', 'false');
+    const er = el.id && document.getElementById(el.id + '-err');
+    if (er) er.hidden = true;
+  }
+
   /* ---------- 4.5 Manage products ---------- */
   let prodQuery = '';
   function productRow(p) {
@@ -16,9 +24,9 @@
       '<div class="prow-top">' + H.prodTile(p, 'tile-48') + '<div class="grow"><span class="strong" dir="auto">' + esc(name) + '</span>' + (p.hidden ? ' <span class="badge badge-muted">' + esc(t('own.hidden')) + '</span>' : '') + (p.available === false ? ' <span class="badge badge-danger">' + esc(t('biz.soldOut')) + '</span>' : '') +
       '<span class="meta">' + esc(p.section ? (H.lang() === 'en' ? p.section.en : p.section.ar) : '') + '</span></div>' + U.price(p.price) + '</div>' +
       '<div class="prow-ctrls"><span class="sw-label"><span id="vis-' + esc(p.id) + '">' + esc(t('own.visible')) + '</span>' + H.sw({ on: !p.hidden, data: ' data-vis aria-labelledby="vis-' + esc(p.id) + '"' }) + '</span>' +
-      '<span class="sw-label"><span id="stk-' + esc(p.id) + '">' + esc(t('own.inStock')) + '</span>' + H.sw({ on: p.available !== false, data: ' data-stock aria-labelledby="stk-' + esc(p.id) + '"' }) + '</span><span class="grow"></span>' +
+      '<span class="sw-label"><span id="stk-' + esc(p.id) + '">' + esc(t('own.inStock')) + '</span>' + H.sw({ on: p.available !== false, data: ' data-stock aria-labelledby="stk-' + esc(p.id) + '"' }) + '</span><span class="prow-actions">' +
       '<a class="icon-btn" href="#/owner/products/' + esc(p.id) + '/edit" aria-label="' + esc(t('own.editName', { name })) + '">' + H.icon('edit') + '</a>' +
-      '<button type="button" class="icon-btn danger-text" data-del aria-label="' + esc(t('own.deleteName', { name })) + '">' + H.icon('trash') + '</button></div></li>';
+      '<button type="button" class="icon-btn danger-text" data-del aria-label="' + esc(t('own.deleteName', { name })) + '">' + H.icon('trash') + '</button></span></div></li>';
   }
   H.route('/owner/products', {
     auth: true, owner: true, tabbar: 'owner',
@@ -93,7 +101,7 @@
     const groupsHtml = () => d.groups.map((g, gi) => '<fieldset class="card grp" data-gi="' + gi + '"><legend class="sr-only">' + esc(t('own.f.groupName')) + ' ' + (gi + 1) + '</legend>' +
       '<div class="form-grid"><div class="field half"><label class="label" for="g' + gi + 'ar">' + esc(t('own.f.groupNameAr')) + '</label><input id="g' + gi + 'ar" class="input" data-g="nameAr" maxlength="40" value="' + esc(g.nameAr) + '"></div>' +
       '<div class="field half"><label class="label" for="g' + gi + 'en">' + esc(t('own.f.groupNameEn')) + '</label><input id="g' + gi + 'en" class="input" dir="ltr" data-g="nameEn" maxlength="40" value="' + esc(g.nameEn) + '"></div>' +
-      '<div class="field half"><label class="label" for="g' + gi + 'type">' + esc(t('own.f.groupName')) + '</label><select id="g' + gi + 'type" class="input" data-g="type"><option value="single"' + (g.type === 'single' ? ' selected' : '') + '>' + esc(t('own.f.single')) + '</option><option value="multi"' + (g.type === 'multi' ? ' selected' : '') + '>' + esc(t('own.f.multi')) + '</option></select></div>' +
+      '<div class="field half"><label class="label" for="g' + gi + 'type">' + esc(t('own.f.groupType')) + '</label><select id="g' + gi + 'type" class="input" data-g="type"><option value="single"' + (g.type === 'single' ? ' selected' : '') + '>' + esc(t('own.f.single')) + '</option><option value="multi"' + (g.type === 'multi' ? ' selected' : '') + '>' + esc(t('own.f.multi')) + '</option></select></div>' +
       (g.type === 'single' ? '<div class="field half sw-field"><span class="label" id="g' + gi + 'req">' + esc(t('common.required')) + '</span>' + H.sw({ on: g.required, data: ' data-greq aria-labelledby="g' + gi + 'req"' }) + '</div>'
         : '<div class="field half"><label class="label" for="g' + gi + 'max">' + esc(t('own.f.max')) + '</label><input id="g' + gi + 'max" class="input" type="number" min="0" max="20" dir="ltr" data-g="max" value="' + esc(g.max || '') + '"></div>') + '</div>' +
       '<ul class="choices">' + g.choices.map((c, ci) => '<li class="choice" data-ci="' + ci + '"><input class="input" aria-label="' + esc(t('own.f.choiceAr')) + '" placeholder="' + esc(t('own.f.choiceAr')) + '" data-c="nameAr" maxlength="40" value="' + esc(c.nameAr) + '">' +
@@ -132,6 +140,7 @@
     const redrawGroups = () => { ctx.el.querySelector('[data-groups]').innerHTML = groupsHtml(); };
     form.addEventListener('input', (e) => {
       const el = e.target;
+      clearErr(el);
       if (el.dataset.k) { d[el.dataset.k] = el.dataset.k === 'price' ? el.value : el.value; if (el.dataset.k === 'emoji') form.querySelectorAll('[data-emoji]').forEach((x) => { const on = x.dataset.emoji === el.value; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); }); refreshPreview(); return; }
       if (el.dataset.newsec) { d.section = d.section && !sections.some((s) => s.ar === d.section.ar) ? d.section : { ar: '', en: '' }; d.section[el.dataset.newsec] = el.value; return; }
       const gEl = el.closest('[data-gi]');
@@ -203,14 +212,14 @@
       ctx.initial = JSON.stringify(ctx.draft);
       ctx.saved = true;
       H.toast(t('own.productSaved'), { type: 'success' });
-      H.back('#/owner/products');
+      H.backTo('#/owner/products');
     });
   }
   const formRoute = (isNew) => ({
     auth: true, owner: true,
     onBack(ctx) {
       if (ctx.saved || !ctx.draft || JSON.stringify(ctx.draft) === ctx.initial) return true;
-      H.confirm({ title: t('own.discardTitle'), ok: t('own.discard'), danger: true }).then((ok) => { if (ok && ctx.alive()) { ctx.saved = true; H.back('#/owner/products'); } });
+      H.confirm({ title: t('own.discardTitle'), ok: t('own.discard'), danger: true }).then((ok) => { if (ok && ctx.alive()) { ctx.saved = true; H.backTo('#/owner/products'); } });
       return false;
     },
     render: (ctx) => productForm(ctx, isNew)
@@ -264,6 +273,7 @@
       const cover = () => { const gg = S.gradient(d); const c = ctx.el.querySelector('[data-cover]'); c.style.setProperty('--g1', gg[0]); c.style.setProperty('--g2', gg[1]); c.querySelector('.cover-emoji').textContent = d.logo; };
       const redrawHours = (focusSel) => { ctx.el.querySelector('[data-hours]').innerHTML = hoursRows(); if (focusSel) { const n = ctx.el.querySelector(focusSel); if (n) n.focus(); } };
       form.addEventListener('input', (e) => {
+        clearErr(e.target);
         const k = e.target.dataset.k;
         if (k) { d[k] = e.target.type === 'number' ? (e.target.value === '' ? '' : Number(e.target.value)) : e.target.value; }
       });

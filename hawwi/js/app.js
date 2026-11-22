@@ -40,6 +40,11 @@
     if (navStack.length > 1) history.back();
     else H.go(fallback || (S.prefs().ownerMode ? '#/owner/dashboard' : '#/home'), { replace: true });
   };
+  /* go "back" to a specific screen: pop history when it is the previous entry, otherwise replace */
+  H.backTo = function (hash) {
+    if (navStack.length > 1 && navStack[navStack.length - 2] === hash) history.back();
+    else H.go(hash, { replace: true });
+  };
   H.requireLogin = function (returnTo) {
     H.mem.returnTo = returnTo || location.hash;
     H.go('#/login');
@@ -64,6 +69,9 @@
     const top = sc ? sc.scrollTop : 0;
     render({ keepScroll: true, noFocus: true });
     if (sc) sc.scrollTop = top;
+    const live = document.getElementById('live');
+    const h1 = document.querySelector('#screen h1');
+    if (live) live.textContent = h1 ? h1.textContent : '';
   };
   H.toggleLang = () => H.setLang(S.lang() === 'ar' ? 'en' : 'ar');
   H.applyTheme = function () { document.documentElement.setAttribute('data-theme', S.prefs().theme || 'light'); };

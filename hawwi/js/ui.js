@@ -37,9 +37,13 @@
   /* ---------- toast (queue, one at a time) ---------- */
   const queue = [];
   let showing = false;
+  let currentToast = null;
   H.toast = function (msg, opts) {
     queue.push({ msg, opts: opts || {} });
     if (!showing) nextToast();
+    // a newer toast is waiting: let the current one finish after a short minimum, so time-limited
+    // actions such as "Undo" are not hidden behind an older toast for several seconds
+    else if (currentToast) currentToast.hurry();
   };
   function nextToast() {
     const item = queue.shift();
@@ -54,11 +58,14 @@
     el.innerHTML = lead + '<span class="toast-msg">' + esc(item.msg) + '</span>' + (o.action ? '<button type="button" class="toast-action">' + esc(o.action.label) + '</button>' : '');
     root.appendChild(el);
     let done = false;
+    const shownAt = Date.now();
     const close = () => {
       if (done) return; done = true;
+      if (currentToast && currentToast.el === el) currentToast = null;
       el.classList.remove('show');
       setTimeout(() => { el.remove(); nextToast(); }, U.reduced() ? 0 : 200);
     };
+    currentToast = { el, hurry: () => setTimeout(close, Math.max(0, 1200 - (Date.now() - shownAt))) };
     if (o.action) el.querySelector('.toast-action').addEventListener('click', () => { try { o.action.fn(); } finally { close(); } });
     requestAnimationFrame(() => el.classList.add('show'));
     setTimeout(close, o.action ? 4000 : 2800);
@@ -261,6 +268,16 @@
   const STATUS_CLS = { received: 'info', preparing: 'warning', ready: 'teal', completed: 'success', rejected: 'danger', cancelled: 'muted' };
   H.statusBadge = (o) => '<span class="badge badge-dot badge-' + STATUS_CLS[o.status] + '">' + esc(H.statusLabel(o)) + '</span>';
 
+  /* rejection reason in the current language: preset reasons are stored as "ar / en" plus a key */
+  H.reasonText = function (o) {
+    const r = (o && o.rejectReason) || '';
+    const k = o && o.rejectReasonKey;
+    if (k === 'otherPreset') return t('own.reason.other');
+    if (k && k !== 'other' && H.STR['own.reason.' + k]) return t('own.reason.' + k);
+    if (k === 'other') return r;
+    const parts = r.split(' / ');
+    return parts.length === 2 ? (H.lang() === 'en' ? parts[1] : parts[0]) : r;
+  };
   H.customerName = (c) => (c && (c.nameAr || c.nameEn) ? H.L(c, 'name') : (c && c.name) || '');
   H.addrText = function (a) {
     if (!a) return '';

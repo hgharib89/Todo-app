@@ -110,33 +110,41 @@
     else if (st.state === 'closing') { label = t('biz.closingSoon'); cls = 'warning'; }
     else if (st.next) {
       const od = new Date(st.next.open);
-      label = t('biz.closedOpens', { day: U.dayLabel(od, now), time: U.fmtTime(od) }); cls = 'muted';
+      let day = U.dayLabel(od, now);
+      if (H.lang() === 'en' && U.dayDiff(od, now || new Date()) <= 1) day = day.toLowerCase(); // "opens today 4:00 PM"
+      label = t('biz.closedOpens', { day, time: U.fmtTime(od) }); cls = 'muted';
     } else { label = t('biz.closed'); cls = 'muted'; }
     return '<span class="badge badge-' + cls + '">' + U.esc(label) + '</span>';
   };
 
-  /* Slots for dayOffset 0 (today) or 1 (tomorrow). Returns [{start:'HH:MM', at:ms, date:'YYYY-MM-DD'}] */
+  /* Slots for dayOffset 0 (today) or 1 (tomorrow). Returns [{start:'HH:MM', at:ms, date:'YYYY-MM-DD'}]
+     `date` is the calendar date of the slot start (after-midnight slots carry the next date).
+     Today also includes the remaining after-midnight slots of last night's opening (e.g. 16:00-03:00). */
   U.slots = function (biz, dayOffset, now) {
     now = now || new Date();
     if (biz.acceptingOrders === false) return [];
-    const d = U.addDays(U.startOfDay(now), dayOffset);
-    const e = biz.hours && biz.hours[U.satIndex(d)];
-    if (!e) return [];
-    const o = U.hm(e[0]); let c = U.hm(e[1]);
-    if (c === o) return [];
-    if (c < o) c += 1440;
-    const openAt = d.getTime() + o * MIN;
-    const closeAt = d.getTime() + c * MIN;
-    let start = openAt;
-    if (dayOffset === 0) {
-      const ready = now.getTime() + (biz.prep || 0) * MIN;
-      const r30 = Math.ceil(ready / (30 * MIN)) * 30 * MIN;
-      start = Math.max(openAt, r30);
-    }
+    const base = U.startOfDay(now);
+    const ready = now.getTime() + (biz.prep || 0) * MIN;
+    const earliest = Math.ceil(ready / (30 * MIN)) * 30 * MIN;
     const out = [];
-    for (let ts = start; ts <= closeAt - 30 * MIN; ts += 30 * MIN) {
-      const sd = new Date(ts);
-      out.push({ start: U.pad(sd.getHours()) + ':' + U.pad(sd.getMinutes()), at: ts, date: U.ymd(d) });
+    const fromDay = (d, minStart) => {
+      const e = biz.hours && biz.hours[U.satIndex(d)];
+      if (!e) return;
+      const o = U.hm(e[0]); let c = U.hm(e[1]);
+      if (c === o) return;
+      if (c < o) c += 1440;
+      const openAt = d.getTime() + o * MIN;
+      const closeAt = d.getTime() + c * MIN;
+      for (let ts = Math.max(openAt, minStart); ts <= closeAt - 30 * MIN; ts += 30 * MIN) {
+        const sd = new Date(ts);
+        out.push({ start: U.pad(sd.getHours()) + ':' + U.pad(sd.getMinutes()), at: ts, date: U.ymd(sd) });
+      }
+    };
+    if (dayOffset === 0) {
+      fromDay(U.addDays(base, -1), Math.max(earliest, base.getTime()));
+      fromDay(base, earliest);
+    } else {
+      fromDay(U.addDays(base, dayOffset), 0);
     }
     return out;
   };

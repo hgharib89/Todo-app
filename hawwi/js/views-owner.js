@@ -30,14 +30,14 @@
   });
 
   /* ---------- owner actions ---------- */
-  H.ownerAction = function (id, action, reason) {
+  H.ownerAction = function (id, action, reason, reasonKey) {
     const o = S.order(id);
     if (!o) return false;
     const map = { accept: ['received', 'preparing', 'own.accepted'], reject: ['received', 'rejected', 'own.rejected'], ready: ['preparing', 'ready', 'own.markedReady'], complete: ['ready', 'completed', 'own.completed'] };
     const m = map[action];
     if (!m || o.status !== m[0]) return false;
-    S.setStatus(id, m[1], { byOwner: true, reason });
-    H.toast(t(m[2], { id: '#' + id }), { type: 'success' });
+    S.setStatus(id, m[1], { byOwner: true, reason, reasonKey });
+    H.toast(t(m[2], { id: '\u2066#' + id + '\u2069' }), { type: 'success' }); // LRI…PDI keeps "#HW-1085" intact in RTL text
     H.updateTabbar();
     return true;
   };
@@ -54,11 +54,12 @@
         f.addEventListener('submit', (e) => {
           e.preventDefault();
           const r = f.reason.value;
-          let reason = t('own.reason.' + r);
-          if (r === 'other') { const tx = panel.querySelector('#rj-text').value.trim(); if (tx) reason = tx; }
-          else { const ar = H.STR['own.reason.' + r]; reason = ar[0] + ' / ' + ar[1]; }
+          const pair = H.STR['own.reason.' + r];
+          let reason = pair[0] + ' / ' + pair[1];
+          let key = r === 'other' ? 'otherPreset' : r;
+          if (r === 'other') { const tx = panel.querySelector('#rj-text').value.trim(); if (tx) { reason = tx; key = 'other'; } }
           sheet.close(true);
-          if (H.ownerAction(id, 'reject', reason) && onDone) onDone();
+          if (H.ownerAction(id, 'reject', reason, key) && onDone) onDone();
         });
       }
     });
@@ -167,9 +168,9 @@
     return '<li class="card in-card' + (flash ? ' flash' : '') + '" data-card="' + esc(o.id) + '"><div class="oc-head"><a href="#/owner/orders/' + esc(o.id) + '" class="strong"><bdi dir="ltr">#' + esc(o.id) + '</bdi></a> · ' + (o.fulfilment === 'delivery' ? '🛵 ' + esc(t('cart.delivery')) : '🏃 ' + esc(t('cart.pickup'))) +
       '<span class="grow"></span>' + (S.STATUS_ACTIVE.indexOf(o.status) >= 0 ? '<span class="timer" aria-label="' + esc(t('own.timerLabel')) + '">⏱ <bdi data-since="' + esc(o.createdAt) + '">' + sinceTxt(o) + '</bdi></span>' : H.statusBadge(o)) + '</div>' +
       '<p class="meta">' + esc(H.customerName(o.customer)) + ' · ' + (sched ? '<span class="badge badge-info">' + esc(t('ord.scheduled')) + '</span> ' + esc(H.slotText(o)) : esc(U.dateTime(o.createdAt))) + '</p>' +
-      '<ul class="in-lines">' + o.lines.map((l) => '<li><bdi dir="ltr">' + l.qty + '×</bdi> <span dir="auto">' + esc(H.lineName(l)) + '</span>' + (H.lineOpts(l) ? ' <span class="muted">(' + esc(H.lineOpts(l)) + ')</span>' : '') + (l.notes ? ' · <span class="line-notes">"' + esc(l.notes) + '"</span>' : '') + '</li>').join('') + '</ul>' +
+      '<ul class="in-lines">' + o.lines.map((l) => '<li><bdi dir="ltr">' + l.qty + '×</bdi> <span dir="auto">' + esc(H.lineName(l)) + '</span>' + (H.lineOpts(l) ? ' <span class="muted">(' + esc(H.lineOpts(l)) + ')</span>' : '') + (l.notes ? ' · <span class="line-notes"><bdi>"' + esc(l.notes) + '"</bdi></span>' : '') + '</li>').join('') + '</ul>' +
       (o.address ? '<p class="meta">📍 ' + esc(H.addrText(o.address)) + '</p>' : '') +
-      (o.rejectReason && o.status === 'rejected' ? '<p class="meta">' + esc(t('trk.reason', { reason: o.rejectReason })) + '</p>' : '') +
+      (o.rejectReason && o.status === 'rejected' ? '<p class="meta">' + esc(t('trk.reason', { reason: H.reasonText(o) })) + '</p>' : '') +
       '<div class="oc-foot"><span>' + esc(H.payText(o.payment)) + '</span><span class="grow"></span>' + U.price(o.total) + '</div>' +
       (actionButtons(o) ? '<div class="in-actions">' + actionButtons(o) + '</div>' : '') + '</li>';
   }
@@ -239,11 +240,11 @@
         (o.address ? '<p class="meta">📍 ' + esc(t('em.' + o.address.emirate)) + ' · ' + esc(H.addrText(o.address)) + (o.address.notes ? ' · "' + esc(o.address.notes) + '"' : '') + '</p>' : '') +
         '<p class="meta">' + esc(H.payText(o.payment)) + '</p>' +
         (S.STATUS_ACTIVE.indexOf(o.status) >= 0 ? '<p class="timer">⏱ <bdi data-since="' + esc(o.createdAt) + '">' + sinceTxt(o) + '</bdi></p>' : '') + '</div>' +
-        '<section class="sec-block"><h2 class="h3">' + esc(t('own.items')) + '</h2><div class="card"><ul class="sum-lines">' + o.lines.map((l) => '<li><span><bdi dir="ltr">' + l.qty + '×</bdi> <span aria-hidden="true">' + esc(l.emoji) + '</span> ' + esc(H.lineName(l)) + (H.lineOpts(l) ? '<span class="line-opts">' + esc(H.lineOpts(l)) + '</span>' : '') + (l.notes ? '<span class="line-notes">"' + esc(l.notes) + '"</span>' : '') + '</span>' + U.price(l.lineTotal) + '</li>').join('') + '</ul>' +
+        '<section class="sec-block"><h2 class="h3">' + esc(t('own.items')) + '</h2><div class="card"><ul class="sum-lines">' + o.lines.map((l) => '<li><span><bdi dir="ltr">' + l.qty + '×</bdi> <span aria-hidden="true">' + esc(l.emoji) + '</span> ' + esc(H.lineName(l)) + (H.lineOpts(l) ? '<span class="line-opts">' + esc(H.lineOpts(l)) + '</span>' : '') + (l.notes ? '<span class="line-notes"><bdi>"' + esc(l.notes) + '"</bdi></span>' : '') + '</span>' + U.price(l.lineTotal) + '</li>').join('') + '</ul>' +
         '<dl class="totals"><div><dt>' + esc(t('cart.subtotal')) + '</dt><dd>' + U.price(o.subtotal) + '</dd></div>' + (o.fulfilment === 'delivery' ? '<div><dt>' + esc(t('cart.deliveryFee')) + '</dt><dd>' + U.price(o.deliveryFee) + '</dd></div>' : '') +
         (o.discount ? '<div class="disc"><dt>' + esc(t('cart.discount', { code: o.promo })) + '</dt><dd>' + U.minus(o.discount) + '</dd></div>' : '') + '<div class="grand"><dt>' + esc(t('cart.total')) + '</dt><dd>' + U.price(o.total) + '</dd></div></dl></div></section>' +
         '<section class="sec-block"><h2 class="h3">' + esc(t('own.history')) + '</h2><ol class="card timeline">' + (o.history || []).map((h) => '<li><span class="vdot done" aria-hidden="true">✓</span><span class="grow">' + esc(H.statusLabel(o, h.status)) + '</span><bdi class="muted">' + esc(U.dateTime(h.at)) + '</bdi></li>').join('') + '</ol>' +
-        (o.rejectReason ? '<p class="info-strip">' + esc(t('trk.reason', { reason: o.rejectReason })) + '</p>' : '') + '</section>' +
+        (o.rejectReason ? '<p class="info-strip">' + esc(t('trk.reason', { reason: H.reasonText(o) })) + '</p>' : '') + '</section>' +
         (actionButtons(o) ? '<div class="in-actions">' + actionButtons(o) + '</div>' : '') + '</div></main>';
       ctx.el.querySelector('main').addEventListener('click', (e) => { const ab = e.target.closest('[data-act-o]'); if (ab) runAction(ab, ctx); });
     }

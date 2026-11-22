@@ -61,6 +61,29 @@
   function getObj(key, fb) { const v = store.get(key, fb); if (!isObj(v)) { if (v != null && v !== fb) { console.warn('hawwi: wrong shape for', key); notifyStorageErrorOnce(); } return fb; } return v; }
   function getArr(key) { const v = store.get(key, []); if (!Array.isArray(v)) { console.warn('hawwi: wrong shape for', key); notifyStorageErrorOnce(); return []; } return v; }
 
+  /* ---------- shape guards for stored overrides (corrupted or hand-edited storage must not crash rendering) ---------- */
+  const HHMM = /^\d{2}:\d{2}$/;
+  const validHours = (h) => Array.isArray(h) && h.length === 7 && h.every((e) => e === null || (Array.isArray(e) && e.length === 2 && HHMM.test(e[0]) && HHMM.test(e[1])));
+  const validGroups = (gs) => Array.isArray(gs) && gs.every((g) => isObj(g) && typeof g.id === 'string' && (g.type === 'single' || g.type === 'multi') &&
+    Array.isArray(g.choices) && g.choices.every((c) => isObj(c) && typeof c.id === 'string' && isFinite(Number(c.delta))));
+  /* keep only override fields whose type matches the seed field (unknown fields must be booleans/strings/numbers) */
+  function cleanOverride(o, seed) {
+    if (!isObj(o)) return {};
+    const out = {};
+    Object.keys(o).forEach((k) => {
+      const v = o[k]; const sv = seed ? seed[k] : undefined;
+      if (k === 'hours') { if (validHours(v)) out[k] = v; return; }
+      if (k === 'groups') { if (validGroups(v)) out[k] = v; return; }
+      if (k === 'section') { if (isObj(v) && typeof v.ar === 'string') out[k] = { ar: v.ar, en: typeof v.en === 'string' ? v.en : v.ar }; return; }
+      if (k === 'price' || k === 'deliveryFee' || k === 'minOrder' || k === 'prep' || k === 'rating' || k === 'reviewCount') { if (typeof v === 'number' && isFinite(v)) out[k] = v; return; }
+      if (sv !== undefined && sv !== null) { if (typeof v === typeof sv) out[k] = v; return; }
+      if (['boolean', 'string', 'number'].indexOf(typeof v) >= 0) out[k] = v;
+    });
+    return out;
+  }
+  const validCustom = (p) => isObj(p) && typeof p.id === 'string' && typeof p.businessId === 'string' && typeof p.nameAr === 'string' && typeof p.nameEn === 'string' &&
+    typeof p.price === 'number' && isFinite(p.price) && (p.groups === undefined || validGroups(p.groups)) && isObj(p.section);
+
   const S = {};
   S.K = K;
 
@@ -78,7 +101,7 @@
   S.bizOverrides = () => getObj(K.bov, {});
   S.businesses = function () {
     const ov = S.bizOverrides();
-    return SEED.businesses.map((b) => Object.assign({}, b, ov[b.id] || {}));
+    return SEED.businesses.map((b) => Object.assign({}, b, cleanOverride(ov[b.id], b)));
   };
   S.business = (id) => S.businesses().find((b) => b.id === id) || null;
   S.saveBusinessOverride = function (bid, patch) {
@@ -91,11 +114,11 @@
 
   /* ---------- products ---------- */
   S.prodOverrides = () => getObj(K.pov, {});
-  S.customProducts = () => getArr(K.custom);
+  S.customProducts = () => getArr(K.custom).filter(validCustom).map((p) => Object.assign({ groups: [] }, p));
   S.allProducts = function () {
     const ov = S.prodOverrides();
     return SEED.products.concat(S.customProducts())
-      .map((p) => Object.assign({}, p, ov[p.id] || {}))
+      .map((p) => Object.assign({}, p, cleanOverride(ov[p.id], p)))
       .filter((p) => !p.deleted);
   };
   /* products for a business; customer view hides owner-hidden */
@@ -175,7 +198,7 @@
 
   /* ---------- reviews ---------- */
   S.seededAt = () => new Date(store.get(K.seededAt, new Date().toISOString()));
-  S.userReviews = () => getArr(K.reviews);
+  S.userReviews = () => getArr(K.reviews).filter((r) => isObj(r) && typeof r.businessId === 'string' && r.stars >= 1 && r.stars <= 5);
   S.reviews = function (bid) {
     const anchor = S.seededAt().getTime();
     const seed = SEED.reviews.filter((r) => r.businessId === bid).map((r) => Object.assign({}, r, { createdAt: new Date(anchor - r.daysAgo * U.DAY).toISOString() }));
@@ -201,7 +224,14 @@
   S.cart = function () {
     const c = getObj(K.cart, null);
     if (!c || !Array.isArray(c.lines)) return emptyCart();
-    return Object.assign(emptyCart(), c);
+    const out = Object.assign(emptyCart(), c);
+    out.lines = c.lines.filter((l) => isObj(l) && typeof l.productId === 'string' && Number.isInteger(l.qty) && l.qty > 0)
+      .map((l) => Object.assign({}, l, { qty: Math.min(20, l.qty), options: isObj(l.options) ? l.options : {}, addons: isObj(l.addons) ? l.addons : {}, notes: typeof l.notes === 'string' ? l.notes : '' }));
+    if (!isObj(out.slot) || (out.slot.type !== 'asap' && out.slot.type !== 'scheduled')) out.slot = { type: 'asap' };
+    if (out.fulfilment !== 'pickup' && out.fulfilment !== 'delivery') out.fulfilment = 'pickup';
+    if (typeof out.businessId !== 'string') out.businessId = null;
+    if (typeof out.promo !== 'string') out.promo = null;
+    return out;
   };
   S.saveCart = (c) => { c.updatedAt = new Date().toISOString(); if (!c.lines.length) { c.businessId = null; c.promo = null; } store.set(K.cart, c); };
   S.clearCart = function () { const c = S.cart(); S.saveCart(emptyCart(c.fulfilment)); };
@@ -274,7 +304,7 @@
   /* ---------- orders ---------- */
   S.STATUS_ACTIVE = ['received', 'preparing', 'ready'];
   S.STATUS_TERMINAL = ['completed', 'rejected', 'cancelled'];
-  S.orders = () => getArr(K.orders);
+  S.orders = () => getArr(K.orders).filter((o) => isObj(o) && typeof o.id === 'string' && typeof o.businessId === 'string' && Array.isArray(o.lines));
   S.saveOrders = (list) => store.set(K.orders, list);
   S.order = (id) => S.orders().find((o) => o.id === id) || null;
   S.updateOrder = function (id, fn) {
@@ -307,7 +337,7 @@
       if (opts.byOwner) o.simulate = false;
       const d = S.durationAfter(status, o);
       o.nextAt = d == null ? null : at + d;
-      if (opts.reason) o.rejectReason = opts.reason;
+      if (opts.reason) { o.rejectReason = opts.reason; o.rejectReasonKey = opts.reasonKey || undefined; }
     });
   };
   /* Advance simulated orders (one step per order per tick). Returns changed orders. */
@@ -398,7 +428,7 @@
           slot: { type: 'asap' }, etaAt: new Date(ct + (b.prep + (ful === 'delivery' ? 15 : 0)) * U.MIN).toISOString(),
           payment: payment, subtotal, deliveryFee: fee, discount: 0, total: U.round2(subtotal + fee), promo: null,
           status, history: hist, simulate: false, nextAt: null, seed: true, createdAt: new Date(ct).toISOString(),
-          rejectReason: status === 'rejected' ? 'مشغولين حالياً / Too busy' : undefined
+          rejectReason: status === 'rejected' ? 'مشغولين حالياً / Too busy' : undefined, rejectReasonKey: status === 'rejected' ? 'busy' : undefined
         });
       };
       const at = (dayOff, h, m) => { const d = U.addDays(today, dayOff); d.setHours(h, m, 0, 0); return d; };

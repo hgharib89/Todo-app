@@ -118,9 +118,8 @@
         input.value = U.fmtLocalPhone(d);
         const full = d.length === 9;
         btn.disabled = !full; btn.setAttribute('aria-disabled', full ? 'false' : 'true');
-        if (!full) { err.hidden = true; input.removeAttribute('aria-invalid'); }
       };
-      input.addEventListener('input', sync);
+      input.addEventListener('input', () => { err.hidden = true; input.removeAttribute('aria-invalid'); sync(); });
       sync();
       ctx.el.querySelector('[data-form]').addEventListener('submit', (e) => {
         e.preventDefault();
