@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { ModeId } from '../engine';
+import { BOT_NAMES } from '../bots/names';
 
 /** Seat positions in % of the table box. Seat 0 = you (bottom); seats go counter-clockwise (right side first). */
 export const SEAT_POS: Record<ModeId, { x: number; y: number }[]> = {
@@ -21,8 +22,8 @@ export const SEAT_POS: Record<ModeId, { x: number; y: number }[]> = {
 
 export const SEAT_NAMES: Record<ModeId, string[]> = {
   // team 0 (us) = even seats, team 1 (them) = odd seats
-  bo4: ['أنت', 'خالد', 'سالم', 'ناصر'],
-  bo6: ['أنت', 'خالد', 'سالم', 'ناصر', 'فهد', 'بو علي'],
+  bo4: ['أنت', ...BOT_NAMES.slice(0, 3)],
+  bo6: ['أنت', ...BOT_NAMES],
 };
 
 /** Where a played card sits in the trick, as a pixel offset from the table centre. */

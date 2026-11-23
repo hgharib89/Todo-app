@@ -265,7 +265,7 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
   );
 }
 
-/** "خالد قطع في الأكلة ٣ (ما لحق الهاس) — صاده سالم: +١٢ لنا" */
+/** "خليفة قطع في الأكلة ٣ (ما لحق الهاس) — صاده محمد: +١٢ لنا" */
 export function catchMessage(game: GameState, c: CatchResult, points?: [number, number], names: string[] = SEAT_NAMES[game.mode]): string {
   if (!c.success) return `${names[c.catcher]} صاد غلط على ${names[c.accused]} — ما في شي`;
   const suit = c.suit ? ` (ما لحق ${SUIT_NAME_AR[c.suit]})` : '';
