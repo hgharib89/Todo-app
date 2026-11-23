@@ -71,7 +71,7 @@ describe('reneging (القطع الغلط)', () => {
   });
 });
 
-describe('catching (الصيد)', () => {
+describe('catching (أكاشف)', () => {
   it('no evidence until the reneger later plays the suit they showed out of', () => {
     let s = play(start(), 'H14', 'D9', 'H8', 'H7');
     expect(renegeEvidence(s)).toEqual([]);

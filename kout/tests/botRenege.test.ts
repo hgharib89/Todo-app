@@ -54,7 +54,7 @@ describe('bots: reneging by mistake', () => {
   });
 });
 
-describe('bots: catching (صيد)', () => {
+describe('bots: catching (أكاشف)', () => {
   it('Hard always catches when there is visible evidence', () => {
     const s = evidenceState();
     expect(chooseBotCatch(s, 0, 'hard')).toEqual({ type: 'CATCH', player: 0, accused: 1, trick: 0 });
@@ -116,7 +116,7 @@ describe('full games with reneging and catching', () => {
           s = applyAction(s, { type: 'NEXT_HAND' });
           continue;
         }
-        // any bot may call صيد on what it has seen
+        // any bot may call «أكاشف» on what it has seen
         let called = false;
         if (s.phase === 'playing' || s.phase === 'review') {
           for (let seat = 0; seat < 4 && !called; seat++) {

@@ -151,7 +151,7 @@ export function ScorePad({ game, onClose }: { game: GameState; onClose: () => vo
                     </td>
                     <td>
                       {h.caught ? (
-                        <span className="caught-tag">صيد</span>
+                        <span className="caught-tag">أكاشف</span>
                       ) : h.larensWin ? (
                         <span className="bawn-tag">قيم</span>
                       ) : h.bawn ? (
@@ -190,8 +190,8 @@ export function HandResultModal({ game, onNext, onPad }: { game: GameState; onNe
   return (
     <div className="modal-back">
       <div className={`modal result ${good ? 'good' : 'bad'}`}>
-        <div className="result-badge">{r.caught ? '🎯' : r.made ? '✓' : '✗'}</div>
-        <h2>{r.caught ? (caughtUs ? 'انصدنا!' : 'صدناهم!') : r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
+        <div className="result-badge">{r.caught ? '👁' : r.made ? '✓' : '✗'}</div>
+        <h2>{r.caught ? (caughtUs ? 'انكشفنا!' : 'كاشفناهم!') : r.made ? (ours ? 'جبنا الطلب!' : 'جابوا الطلب') : ours ? 'انكسر طلبنا' : 'كسرناهم!'}</h2>
         {r.caught && <p className="catch-line">{catchMessage(game, r.caught, r.points, names)}</p>}
         {!r.caught && r.bawn && <p className="catch-line">{r.made ? `باون! أخذوا كل الأكلات بعد الإعلان: +${ar(r.points[r.team])}` : `انكسر الباون: +${ar(r.points[1 - r.team])} للخصم`}</p>}
         <p className="result-line">
@@ -265,19 +265,20 @@ export function GameOverModal({ game, onAgain, onHome, onPad }: { game: GameStat
   );
 }
 
-/** "خليفة قطع في الأكلة ٣ (ما لحق الهاس) — صاده محمد: +١٢ لنا" */
+/** "خليفة كاشف راشد في الأكلة ٣ (ما لحق هاس): +١٢ لنا" (seat 0 is always you) */
 export function catchMessage(game: GameState, c: CatchResult, points?: [number, number], names: string[] = SEAT_NAMES[game.mode]): string {
-  if (!c.success) return `${names[c.catcher]} صاد غلط على ${names[c.accused]} — ما في شي`;
+  if (!c.success) return `مكاشفة غلط من ${c.catcher === 0 ? 'عندك' : names[c.catcher]} على ${names[c.accused]} — ما في شي`;
   const suit = c.suit ? ` (ما لحق ${SUIT_NAME_AR[c.suit]})` : '';
   let pts = '';
   if (points) {
     const team = points[0] > 0 ? 0 : 1;
     pts = `: +${ar(points[team])} ${team === 0 ? 'لنا' : 'لهم'}`;
   }
-  return `${names[c.accused]} قطع في الأكلة ${ar(c.trick + 1)}${suit} — صاده ${names[c.catcher]}${pts}`;
+  const who = c.catcher === 0 ? `أنت كاشفت ${names[c.accused]}` : c.accused === 0 ? `${names[c.catcher]} كاشفك` : `${names[c.catcher]} كاشف ${names[c.accused]}`;
+  return `${who} في الأكلة ${ar(c.trick + 1)}${suit}${pts}`;
 }
 
-/** The human's صيد picker: choose an opponent, then the trick where they reneged. */
+/** The human's «أكاشف» picker: choose an opponent, then the trick where they reneged. */
 export function CatchModal({ game, me, onCatch, onClose }: { game: GameState; me: number; onCatch: (accused: number, trick: number) => void; onClose: () => void }) {
   const names = useSeatNames(game.mode);
   const myTeam = teamOf(game, me);
@@ -288,7 +289,7 @@ export function CatchModal({ game, me, onCatch, onClose }: { game: GameState; me
     <div className="modal-back" onClick={onClose}>
       <div className="modal catch-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h2>صيد</h2>
+          <h2>أكاشف</h2>
           <button className="icon-btn" onClick={onClose} aria-label="إغلاق">
             ✕
           </button>
@@ -331,14 +332,14 @@ export function CatchModal({ game, me, onCatch, onClose }: { game: GameState; me
   );
 }
 
-/** End-of-hand review: the human may still call صيد before the hand is scored. */
+/** End-of-hand review: the human may still call «أكاشف» before the hand is scored. */
 export function ReviewPanel({ onCatch, onDone }: { onCatch: () => void; onDone: () => void }) {
   return (
     <div className="panel review-panel">
-      <div className="panel-title">انتهت الأوراق — تبي تصيد قبل الحساب؟</div>
+      <div className="panel-title">انتهت الأوراق — تبي تكاشف قبل الحساب؟</div>
       <div className="modal-actions">
         <button className="btn ghost" onClick={onCatch}>
-          🎯 صيد
+          أكاشف
         </button>
         <button className="btn primary" onClick={onDone}>
           متابعة

@@ -4,7 +4,7 @@
  *   npm run loadtest -- --url http://localhost:2567 --players 500 --duration 180
  *
  * Each player joins public matchmaking (Bo 6 / Bo 4 mix), acts like a person (0.3–1.5 s to decide,
- * using the Easy bot on its own view — so it also reneges sometimes, which exercises صيد),
+ * using the Easy bot on its own view — so it also reneges sometimes, which exercises «أكاشف»),
  * votes for the next hand, and starts a new game when one ends. We measure the time from sending
  * a move (bid, trump, card, Bawn answer, joker question) until the server's answer (the next view),
  * plus errors and drops. Votes (next hand / end of review) are not timed: they wait for the others.

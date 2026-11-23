@@ -59,7 +59,7 @@ describe('hand end: play to the last card (playToLastCard)', () => {
     s = leadAll(s);
     expect(s.phase).toBe('playing'); // bid already made, but the hand goes on
     s = play(s, 'H7', s.hands[1][0], s.hands[2][0], s.hands[3][0]);
-    expect(s.phase).toBe('review'); // all cards played: the table may still call صيد
+    expect(s.phase).toBe('review'); // all cards played: the table may still call «أكاشف»
     expect(s.hands.every((h) => h.length === 0)).toBe(true);
     s = applyAction(s, { type: 'END_REVIEW' });
     expect(s.phase).toBe('handOver');

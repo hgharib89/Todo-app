@@ -5,7 +5,7 @@ The server was pinned to **2 CPU cores** (`taskset -c 0,1`, `KOUT_BOT_WORKERS=2`
 
 Simulated players behave like people. Each one:
 - joins matchmaking and takes 0.3–1.5 s per decision;
-- plays from its own view (the server never sends it other cards) with the Easy bot, so it sometimes reneges and gets caught (صيد);
+- plays from its own view (the server never sends it other cards) with the Easy bot, so it sometimes reneges and gets caught («أكاشف»);
 - votes for the next hand, and starts a new game when one ends.
 
 **Latency** is the time from sending a move (bid, trump, card, Bawn answer, joker question) to receiving the server's answer. "Next hand" votes are not timed, because they wait for the other players.

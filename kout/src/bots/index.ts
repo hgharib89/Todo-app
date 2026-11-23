@@ -2,7 +2,7 @@
  * Bots. They pick from the engine's legal moves, so they obey the active rules config,
  * and they read only public information + their own hand (never state.reneges).
  * Easy/Medium bots may renege by mistake (rules.renege.botRenegeChance); Hard never does.
- * Catches (صيد) are decided from visible evidence only: see chooseBotCatch.
+ * Catches («أكاشف») are decided from visible evidence only: see chooseBotCatch.
  */
 import {
   Action,
@@ -108,7 +108,7 @@ function simpleBawn(state: GameState, difficulty: Difficulty, rng: Rng): Action 
 }
 
 // ---------------------------------------------------------------------------
-// Reneging by mistake, and catching (صيد)
+// Reneging by mistake, and catching («أكاشف»)
 // ---------------------------------------------------------------------------
 
 /** With rules.renege.botRenegeChance[difficulty], play a wrong (off-suit) card while holding the led suit. */
@@ -133,7 +133,7 @@ function stableRoll(key: string): number {
 }
 
 /**
- * Should bot `seat` call صيد now? Uses only visible evidence (an opponent showed out of a suit,
+ * Should bot `seat` call «أكاشف» now? Uses only visible evidence (an opponent showed out of a suit,
  * then played it later). Each bot rolls rules.renege.botCatchChance[difficulty] once per piece of
  * evidence during play, and once more in the end-of-hand review. Hard always catches.
  */

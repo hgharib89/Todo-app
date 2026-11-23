@@ -182,7 +182,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
     const lc = game.lastCatch;
     if (lc && JSON.stringify(lc) !== JSON.stringify(prev.lastCatch)) {
       if (lc.success) sfx.collect();
-      showToast(`${lc.success ? '🎯 صيد! ' : ''}${catchMessage(game, lc, lc.success ? game.lastResult?.points : undefined, names)}`, 3200);
+      showToast(`${lc.success ? 'أكاشف! ' : ''}${catchMessage(game, lc, lc.success ? game.lastResult?.points : undefined, names)}`, 3200);
     }
     if (game.phase === 'gameOver' && prev.phase !== 'gameOver') {
       setTimeout(() => (game.winner === 0 ? sfx.win() : sfx.lose()), speed.hold + 500);
@@ -211,7 +211,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
       if (game.currentPlayer === HUMAN && ['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(game.phase)) sfx.turn();
       return; // the server runs the bots
     }
-    // صيد: any bot that has seen evidence against an opponent may call it (never peeking)
+    // أكاشف: any bot that has seen evidence against an opponent may call it (never peeking)
     if (game.phase === 'playing' || game.phase === 'review' || game.phase === 'bawnAsk') {
       for (let seat = 0; seat < game.numPlayers; seat++) {
         if (seat === HUMAN) continue;
@@ -339,7 +339,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
               disabled={!(game.phase === 'playing' || game.phase === 'review') || (game.tricks.length === 0 && game.trick.plays.length === 0)}
               onClick={() => setCatchOpen(true)}
             >
-              🎯 صيد
+              أكاشف
             </button>
           )}
         </div>

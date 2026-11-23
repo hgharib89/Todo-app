@@ -7,7 +7,7 @@ It imports the same `src/engine` and `src/engine/rules.config.ts` as the app, so
 
 | | |
 |---|---|
-| **Owns the game** | Deals with a cryptographic seed, validates every action with the shared engine (`applyAction`), and applies every rule: Larens, Bawn on 7, the joker question, reneging and صيد, and scoring. |
+| **Owns the game** | Deals with a cryptographic seed, validates every action with the shared engine (`applyAction`), and applies every rule: Larens, Bawn on 7, the joker question, reneging and «أكاشف», and scoring. |
 | **Hidden information** | Each player receives only `viewFor(state, seat)`. That contains their own cards (the others are `"??"`), no RNG seed, no renege record and no rules object. The view is rotated so every player sits at seat 0. |
 | **Clients only send actions** | Each action arrives as `{type, ...}`. The acting seat is always the sender's own seat: a client cannot act for someone else. |
 | **Public matchmaking** | `joinOrCreate('kout', {mode: 'bo6' \| 'bo4'})`. A table waits `KOUT_PUBLIC_WAIT_SECONDS` (12 s) for more people, then Hard bots fill the empty seats. |
@@ -38,7 +38,7 @@ Game rules are **not** here; they stay in `src/engine/rules.config.ts`. These ar
 |---|---|---|
 | `PORT` | 2567 | |
 | `KOUT_BID_SECONDS` / `KOUT_PLAY_SECONDS` | 20 / 20 | turn timer |
-| `KOUT_REVIEW_SECONDS` | 8 | end-of-hand صيد window (only when someone could catch) |
+| `KOUT_REVIEW_SECONDS` | 8 | end-of-hand «أكاشف» window (only when someone could catch) |
 | `KOUT_HANDOVER_SECONDS` | 7 | result screen before the next deal |
 | `KOUT_PUBLIC_WAIT_SECONDS` | 12 | wait for humans before bots fill a public table |
 | `KOUT_RECONNECT_SECONDS` | 120 | how long a dropped player keeps the seat |
