@@ -60,8 +60,8 @@ describe('rules text for reneging and catching', () => {
     const { catchMessage } = await import('../src/ui/panels');
     const { createGame } = await import('../src/engine');
     const g = createGame(RULES, 'bo4', 1);
-    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خليفة قطع في الأكلة ٣ (ما لحق هاس) — صاده أنت: +١٢ لنا');
-    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('صاد غلط');
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('أنت كاشفت خليفة في الأكلة ٣ (ما لحق هاس): +١٢ لنا');
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('مكاشفة غلط');
   });
 });
 
@@ -96,5 +96,24 @@ describe('rules text for the dealer (الخبّاص)', () => {
     const other = describeDealer(buildRules('default', { firstDealer: 'random', dealerRotation: 'alwaysRotate' })).join(' ');
     expect(other).toContain('عشوائياً');
     expect(other).toContain('ينتقل للي على يمين الخبّاص');
+  });
+});
+
+describe('«أكاشف» (catching) wording', () => {
+  it('table messages say who caught whom, in which trick, and the points', async () => {
+    const { catchMessage } = await import('../src/ui/panels');
+    const { createGame } = await import('../src/engine');
+    const g = createGame(RULES, 'bo6', 1);
+    const names = ['أنت', 'خليفة', 'محمد', 'حمدان', 'راشد', 'سلطان'];
+    expect(catchMessage(g, { catcher: 1, accused: 4, trick: 2, success: true, suit: 'H' }, [0, 14], names)).toBe('خليفة كاشف راشد في الأكلة ٣ (ما لحق هاس): +١٤ لهم');
+    expect(catchMessage(g, { catcher: 1, accused: 0, trick: 0, success: true, suit: 'S' }, [0, 12], names)).toBe('خليفة كاشفك في الأكلة ١ (ما لحق سبيت): +١٢ لهم');
+    expect(catchMessage(g, { catcher: 3, accused: 2, trick: 4, success: false, suit: null }, undefined, names)).toBe('مكاشفة غلط من حمدان على محمد — ما في شي');
+  });
+  it('the rules screen explains «أكاشف»', async () => {
+    const { describeRenege } = await import('../src/ui/rulesText');
+    const t = describeRenege(RULES).join(' ');
+    expect(t).toContain('أكاشف:');
+    expect(t).toContain('تكاشفه');
+    expect(t).not.toMatch(/صيد|صاد|يصيد/);
   });
 });

@@ -79,7 +79,7 @@ export function describeRemovedCards(rules: RulesConfig, mode: 'bo4' | 'bo6'): s
     .join(' و');
 }
 
-/** The reneging & catching rules (القطع والصيد) as sentences, from rules.renege / rules.playToLastCard. */
+/** The reneging & catching rules (القطع والمكاشفة, «أكاشف») as sentences, from rules.renege / rules.playToLastCard. */
 export function describeRenege(rules: RulesConfig): string[] {
   const r = rules.renege;
   const out: string[] = [];
@@ -89,11 +89,11 @@ export function describeRenege(rules: RulesConfig): string[] {
     return out;
   }
   out.push('تقدر تلعب أي ورقة من يدك، بس إذا ما لحقت النقش وعندك منه هذا قطع غلط (الجوكر مو قطع).');
-  out.push('الصيد: إذا لاعب ما لحق نقش، وبعدين لعب من نفس النقش في نفس اليد، تقدر تصيده. وفي آخر اليد تنراجع كل الأوراق ويقدر أي أحد يصيد.');
-  out.push(`إذا انصاد القطع: تنكسر اليد على الفريق اللي قطع، والفريق اللي صاد ياخذ ${ar(r.renegePenaltyMultiplier)} أضعاف الطلب، واللي قطع ياخذ صفر.`);
-  out.push(r.wrongCatchPenalty === 'none' ? 'الصيد الغلط ما عليه شي.' : 'الصيد الغلط: تنكسر اليد على الفريق اللي صاد.');
+  out.push('أكاشف: إذا لاعب ما لحق نقش، وبعدين لعب من نفس النقش في نفس اليد، تقدر تكاشفه. وفي آخر اليد تنراجع كل الأوراق ويقدر أي أحد يكاشف.');
+  out.push(`إذا انكشف القطع: تنكسر اليد على الفريق اللي قطع، والفريق اللي كاشف ياخذ ${ar(r.renegePenaltyMultiplier)} أضعاف الطلب، واللي قطع ياخذ صفر.`);
+  out.push(r.wrongCatchPenalty === 'none' ? 'المكاشفة الغلط ما عليها شي.' : 'المكاشفة الغلط: تنكسر اليد على الفريق اللي كاشف.');
   const pct = (x: number) => `${ar(Math.round(x * 100))}٪`;
-  out.push(`البوتات تصيد بس من اللي شافته: صعب ${pct(r.botCatchChance.hard)}، متوسط ${pct(r.botCatchChance.medium)}، سهل ${pct(r.botCatchChance.easy)}.`);
+  out.push(`البوتات تكاشف بس من اللي شافته: صعب ${pct(r.botCatchChance.hard)}، متوسط ${pct(r.botCatchChance.medium)}، سهل ${pct(r.botCatchChance.easy)}.`);
   return out;
 }
 
@@ -137,7 +137,7 @@ export function describeDealer(rules: RulesConfig): string[] {
       : 'أول خبّاص في كل لعبة يتحدد عشوائياً.';
   const after =
     rules.dealerRotation === 'loserKeepsDeal'
-      ? 'بعد كل يد: إذا فريق الخبّاص ما سجّل ولا نقطة (خسر، حتى لو انصاد بقطع) يخبّص نفسه مرة ثانية. وإذا سجّل نقاط، التخبيص ينتقل للي على يمينه.'
+      ? 'بعد كل يد: إذا فريق الخبّاص ما سجّل ولا نقطة (خسر، حتى لو انكشف قطعه) يخبّص نفسه مرة ثانية. وإذا سجّل نقاط، التخبيص ينتقل للي على يمينه.'
       : 'بعد كل يد: التخبيص ينتقل للي على يمين الخبّاص.';
   return [first, after];
 }

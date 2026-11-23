@@ -9,7 +9,7 @@ export interface ServerConfig {
   bidSeconds: number;
   /** seconds a human has to play a card */
   playSeconds: number;
-  /** seconds the table may still call صيد after the last card (only when someone could) */
+  /** seconds the table may still call «أكاشف» after the last card (only when someone could) */
   reviewSeconds: number;
   /** seconds the hand result stays up before the next deal */
   handOverSeconds: number;

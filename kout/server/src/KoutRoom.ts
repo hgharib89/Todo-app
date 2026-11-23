@@ -3,7 +3,7 @@
  *
  * The server owns the game: it deals (crypto seed), validates every action with the shared engine
  * (src/engine — the same code and the same rules.config.ts as the app), runs the bots, applies every
- * rule (Larens, Bawn, joker question, reneging and صيد, scoring) and sends each player ONLY their own
+ * rule (Larens, Bawn, joker question, reneging and «أكاشف», scoring) and sends each player ONLY their own
  * view (viewFor). Clients just send actions.
  */
 import { randomInt } from 'node:crypto';
@@ -293,7 +293,7 @@ export class KoutRoom extends Room {
       if (this.humansVoted((p) => catchOptions(g, p).length > 0)) this.apply({ type: 'END_REVIEW' });
       return;
     }
-    // صيد may be called by anyone, any time it is allowed
+    // «أكاشف» may be called by anyone, any time it is allowed
     if (action.type !== 'CATCH' && g.currentPlayer !== seat) return this.reject(client, seat, 'out_of_turn', { type: action.type });
 
     let next: GameState;
@@ -368,7 +368,7 @@ export class KoutRoom extends Room {
       return;
     }
 
-    // a bot that saw a renege calls صيد
+    // a bot that saw a renege calls «أكاشف»
     if (g.phase === 'playing' || g.phase === 'review' || g.phase === 'bawnAsk') {
       for (let p = 0; p < g.numPlayers; p++) {
         if (this.seats[p].kind !== 'bot') continue;

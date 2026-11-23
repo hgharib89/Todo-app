@@ -22,7 +22,7 @@ import type { ModeId, RulesConfig, Suit } from './rules.config';
 import { randomInt, shuffle } from './rng';
 
 export type Team = 0 | 1;
-/** 'review' = all cards played; the table may still call a catch (صيد) before the hand is scored */
+/** 'review' = all cards played; the table may still call a catch («أكاشف») before the hand is scored */
 /** 'bawnAsk' = bid 7 reached 6 tricks: the bidder answers "تبي باون؟" */
 export type Phase = 'bidding' | 'choosingTrump' | 'playing' | 'bawnAsk' | 'review' | 'handOver' | 'gameOver';
 
@@ -87,7 +87,7 @@ export interface Renege {
   ledSuit: Suit;
 }
 
-/** A catch (صيد) call and how it went. */
+/** A catch («أكاشف») call and how it went. */
 export interface CatchResult {
   catcher: number;
   accused: number;
@@ -170,7 +170,7 @@ export type Action =
   | { type: 'CHOOSE_TRUMP'; player: number; suit: Suit }
   | { type: 'PLAY'; player: number; card: CardId }
   | { type: 'NEXT_HAND' }
-  /** صيد: `player` accuses `accused` of reneging in trick number `trick` (0 = first) of this hand */
+  /** أكاشف: `player` accuses `accused` of reneging in trick number `trick` (0 = first) of this hand */
   | { type: 'CATCH'; player: number; accused: number; trick: number }
   /** finish the end-of-hand review and score the hand */
   | { type: 'END_REVIEW' }
@@ -684,7 +684,7 @@ function isLarens(rules: RulesConfig, c: Pick<Contract, 'value' | 'forced'>): bo
 }
 
 // ---------------------------------------------------------------------------
-// reneging & catching (القطع والصيد)
+// reneging & catching (القطع والمكاشفة، «أكاشف»)
 // ---------------------------------------------------------------------------
 
 /**

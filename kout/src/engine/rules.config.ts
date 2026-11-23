@@ -159,19 +159,19 @@ export interface RenegeRules {
    */
   allowRenege: boolean;
   /**
-   * إذا انصاد القطع: اليد تنكسر على الفريق اللي قطع، والفريق اللي صاد ياخذ (قيمة الطلب × هذا الرقم)،
+   * إذا انكشف القطع (أكاشف): اليد تنكسر على الفريق اللي قطع، والفريق اللي كاشف ياخذ (قيمة الطلب × هذا الرقم)،
    * والفريق اللي قطع ياخذ صفر. ينطبق سواء كان القاطع من فريق المزايد أو من الخصم.
    * When a renege is caught the hand is broken for the reneging team: the catching team gets
    * (bid value × this number) and the reneging team gets 0, whichever side reneged.
    */
   renegePenaltyMultiplier: number;
   /**
-   * صيد غلط: 'none' = ما يصير شي. 'brokenHand' = تنكسر اليد على الفريق اللي صاد غلط.
+   * مكاشفة غلط: 'none' = ما يصير شي. 'brokenHand' = تنكسر اليد على الفريق اللي كاشف غلط.
    * A wrong catch: 'none' = nothing happens. 'brokenHand' = the hand is broken for the team that called it.
    */
   wrongCatchPenalty: 'none' | 'brokenHand';
   /**
-   * احتمال أن البوت يصيد إذا شاف دليل (البوت ما يشوف أوراق مخفية أبداً).
+   * احتمال أن البوت يكاشف إذا شاف دليل (البوت ما يشوف أوراق مخفية أبداً).
    * Chance a bot calls a catch when it has seen the evidence (bots never peek at hidden cards).
    */
   botCatchChance: Record<BotLevel, number>;
@@ -234,7 +234,7 @@ export interface RulesConfig {
   firstDealer: 'lowestCardDraw' | 'random' | number;
   /**
    * من يخبّص بعد كل يد:
-   *   - 'loserKeepsDeal' = إذا فريق الخبّاص خسر اليد (ما سجّل ولا نقطة، حتى لو انصاد بقطع) يخبّص نفس الشخص مرة ثانية؛
+   *   - 'loserKeepsDeal' = إذا فريق الخبّاص خسر اليد (ما سجّل ولا نقطة، حتى لو انكشف قطعه) يخبّص نفس الشخص مرة ثانية؛
    *                        وإذا فريقه سجّل نقاط، التخبيص ينتقل للي على يمينه (من الفريق الخسران).
    *   - 'alwaysRotate'   = التخبيص ينتقل للي على اليمين كل يد.
    * Who deals after each hand:
@@ -258,7 +258,7 @@ export interface RulesConfig {
    * is seen and reneges can be reviewed. false = end the hand as soon as the bid is made or lost.
    */
   playToLastCard: boolean;
-  /** القطع الغلط والصيد / reneging and catching */
+  /** القطع الغلط والمكاشفة (أكاشف) / reneging and catching */
   renege: RenegeRules;
   /** جدول النقاط لكل مزايدة / scoring table per bid value */
   scoring: Record<number, ScoreRow>;

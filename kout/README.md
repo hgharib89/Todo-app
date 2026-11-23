@@ -62,7 +62,7 @@ The engine reads every rule value from this file, and each option has a comment 
 | `dealerRotation` | `'loserKeepsDeal'` (default: if the dealer's team scored 0 in the hand, including being caught reneging, the same player deals again; if it scored, the deal passes to the right) or `'alwaysRotate'` |
 | `jokerPresets` + `activeJokerPreset` | the four joker presets (see below) |
 | `playToLastCard` | `true` (default): every hand is played to the last card. `false`: stop as soon as the bid is made or can no longer be made |
-| `renege` | reneging and catching (القطع والصيد), see below: `allowRenege`, `renegePenaltyMultiplier`, `wrongCatchPenalty`, `botCatchChance`, `botRenegeChance` |
+| `renege` | reneging and catching (القطع و«أكاشف»), see below: `allowRenege`, `renegePenaltyMultiplier`, `wrongCatchPenalty`, `botCatchChance`, `botRenegeChance` |
 | `scoring`, `malzoomScoring` | points table |
 | `gameEnd` | `targetScore` (54: first team to 54+ wins), `shutoutTarget` (36: 36+ while the other team has 0 wins; `null` disables it) |
 | `larens` | bid 9 = لارنس: `larensWinsGame` (true: making it wins the whole game at once, قيم), `larensFailPoints` (18 to the opponents), `larensMadePoints` (only used when `larensWinsGame` is false) |
@@ -95,13 +95,13 @@ Players pick the preset in the in-game **Settings** screen. The preset descripti
 buildRules('default', { playToLastCard: false, jokers: { illegalForcedLead: 'asTrump' } });
 ```
 
-## Reneging and catching (القطع والصيد)
+## Reneging and catching (القطع و«أكاشف»)
 
 Like a real table, the game doesn't stop you playing a wrong card.
 
 - **Reneging.** With `renege.allowRenege` (default `true`), any card in your hand can be played even when you hold the led suit. Only the joker rules still block cards. The engine silently records every renege in `state.reneges`, which is hidden: `playerView` strips it and bots never read it.
 - **Evidence.** A catch needs proof everyone can see: the player didn't follow suit S in one trick, then played an S card later in the same hand. `renegeEvidence(state)` finds this from the table alone. Because every hand is played to the last card (`playToLastCard`), every renege has proof by the end of the hand.
-- **Calling صيد.** During play, anyone can call صيد on an opponent (action `CATCH`, or the 🎯 صيد button: pick the opponent, then the trick). After the last card the hand goes to a short `review` phase where the table can still catch. `END_REVIEW` then scores the hand normally.
+- **Calling «أكاشف».** During play, anyone can call «أكاشف» on an opponent (action `CATCH`, or the «أكاشف» button: pick the opponent, then the trick). After the last card the hand goes to a short `review` phase where the table can still catch. `END_REVIEW` then scores the hand normally.
 - **Penalty.** A correct catch breaks the hand for the reneging team, whether it bid or defended. The catchers get bid × `renegePenaltyMultiplier` (2) and the renegers get 0. A wrong catch does nothing (`wrongCatchPenalty: 'none'`); `'brokenHand'` would break the hand for the caller instead.
 - **Bots.** Bots catch only from visible evidence, with chance `botCatchChance` (Hard 100%, Medium 60%, Easy 25%), deciding once per piece of evidence and once more at the review. Easy and Medium occasionally renege by mistake (`botRenegeChance`: Easy 6%, Medium 3% of the cards where they could; Hard 0%).
 

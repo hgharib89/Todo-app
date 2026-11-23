@@ -158,7 +158,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
         ))}
       </section>
       <section>
-        <h3>القطع والصيد</h3>
+        <h3>القطع والمكاشفة (أكاشف)</h3>
         {describeRenege(r).map((t) => (
           <p key={t}>{t}</p>
         ))}
