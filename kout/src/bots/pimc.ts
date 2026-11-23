@@ -67,7 +67,7 @@ export function setPimcMinMake(v: number) {
   PIMC_MIN_MAKE = v;
 }
 /** weight of the simulation in the bid's make-chance (the rest is the hand-strength estimate) */
-export let BLEND = 0.5;
+export let BLEND = 0;
 export function setPimcBlend(v: number) {
   BLEND = v;
 }

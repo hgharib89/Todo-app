@@ -32,7 +32,8 @@ jobs:
         working-directory: kout
         env:
           # the online game server address (repo Settings → Secrets and variables → Actions → Variables)
-          VITE_KOUT_SERVER: ${{ vars.KOUT_SERVER_URL }}
+          # KOUT_SERVER_URL if set, else https://<FLY_APP>.fly.dev when the FLY_APP variable is set
+          VITE_KOUT_SERVER: ${{ vars.KOUT_SERVER_URL || (vars.FLY_APP && format('https://{0}.fly.dev', vars.FLY_APP)) || '' }}
         run: |
           npm ci
           npm test
