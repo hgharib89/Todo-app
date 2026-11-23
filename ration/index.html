@@ -7,11 +7,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="راشن">
+<meta name="apple-mobile-web-app-title" content="وفرلي">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
-<title>راشن | Ration</title>
+<title>وفرلي | Wafrly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
@@ -164,7 +164,7 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 /* ---------- language ---------- */
 const T = {
 ar: {
-  brandMain: 'راشن', brandSub: 'Ration', langBtn: 'English',
+  brandMain: 'وفرلي', brandSub: 'Wafrly', langBtn: 'English',
   tagline: 'اكتب أغراضك، ونلقى لك أرخص العروض في الجمعيات والسوبرماركتات',
   demoNote: 'الأسعار الموجودة الحين تجريبية للعرض فقط. ارفع بروشورات حقيقية من تبويب "العروض".',
   addLabel: 'أضف غرض أو الصق قائمة كاملة', draftPh: 'مثال: حليب المراعي ٢ لتر، رز بسمتي ٥ كيلو، بيض ٣٠ حبة',
@@ -195,7 +195,7 @@ ar: {
   notAdmin: 'هذا الحساب مب مشرف.'
 },
 en: {
-  brandMain: 'Ration', brandSub: 'راشن', langBtn: 'عربي',
+  brandMain: 'Wafrly', brandSub: 'وفرلي', langBtn: 'عربي',
   tagline: 'Add your groceries and we find the cheapest offers at co-ops and supermarkets',
   demoNote: 'Current prices are demo data for testing only. Upload real flyers from the "Offers" tab.',
   addLabel: 'Add an item or paste a whole list', draftPh: 'e.g. Almarai milk 2L, basmati rice 5kg, eggs 30 pcs',
@@ -234,7 +234,7 @@ const aed = n => n == null ? '-' : lang === 'ar' ? n.toFixed(2) + ' ' + t('cur')
 
 function applyLang(){
   document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-  document.title = lang === 'ar' ? 'راشن | Ration' : 'Ration | راشن';
+  document.title = lang === 'ar' ? 'وفرلي | Wafrly' : 'Wafrly | وفرلي';
   $('brand').innerHTML = `${esc(t('brandMain'))} <span dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${esc(t('brandSub'))}</span>`;
   $('langBtn').textContent = t('langBtn');
   document.querySelectorAll('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
@@ -503,11 +503,11 @@ $('results').onclick = e => { const b = e.target.closest('[data-t]'); if (b){ re
 
 /* ---------- assistant ---------- */
 const sys = () => lang === 'ar'
-  ? `أنت "راشن"، مساعد تسوق في الإمارات. تساعد الزبون يلقى أرخص العروض في الجمعيات والسوبرماركتات.
+  ? `أنت "وفرلي"، مساعد تسوق في الإمارات. تساعد الزبون يلقى أرخص العروض في الجمعيات والسوبرماركتات.
 - استخدم الأداة search_offers لكل سعر. لا تخترع أي سعر أو محل أو عرض.
 - رد بالعربي بلهجة إماراتية بسيطة ومختصرة، واذكر المحل والسعر ونهاية العرض إذا موجودة.
 - إذا ما في عرض على منتج، قول ذلك بوضوح.`
-  : `You are "Ration", a shopping assistant in the UAE. You help the customer find the cheapest offers at co-ops and supermarkets.
+  : `You are "Wafrly", a shopping assistant in the UAE. You help the customer find the cheapest offers at co-ops and supermarkets.
 - Use the search_offers tool for every price. Never invent a price, store or offer.
 - Reply in clear, short English. Mention the store, price and offer end date when known. Store and product names may be in Arabic; translate them.
 - If there is no offer for a product, say so plainly.`;
