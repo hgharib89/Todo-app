@@ -325,10 +325,11 @@ describe('hard bot — always obeys the rules', () => {
           continue;
         }
         const diff = s.currentPlayer % 2 === hardTeam ? 'hard' : 'medium';
-        s = applyAction(s, chooseBotAction(s, diff, rng, { samples: 12 }));
+        s = applyAction(s, chooseBotAction(s, diff, rng, { samples: 60 }));
       }
       if (s.winner === hardTeam) hardWins++;
     }
+    // (with very few sampled deals PIMC is too noisy to judge; real games use 200)
     expect(hardWins).toBeGreaterThan(games / 2);
-  }, 60000);
+  }, 600000);
 });

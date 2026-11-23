@@ -403,7 +403,9 @@ export class KoutRoom extends Room {
     if (s.kind === 'bot' || !s.connected || s.away) {
       this.deadline = null;
       this.broadcastViews();
-      this.timer = setTimeout(() => this.botMove(p, false), pause + this.botDelay());
+      // the bot starts thinking now (in a worker) and moves after its "thinking" pause
+      const decision = this.decideFor(g);
+      this.timer = setTimeout(() => this.botMove(p, false, decision), pause + this.botDelay());
       return;
     }
     const secs = g.phase === 'playing' ? this.cfg.playSeconds : this.cfg.bidSeconds;
@@ -413,7 +415,16 @@ export class KoutRoom extends Room {
   }
 
   /** A bot moves for seat p (its own seat, or a human who timed out / is away / disconnected). */
-  private async botMove(p: number, timedOut: boolean) {
+  private decideFor(g: GameState): Promise<Action | null> {
+    return botPool()
+      .decide(g, this.cfg.botSamples, this.cfg.botTimeMs)
+      .catch((e) => {
+        log('error', 'bot_failed', { roomId: this.roomId, error: String(e) });
+        return null;
+      });
+  }
+
+  private async botMove(p: number, timedOut: boolean, early?: Promise<Action | null>) {
     const g = this.game;
     if (!g || g.currentPlayer !== p || !['bidding', 'choosingTrump', 'playing', 'bawnAsk'].includes(g.phase)) return;
     if (timedOut) {
@@ -423,14 +434,8 @@ export class KoutRoom extends Room {
       log('info', 'turn_timeout', { roomId: this.roomId, seat: p, timeouts: s.timeouts });
     }
     // humans' seats get a bot that never reneges on purpose; it thinks in a worker thread
-    let action: Action;
-    try {
-      action = await botPool().decide(g, this.cfg.botSamples);
-    } catch (e) {
-      log('error', 'bot_failed', { roomId: this.roomId, error: String(e) });
-      return;
-    }
-    if (this.game !== g) return; // something else happened meanwhile (a catch, a reconnect move…)
+    const action = await (early ?? this.decideFor(g));
+    if (!action || this.game !== g) return; // something else happened meanwhile (a catch, a reconnect move…)
     this.apply(action);
   }
 

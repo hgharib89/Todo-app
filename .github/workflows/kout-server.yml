@@ -1,6 +1,8 @@
-# Tests and deploys the Kout game server to Fly.io when the server or the game engine changes on main.
-# Needs one repository secret: FLY_API_TOKEN (Settings → Secrets and variables → Actions).
-# Without the secret, only the tests run.
+# Tests and deploys the Kout game server to Fly.io when the server or the game engine changes on main
+# (or on demand: Actions → "Kout game server" → Run workflow).
+# Needs one repository secret: FLY_API_TOKEN (an organization token from the Fly.io dashboard → Tokens).
+# Optional repository variable FLY_APP: the app name (default: the `app` line of kout/fly.toml).
+# The app is created on the first run if it doesn't exist yet. Without the secret, only the tests run.
 name: Kout game server
 
 on:
@@ -40,6 +42,26 @@ jobs:
       - name: Set up flyctl
         if: env.FLY_API_TOKEN != ''
         uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Create the Fly app if needed
+        if: env.FLY_API_TOKEN != ''
+        env:
+          FLY_APP: ${{ vars.FLY_APP }}
+        run: |
+          APP="${FLY_APP:-$(grep -E '^app *=' fly.toml | sed -E 's/app *= *"([^"]+)".*/\1/')}"
+          echo "APP=$APP" >> "$GITHUB_ENV"
+          if flyctl status --app "$APP" >/dev/null 2>&1; then
+            echo "Fly app $APP exists"
+          else
+            flyctl apps create "$APP" --org personal
+          fi
       - name: Deploy to Fly.io
         if: env.FLY_API_TOKEN != ''
-        run: flyctl deploy --remote-only
+        run: flyctl deploy --remote-only --app "$APP" --ha=false
+      - name: Health check
+        if: env.FLY_API_TOKEN != ''
+        run: |
+          for i in $(seq 1 20); do
+            if curl -fsS "https://$APP.fly.dev/healthz"; then echo; echo "Server is up: https://$APP.fly.dev"; exit 0; fi
+            sleep 6
+          done
+          echo "health check failed"; exit 1

@@ -44,13 +44,28 @@ Game rules are **not** here; they stay in `src/engine/rules.config.ts`. These ar
 | `KOUT_RECONNECT_SECONDS` | 120 | how long a dropped player keeps the seat |
 | `KOUT_BOT_MIN_MS` / `KOUT_BOT_MAX_MS` | 700 / 1300 | bot "thinking" time |
 | `KOUT_DRAW_ROUND_MS` / `KOUT_DEAL_PAUSE_MS` | 1300 / 2900 | pause at the start of a game while clients show the first-dealer card draw and the deal |
-| `KOUT_BOT_SAMPLES` | 40 | Monte Carlo samples per Hard-bot move (lower = less CPU) |
+| `KOUT_BOT_SAMPLES` | 200 | sampled deals per Hard-bot move (PIMC; lower = less CPU) |
+| `KOUT_BOT_TIME_MS` | 1000 | time budget per Hard-bot move (the bot thinks during its "thinking" pause) |
 | `KOUT_BOT_WORKERS` | CPU cores | worker threads for bot thinking (0 = main thread) |
 | `KOUT_RATE_CAPACITY` / `KOUT_RATE_PER_SECOND` / `KOUT_FLOOD_STRIKES` | 12 / 6 / 40 | rate limit |
 | `KOUT_ALLOWED_ORIGINS` | (all) | comma-separated web origins allowed to connect |
 | `KOUT_METRICS` | (off) | seconds between metrics log lines |
 
-## Deploy to Fly.io: step by step
+## Deploy to Fly.io: the easy way (GitHub does it, no command line)
+
+The workflow `.github/workflows/kout-server.yml` tests the server, creates the Fly app on the first run, deploys it and checks `/healthz`.
+
+1. Create an account at <https://fly.io/app/sign-up> and add a card under **Billing**. Fly bills per use, about US$10–15/month for this machine.
+2. In the Fly dashboard, open **Tokens** (<https://fly.io/dashboard/personal/tokens>), click **Create token**, choose an **organization token** for your personal org, and copy it. Never share your password; the token is all GitHub needs.
+3. On GitHub, open the repository → **Settings → Secrets and variables → Actions**.
+   - Under **Secrets**: **New repository secret**, name `FLY_API_TOKEN`, value = the token.
+   - Under **Variables**: **New repository variable**, name `FLY_APP`, value = a unique name such as `diwaniya-kout-yourname`. It becomes `https://diwaniya-kout-yourname.fly.dev`.
+4. Open **Actions → Kout game server → Run workflow**. When it's green, the last step prints `Server is up: https://….fly.dev`.
+5. Open **Actions → Deploy site (with Kout) to GitHub Pages → Run workflow**. The site picks up the server from `FLY_APP`, and the «🌐 العب أونلاين» button appears.
+
+From then on, every push to `main` that changes the server or the game engine redeploys automatically. If the name is taken, the first run fails at "Create the Fly app": choose another `FLY_APP` and run it again.
+
+## Deploy to Fly.io from your own computer (alternative)
 
 You need a Fly.io account with a payment card (Fly bills per use). Never share your password; the steps below use Fly's own login page and a deploy token.
 

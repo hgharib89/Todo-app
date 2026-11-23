@@ -300,10 +300,11 @@ export interface BawnRules {
    */
   bawnOnBid: number | null;
   /**
-   * أول ما يوصل الفريق المزايد لهذا العدد من الأكلات، ينسأل المزايد: "تبي باون؟".
-   * If نعم: لازم ياخذون كل الأكلات الباقية.
-   * As soon as the bidding team reaches this many tricks the bidder is asked "تبي باون؟".
-   * If yes, the team must win every remaining trick.
+   * أول ما يوصل الفريق المزايد لهذا العدد من الأكلات والخصم ما أخذ ولا أكلة، ينسأل المزايد: "تبي باون؟".
+   * إذا نعم: لازم ياخذون كل الأكلات الباقية (كل الـ٩). إذا الخصم أخذ أي أكلة، ما في باون وما ينسأل.
+   * As soon as the bidding team reaches this many tricks — while the opponents have NONE — the bidder is
+   * asked "تبي باون؟". If yes, the team must win every remaining trick (all 9). If the opponents have
+   * taken any trick, Bawn is impossible and the question never comes.
    */
   bawnAskAtTricks: number;
   /** نقاط الباون إذا نجح / points when Bawn succeeds */

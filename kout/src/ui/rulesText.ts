@@ -114,7 +114,7 @@ export function describeBawn(rules: RulesConfig): string[] {
   const b = rules.bawn;
   if (b.bawnOnBid === null) return [];
   return [
-    `الباون: إذا الطلب ${ar(b.bawnOnBid)} ووصل الفريق المزايد ${ar(b.bawnAskAtTricks)} أكلات، ينسأل المزايد: «تبي باون؟»`,
+    `الباون: إذا الطلب ${ar(b.bawnOnBid)} ووصل الفريق المزايد ${ar(b.bawnAskAtTricks)} أكلات والخصم ما أخذ ولا أكلة، ينسأل المزايد: «تبي باون؟» (إذا الخصم أخذ أي أكلة ما في باون)`,
     `إذا قال نعم لازم ياخذون كل الأكلات الباقية: إذا جابوها ياخذون ${ar(b.bawnWinPoints)}، وإذا راحت عليهم أكلة تنكسر والخصم ياخذ ${ar(b.bawnFailPoints)}. وإذا قال لا تكمل اليد عادي.`,
   ];
 }
