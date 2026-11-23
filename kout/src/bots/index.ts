@@ -65,6 +65,8 @@ function pimcOptions(opts: HardOptions & PimcOptions): PimcOptions {
   if (opts.timeMs !== undefined) out.timeMs = opts.timeMs;
   if (opts.minDeals !== undefined) out.minDeals = opts.minDeals;
   if (opts.bidDeals !== undefined) out.bidDeals = opts.bidDeals;
+  // a small deal budget (tests, overloaded servers) also shrinks the bidding simulation
+  else if (out.deals !== undefined) out.bidDeals = Math.min(60, out.deals);
   return out;
 }
 
