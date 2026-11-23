@@ -25,8 +25,10 @@ export interface ServerConfig {
   /** at the start of a game: ms per round of the first-dealer card draw, plus the deal (the clients animate it) */
   drawRoundMs: number;
   dealPauseMs: number;
-  /** Monte Carlo samples per Hard-bot decision */
+  /** sampled deals per Hard-bot decision (PIMC) */
   botSamples: number;
+  /** time budget per Hard-bot decision, ms */
+  botTimeMs: number;
   /** consecutive timeouts after which a player is treated as away (a bot plays immediately) */
   awayAfterTimeouts: number;
   /** rate limit per client */
@@ -53,7 +55,8 @@ export function loadConfig(over: Partial<ServerConfig> = {}): ServerConfig {
     trickPauseMs: num('KOUT_TRICK_PAUSE_MS', 1100),
     drawRoundMs: num('KOUT_DRAW_ROUND_MS', 1300),
     dealPauseMs: num('KOUT_DEAL_PAUSE_MS', 2900),
-    botSamples: num('KOUT_BOT_SAMPLES', 40),
+    botSamples: num('KOUT_BOT_SAMPLES', 200),
+    botTimeMs: num('KOUT_BOT_TIME_MS', 1000),
     awayAfterTimeouts: num('KOUT_AWAY_AFTER_TIMEOUTS', 2),
     rateCapacity: num('KOUT_RATE_CAPACITY', 12),
     ratePerSecond: num('KOUT_RATE_PER_SECOND', 6),

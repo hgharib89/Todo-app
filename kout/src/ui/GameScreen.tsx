@@ -15,7 +15,8 @@ import {
   rankOf,
   teamOf,
 } from '../engine';
-import { chooseBotAction, chooseBotCatch } from '../bots';
+import { chooseBotCatch } from '../bots';
+import { decideAsync } from '../bots/async';
 import { Card } from './Card';
 import { Hand } from './Hand';
 import { BawnPanel, BidPanel, CatchModal, GameOverModal, HandResultModal, ReviewPanel, ScorePad, SuitIcon, TrumpPicker, bidLabel, catchMessage } from './panels';
@@ -232,8 +233,18 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
       sfx.turn();
       return;
     }
-    const t = setTimeout(() => act(chooseBotAction(game, settings.difficulty)), speed.bot);
-    return () => clearTimeout(t);
+    // the bot starts thinking at once (in a background thread) and moves after its "thinking" pause
+    let cancelled = false;
+    const decision = decideAsync(game, settings.difficulty);
+    const t = setTimeout(() => {
+      decision.then((a) => {
+        if (!cancelled && gameRef.current === game) act(a);
+      });
+    }, speed.bot);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [game, busy, act, settings.difficulty, speed.bot, humanCanCatch, online]);
 
   const myTurn = !busy && game.currentPlayer === HUMAN;

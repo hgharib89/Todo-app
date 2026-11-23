@@ -29,19 +29,21 @@ import {
   winningPlayIndex,
 } from '../engine';
 import { HARD_DEFAULT_SAMPLES, HardOptions, Rng, chooseTrump, hardBawn, hardBid, hardPlay } from './hard';
+import { pimcAction, type PimcOptions } from './pimc';
 
 export type Difficulty = 'easy' | 'medium' | 'hard';
 export type { Rng };
 export * from './hard';
+export * from './pimc';
 
-export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: Rng = Math.random, opts: HardOptions = {}): Action {
+export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: Rng = Math.random, opts: HardOptions & PimcOptions = {}): Action {
   const acts = legalActions(state);
   if (acts.length === 0) throw new Error('No legal action');
   if (state.phase === 'playing') {
     const mistake = renegeMistake(state, difficulty, rng);
     if (mistake) return mistake;
   }
-  if (difficulty === 'hard') return hardAction(state, acts, rng, opts);
+  if (difficulty === 'hard') return pimcAction(state, rng, pimcOptions(opts));
   if (state.phase === 'bawnAsk') return simpleBawn(state, difficulty, rng);
   if (difficulty === 'easy') return easyAction(state, acts, rng);
   switch (state.phase) {
@@ -54,6 +56,24 @@ export function chooseBotAction(state: GameState, difficulty: Difficulty, rng: R
     default:
       return acts[0];
   }
+}
+
+/** `samples` (older option name) = sampled deals per decision */
+function pimcOptions(opts: HardOptions & PimcOptions): PimcOptions {
+  const out: PimcOptions = {};
+  if (opts.deals ?? opts.samples) out.deals = opts.deals ?? opts.samples;
+  if (opts.timeMs !== undefined) out.timeMs = opts.timeMs;
+  if (opts.minDeals !== undefined) out.minDeals = opts.minDeals;
+  if (opts.bidDeals !== undefined) out.bidDeals = opts.bidDeals;
+  return out;
+}
+
+/**
+ * The previous Hard bot (v1: heuristic bidding, 40 Monte Carlo rollouts with a simple policy).
+ * Kept only to benchmark the new bot against it.
+ */
+export function legacyHardAction(state: GameState, rng: Rng = Math.random, opts: HardOptions = {}): Action {
+  return hardAction(state, legalActions(state), rng, opts);
 }
 
 function hardAction(state: GameState, acts: Action[], rng: Rng, opts: HardOptions): Action {

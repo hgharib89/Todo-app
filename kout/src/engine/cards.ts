@@ -54,7 +54,20 @@ export function removedCards(rules: RulesConfig, mode: ModeId): CardId[] {
   return [...rules.modes[mode].removeCards, ...extra].map(normalizeCardId);
 }
 
+// decks are cached per rules object (the result never changes for the same rules and mode)
+const deckCache = new WeakMap<RulesConfig, Partial<Record<ModeId, CardId[]>>>();
+
 export function buildDeck(rules: RulesConfig, mode: ModeId): CardId[] {
+  let byMode = deckCache.get(rules);
+  if (!byMode) deckCache.set(rules, (byMode = {}));
+  const hit = byMode[mode];
+  if (hit) return hit.slice();
+  const deck = buildDeckUncached(rules, mode);
+  byMode[mode] = deck;
+  return deck.slice();
+}
+
+function buildDeckUncached(rules: RulesConfig, mode: ModeId): CardId[] {
   const m = rules.modes[mode];
   const removed = new Set(removedCards(rules, mode));
   const deck: CardId[] = [];

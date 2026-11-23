@@ -16,6 +16,7 @@ interface Job {
   id: number;
   state: GameState;
   samples: number;
+  timeMs: number;
   resolve: (a: Action) => void;
   reject: (e: Error) => void;
 }
@@ -47,17 +48,18 @@ export class BotPool {
   }
 
   /** A Hard-bot action for the current player of `state`. */
-  decide(state: GameState, samples: number): Promise<Action> {
-    if (this.workers.length === 0) return Promise.resolve(chooseBotAction(state, 'hard', Math.random, { samples }));
-    // shed load: a long queue means fewer samples per decision (min 8)
+  decide(state: GameState, samples: number, timeMs = 1000): Promise<Action> {
+    if (this.workers.length === 0) return Promise.resolve(chooseBotAction(state, 'hard', Math.random, { deals: samples, timeMs }));
+    // shed load: a long queue means fewer deals and less time per decision (min 24 deals)
     const pressure = this.queue.length / this.workers.length;
-    const s = pressure > 8 ? Math.max(8, samples >> 2) : pressure > 3 ? Math.max(8, samples >> 1) : samples;
+    const s = pressure > 8 ? Math.max(24, samples >> 2) : pressure > 3 ? Math.max(24, samples >> 1) : samples;
+    const t = pressure > 8 ? timeMs >> 2 : pressure > 3 ? timeMs >> 1 : timeMs;
     if (pressure > 8 && Date.now() - this.overloadLogged > 10000) {
       this.overloadLogged = Date.now();
       log('warn', 'bot_overload', { queue: this.queue.length, workers: this.workers.length, samples: s });
     }
     return new Promise((resolve, reject) => {
-      this.queue.push({ id: this.nextId++, state, samples: s, resolve, reject });
+      this.queue.push({ id: this.nextId++, state, samples: s, timeMs: t, resolve, reject });
       this.pump();
     });
   }
@@ -87,7 +89,7 @@ export class BotPool {
       for (const [id, r] of this.running) {
         if (r.worker === w) {
           this.running.delete(id);
-          r.job.resolve(chooseBotAction(r.job.state, 'hard', Math.random, { samples: 8 }));
+          r.job.resolve(chooseBotAction(r.job.state, 'hard', Math.random, { deals: 24, timeMs: 200 }));
         }
       }
       this.workers = this.workers.filter((x) => x !== w);
@@ -96,7 +98,7 @@ export class BotPool {
       if (++this.crashes <= 5) this.spawn(path);
       else if (this.workers.length === 0) {
         log('error', 'bot_pool_disabled', { crashes: this.crashes });
-        for (const job of this.queue.splice(0)) job.resolve(chooseBotAction(job.state, 'hard', Math.random, { samples: 8 }));
+        for (const job of this.queue.splice(0)) job.resolve(chooseBotAction(job.state, 'hard', Math.random, { deals: 24, timeMs: 200 }));
       }
     });
     this.workers.push(w);
@@ -108,7 +110,7 @@ export class BotPool {
       const w = this.idle.pop()!;
       const job = this.queue.shift()!;
       this.running.set(job.id, { job, worker: w });
-      w.postMessage({ id: job.id, state: job.state, samples: job.samples });
+      w.postMessage({ id: job.id, state: job.state, samples: job.samples, timeMs: job.timeMs });
     }
   }
 }

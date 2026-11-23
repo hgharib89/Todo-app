@@ -625,9 +625,11 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
     // every card is on the table: with reneging possible, the table reviews before scoring
     return s.rules.renege.allowRenege ? { ...s, phase: 'review' } : scoreHand(s, false);
   }
-  // Bawn: the bid-7 team just reached 6 tricks → ask the bidder
+  // Bawn (every trick): the bid-7 team just reached 6 tricks AND the opponents have none → ask the bidder.
+  // Once the opponents have taken a trick, Bawn is impossible and is never asked.
   const bw = s.rules.bawn;
-  if (bw.bawnOnBid !== null && c.value === bw.bawnOnBid && !c.forced && (c.bawn ?? null) === null && tricksWon[c.team] >= bw.bawnAskAtTricks) {
+  const oppTricks = tricksWon[1 - c.team];
+  if (bw.bawnOnBid !== null && c.value === bw.bawnOnBid && !c.forced && (c.bawn ?? null) === null && tricksWon[c.team] >= bw.bawnAskAtTricks && oppTricks === 0) {
     return { ...s, phase: 'bawnAsk', currentPlayer: c.bidder };
   }
   if (!s.rules.playToLastCard && handDecided(s)) return scoreHand(s, true);

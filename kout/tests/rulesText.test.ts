@@ -70,7 +70,7 @@ describe('rules text for Larens, Bawn and the joker question', () => {
     const { describeLarens, describeBawn, describeJokerAsk } = await import('../src/ui/rulesText');
     expect(describeLarens(RULES).join(' ')).toContain('يفوز باللعبة كلها فوراً (قيم)');
     expect(describeLarens(RULES).join(' ')).toContain('١٨');
-    expect(describeBawn(RULES).join(' ')).toContain('إذا الطلب ٧ ووصل الفريق المزايد ٦ أكلات');
+    expect(describeBawn(RULES).join(' ')).toContain('إذا الطلب ٧ ووصل الفريق المزايد ٦ أكلات والخصم ما أخذ ولا أكلة');
     expect(describeBawn(RULES).join(' ')).toContain('٣٦');
     expect(describeJokerAsk(RULES).join(' ')).toContain('مجبور يطلب لارنس');
     expect(describeJokerAsk(RULES).join(' ')).toContain('مجبور يطلب ٨');

@@ -61,23 +61,24 @@ describe('Larens (لارنس, bid 9)', () => {
 
 // ---------------------------------------------------------------------------
 describe('Bawn (باون) on bid 7', () => {
-  // bid 7 by seat 0 (team 0); team 0 has 5 tricks after 6; three tricks to go
+  // bid 7 by seat 0 (team 0); after 5 tricks team 0 has all 5 (5–0); four tricks to go
   const hands = () => [
-    ['S14', 'S13', 'H14'],
-    ['H7', 'C7', 'D7'],
-    ['S12', 'S11', 'C8'],
-    ['H8', 'C9', 'D8'],
+    ['S14', 'S13', 'H14', 'D14'],
+    ['H7', 'C7', 'D7', 'D9'],
+    ['S12', 'S11', 'C8', 'D10'],
+    ['H8', 'C9', 'D8', 'D11'],
   ];
   const at5 = (over: Partial<Parameters<typeof playingState>[0]> = {}) =>
-    playingState({ trump: 'S', bidder: 0, bid: 7, hands: hands(), tricksWon: [5, 1], tricksPlayed: 6, ...over });
+    playingState({ trump: 'S', bidder: 0, bid: 7, hands: hands(), tricksWon: [5, 0], tricksPlayed: 5, ...over });
+  const REST = ['S13', 'C7', 'S11', 'C9', 'H14', 'D7', 'C8', 'D8', 'D14', 'D9', 'D10', 'D11'];
 
   it('config defaults', () => {
     expect(RULES.bawn).toEqual({ bawnOnBid: 7, bawnAskAtTricks: 6, bawnWinPoints: 36, bawnFailPoints: 18 });
   });
 
-  it('as soon as the bid-7 team reaches 6 tricks, play pauses and the bidder is asked', () => {
+  it('asked at 6–0: play pauses and the bidder is asked', () => {
     const s = play(at5(), 'S14', 'H7', 'S12', 'H8');
-    expect(s.tricksWon[0]).toBe(6);
+    expect(s.tricksWon).toEqual([6, 0]);
     expect(s.phase).toBe('bawnAsk');
     expect(s.currentPlayer).toBe(0);
     expect(legalActions(s)).toEqual([
@@ -88,8 +89,29 @@ describe('Bawn (باون) on bid 7', () => {
     expect(() => applyAction(s, { type: 'BAWN', player: 2, accept: true })).toThrow(); // only the bidder answers
   });
 
+  it.each([1, 2, 3])('never asked at 6–%i: the opponents already have a trick, so the hand stays a normal 7', (opp) => {
+    const left = 9 - 5 - opp; // cards left before the trick that makes 6
+    const s0 = playingState({
+      trump: 'S', bidder: 0, bid: 7, tricksWon: [5, opp], tricksPlayed: 5 + opp,
+      hands: hands().map((h, i) => (i === 0 ? ['S14', 'S13', 'H14', 'D14'] : h).slice(0, left)),
+    });
+    const s = play(s0, 'S14', 'H7', 'S12', 'H8');
+    expect(s.tricksWon).toEqual([6, opp]);
+    expect(s.phase).not.toBe('bawnAsk');
+    expect(s.contract?.bawn ?? null).toBeNull();
+  });
+
+  it('6–1 after a trick is lost early: never asked for the rest of the hand, scored as a normal 7', () => {
+    // team 0 has 5, team 1 has 1; the 6th trick for team 0 comes later
+    const s0 = playingState({ trump: 'S', bidder: 0, bid: 7, hands: hands().map((h) => h.slice(0, 3)), tricksWon: [5, 1], tricksPlayed: 6 });
+    let s = play(s0, 'S14', 'H7', 'S12', 'H8');
+    expect(s.phase).toBe('playing');
+    s = end(play(s, 'S13', 'C7', 'S11', 'C9', 'H14', 'D7', 'C8', 'D8'));
+    expect(s.lastResult).toMatchObject({ bawn: null, made: true, points: [7, 0] });
+  });
+
   it('the bidder is asked even when a partner won the 6th trick; play resumes with the trick winner', () => {
-    let s = at5({ leader: 2, hands: [['S9', 'S13', 'H14'], ['H7', 'C7', 'D7'], ['S14', 'S11', 'C8'], ['S8', 'C9', 'D8']] });
+    let s = at5({ leader: 2, hands: [['S9', 'S13', 'H14', 'D14'], ['H7', 'C7', 'D7', 'D9'], ['S14', 'S11', 'C8', 'D10'], ['S8', 'C9', 'D8', 'D11']] });
     s = play(s, 'S14', 'S8', 'S9', 'H7');
     expect(s.phase).toBe('bawnAsk');
     expect(s.currentPlayer).toBe(0);
@@ -102,70 +124,72 @@ describe('Bawn (باون) on bid 7', () => {
     let s = play(at5(), 'S14', 'H7', 'S12', 'H8');
     s = applyAction(s, { type: 'BAWN', player: 0, accept: false });
     expect(s.contract?.bawn).toBe(false);
-    s = end(play(s, 'S13', 'C7', 'S11', 'C9', 'H14', 'D7', 'C8', 'D8'));
+    s = end(play(s, ...REST));
     expect(s.lastResult).toMatchObject({ bawn: false, made: true, points: [7, 0] });
   });
 
-  it('Yes + every remaining trick → 36', () => {
+  it('Yes + every remaining trick (all 9) → 36', () => {
     let s = play(at5(), 'S14', 'H7', 'S12', 'H8');
     s = applyAction(s, { type: 'BAWN', player: 0, accept: true });
     expect(s.contract?.bawn).toBe(true);
-    s = end(play(s, 'S13', 'C7', 'S11', 'C9', 'H14', 'D7', 'C8', 'D8'));
+    s = end(play(s, ...REST));
+    expect(s.tricksWon).toEqual([9, 0]);
     expect(s.lastResult).toMatchObject({ bawn: true, made: true, points: [36, 0] });
   });
 
   it('Yes + losing any trick → broken, the opponents get 18', () => {
     let s = play(at5(), 'S14', 'H7', 'S12', 'H8');
     s = applyAction(s, { type: 'BAWN', player: 0, accept: true });
-    // seat 0 leads H14... but let seat 3 win a trick: lead a club, seat 3's C9 wins
-    s = play(s, 'S13', 'C7', 'S11', 'C9'); // team 0 wins (7 tricks)
-    s = end(play({ ...s, hands: [['C7'], ['D7'], ['C8'], ['C14']] }, 'C7', 'D7', 'C8', 'C14')); // seat 3 wins the last
+    s = play(s, 'S13', 'C7', 'S11', 'C9'); // team 0: 7 tricks
+    // the last two tricks: seat 3's C14 wins one
+    s = play({ ...s, hands: [['C7', 'D14'], ['D7', 'D9'], ['C8', 'D10'], ['C14', 'D11']] }, 'C7', 'D7', 'C8', 'C14');
+    s = end(play(s, 'D11', 'D14', 'D9', 'D10'));
     expect(s.lastResult).toMatchObject({ bawn: true, made: false, points: [0, 18] });
   });
 
   it('with playToLastCard off, a failed Bawn ends the hand at once', () => {
     const rules = buildRules('default', { playToLastCard: false });
-    let s = play(at5({ rules, hands: [['S14', 'C7', 'H14'], ['H7', 'C14', 'D7'], ['S12', 'S11', 'C8'], ['H8', 'C9', 'D8']] }), 'S14', 'H7', 'S12', 'H8');
+    let s = play(at5({ rules, hands: [['S14', 'C7', 'H14', 'D14'], ['H7', 'C14', 'D7', 'D9'], ['S12', 'S11', 'C8', 'D10'], ['H8', 'C9', 'D8', 'D11']] }), 'S14', 'H7', 'S12', 'H8');
     s = applyAction(s, { type: 'BAWN', player: 0, accept: true });
     s = play(s, 'C7', 'C14', 'C8', 'C9'); // seat 1 wins a trick
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ bawn: true, points: [0, 18], endedEarly: true });
   });
 
-  it('is asked only once, only for bid 7, not on the last trick, and can be switched off', () => {
-    // asked once
+  it('is asked only once, only for bid 7, and can be switched off', () => {
     let s = applyAction(play(at5(), 'S14', 'H7', 'S12', 'H8'), { type: 'BAWN', player: 0, accept: false });
     s = play(s, 'S13', 'C7', 'S11', 'C9');
     expect(s.phase).toBe('playing');
-    // bid 8: no question at 6 tricks
     expect(play(at5({ bid: 8 }), 'S14', 'H7', 'S12', 'H8').phase).toBe('playing');
-    // 6th trick is the last trick: nothing left to ask about
-    const last = playingState({ trump: 'S', bidder: 0, bid: 7, hands: [['S14'], ['H7'], ['S12'], ['H8']], tricksWon: [5, 3], tricksPlayed: 8 });
-    expect(play(last, 'S14', 'H7', 'S12', 'H8').phase).toBe('review');
-    // switched off
     const off = buildRules('default', { bawn: { ...RULES.bawn, bawnOnBid: null } });
     expect(play(at5({ rules: off }), 'S14', 'H7', 'S12', 'H8').phase).toBe('playing');
   });
 
   it('points and the trigger are configurable', () => {
     const rules = buildRules('default', { bawn: { bawnOnBid: 7, bawnAskAtTricks: 5, bawnWinPoints: 40, bawnFailPoints: 20 } });
-    const s = playingState({ rules, trump: 'S', bidder: 0, bid: 7, hands: hands(), tricksWon: [4, 2], tricksPlayed: 6 });
+    const h5 = [
+      ['S14', 'S13', 'H14', 'D14', 'C14'],
+      ['H7', 'C7', 'D7', 'D9', 'C10'],
+      ['S12', 'S11', 'C8', 'D10', 'C11'],
+      ['H8', 'C9', 'D8', 'D11', 'C12'],
+    ];
+    const s = playingState({ rules, trump: 'S', bidder: 0, bid: 7, hands: h5, tricksWon: [4, 0], tricksPlayed: 4 });
     let t = play(s, 'S14', 'H7', 'S12', 'H8');
     expect(t.phase).toBe('bawnAsk');
-    t = end(play(applyAction(t, { type: 'BAWN', player: 0, accept: true }), 'S13', 'C7', 'S11', 'C9', 'H14', 'D7', 'C8', 'D8'));
+    t = end(play(applyAction(t, { type: 'BAWN', player: 0, accept: true }), ...REST, 'C14', 'C10', 'C11', 'C12'));
     expect(t.lastResult?.points).toEqual([40, 0]);
   });
 
   it('bots answer from their hand and the cards still out', () => {
-    const ask = (h0: string[], h1 = ['H7', 'C7', 'D7'], h3 = ['H8', 'C14', 'D8'], h2 = ['S9', 'C8', 'D9']) => {
+    const ask = (h0: string[], h1 = ['H7', 'C7', 'D7', 'H9'], h3 = ['H8', 'C14', 'D8', 'H10'], h2 = ['S9', 'C8', 'D9', 'D10']) => {
       const all = [h0, h1, h2, h3];
-      const s = playingState({ trump: 'S', bidder: 0, bid: 7, tricksWon: [5, 1], tricksPlayed: 6, hands: all });
+      const s = playingState({ trump: 'S', bidder: 0, bid: 7, tricksWon: [5, 0], tricksPlayed: 5, hands: all });
       const inHands = new Set(all.flat());
       const consistent = { ...s, playedCards: buildDeck(s.rules, s.mode).filter((c) => !inHands.has(c)) };
       return play(consistent, h0[0], h1[0], h2[0], h3[0]);
     };
-    // the two best trumps left (jokers and the other high trumps are gone) → yes
-    const strong = ask(['S14', 'S13', 'S12']);
+    // the best trumps left (jokers and the other high trumps are gone) → yes
+    const strong = ask(['S14', 'S13', 'S12', 'S10']);
     expect(strong.phase).toBe('bawnAsk');
     for (const d of ['hard', 'medium'] as const) expect(chooseBotAction(strong, d, seeded(1), { samples: 20 })).toEqual({ type: 'BAWN', player: 0, accept: true });
     // three small cards left, no trumps left anywhere, the aces are still out → no
