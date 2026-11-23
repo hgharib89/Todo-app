@@ -1,6 +1,6 @@
 // راشن · Ration — AI edge function (Supabase Edge Functions, Deno).
 // Keeps the Claude API key on the server. Needs the secret ANTHROPIC_API_KEY.
-// Callers must be signed in (anonymous sign-in counts): Supabase checks the JWT.
+// Callers must be signed in (anonymous sign-in counts); the function checks the token itself.
 //
 // POST body:
 //   { mode: "json", prompt, images?: [{ media_type, data }], tier?: "quick"|"default"|"complex" }
@@ -47,6 +47,13 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return reply({ error: "POST only" }, 405);
   if (Number(req.headers.get("content-length") || 0) > MAX_BODY) return reply({ error: "Request too large" }, 413);
+
+  // Only signed-in app users (anonymous sign-in counts) may call Claude.
+  // Checked here so it works with both legacy and new JWT signing keys ("Verify JWT" can stay OFF).
+  const who = await fetch(`${Deno.env.get("SUPABASE_URL")}/auth/v1/user`, {
+    headers: { Authorization: req.headers.get("authorization") || "", apikey: req.headers.get("apikey") || "" },
+  });
+  if (!who.ok) return reply({ error: "Sign in required" }, 401);
 
   try {
     const body = await req.json();
