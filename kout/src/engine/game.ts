@@ -10,6 +10,7 @@ import {
   BLACK_JOKER,
   CardId,
   RANK_NAME_TO_RANK,
+  RED_JOKER,
   buildDeck,
   cardId,
   isJoker,
@@ -60,8 +61,10 @@ export interface Contract {
 export interface TrickPlay {
   player: number;
   card: CardId;
-  /** a void joker (illegal forced lead): no rank, cannot win */
+  /** a void joker (illegal forced lead, or a burned big joker): no rank, cannot win */
   cancelled: boolean;
+  /** the red (big) joker played before the black (small) one: «محترق», no value (cancelled is set too) */
+  burned?: boolean;
 }
 
 export interface Trick {
@@ -478,6 +481,7 @@ export function canLeadJoker(state: GameState, player: number, joker: CardId): b
   const c = state.contract;
   if (!c || !c.trump) return false;
   const jr = state.rules.jokers;
+  if (!jr.jokerLeadAllowed) return false;
   // a) / b) bid-based permission for the bidding team
   if (teamOf(state, player) === c.team) {
     const perm = jr.leadAllowedByBid[c.value];
@@ -497,6 +501,20 @@ export function canLeadJoker(state: GameState, player: number, joker: CardId): b
 }
 
 /** True if the trick so far started with a void (cancelled) joker and no suit is set yet. */
+/**
+ * Would `card` be burned (الجوكر المحترق) if played now? True for the red (big) joker while the black
+ * (small) joker has not been played yet this hand: earlier tricks and earlier in this trick both count
+ * (state.playedCards holds both). Bots may pass a hypothetical `trick` (the current one plus imagined plays).
+ */
+export function jokerBurns(state: GameState, card: CardId, trick: Trick = state.trick): boolean {
+  return (
+    state.rules.jokers.burnBigJokerBeforeSmall &&
+    card === RED_JOKER &&
+    !state.playedCards.includes(BLACK_JOKER) &&
+    !trick.plays.some((p) => p.card === BLACK_JOKER)
+  );
+}
+
 function voidLeadPending(trick: Trick): boolean {
   return trick.ledSuit === null && trick.plays.length > 0 && trick.plays.some((p) => p.cancelled);
 }
@@ -591,10 +609,16 @@ function applyPlay(state: GameState, player: number, card: CardId): GameState {
       ledSuit = suitOf(card);
     }
   }
+  // الجوكر المحترق: the big joker played before the small one has no value
+  let burned = false;
+  if (!cancelled && jokerBurns(state, card)) {
+    cancelled = true;
+    burned = true;
+  }
 
   const hands = state.hands.slice();
   hands[player] = hands[player].filter((x) => x !== card);
-  const newTrick: Trick = { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled }] };
+  const newTrick: Trick = { ...trick, ledSuit, plays: [...trick.plays, burned ? { player, card, cancelled, burned } : { player, card, cancelled }] };
   let s: GameState = {
     ...state,
     hands,

@@ -17,6 +17,7 @@ import {
   canAskJoker,
   buildDeck,
   isJoker,
+  jokerBurns,
   catchOptions,
   legalActions,
   legalPlays,
@@ -179,8 +180,10 @@ export function estimateTricks(state: GameState, hand: CardId[], trump: Suit): n
   let est = 0;
   const trumps = hand.filter((c) => suitOf(c) === trump).map((c) => rankOf(c)!);
   const tLen = trumps.length;
-  if (hand.includes(RED_JOKER)) est += 1;
-  if (hand.includes(BLACK_JOKER)) est += 0.85;
+  // the black joker never burns; the red one burns unless the black is out first (sure only with both)
+  const burn = state.rules.jokers.burnBigJokerBeforeSmall;
+  if (hand.includes(BLACK_JOKER)) est += 0.9;
+  if (hand.includes(RED_JOKER)) est += !burn || hand.includes(BLACK_JOKER) ? 1 : 0.6;
   const ranked = [...trumps].sort((a, b) => b - a);
   for (const r of ranked) {
     if (r === 14) est += 1;
@@ -270,13 +273,13 @@ function cost(state: GameState, card: CardId, trump: Suit): number {
   return suitPower(state.rules, rankOf(card)!);
 }
 
-function simulateTrick(trick: Trick, player: number, card: CardId): Trick {
+function simulateTrick(state: GameState, trick: Trick, player: number, card: CardId): Trick {
   const ledSuit = trick.ledSuit ?? (isJoker(card) ? null : suitOf(card));
-  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: false }] };
+  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: jokerBurns(state, card, trick) }] };
 }
 
 function wouldWin(state: GameState, me: number, card: CardId, trump: Suit): boolean {
-  const t = simulateTrick(state.trick, me, card);
+  const t = simulateTrick(state, state.trick, me, card);
   const i = winningPlayIndex(state.rules, t, trump);
   return i >= 0 && t.plays[i].player === me;
 }

@@ -67,20 +67,21 @@ describe('new Hard bot (PIMC) — key decisions', () => {
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'H7' });
   });
 
-  it("doesn't waste a joker on a trick it cannot win", () => {
-    // the red joker is already on the trick: the black joker can't beat it
+  it('beats the trump Ace with the black joker when the trick matters (both jokers rank above the Ace)', () => {
+    // bidders have 5 of 7 with 3 tricks left: the defenders must win 2 of 3, so this trick matters
     let s = position({
       trump: 'S', bidder: 1, bid: 7, leader: 1, tricksPlayed: 6, tricksWon: [1, 5],
-      hands: [['XB', 'H7', 'C14'], ['XR', 'C9', 'D9'], ['H14', 'D7', 'C7'], ['H8', 'C8', 'D8']],
+      hands: [['XB', 'H7', 'C14'], ['C9', 'D9', 'S14'], ['H14', 'D7', 'C7'], ['H8', 'C8', 'D8']],
     });
-    s = play(s, 'XR', 'H14', 'H8');
-    expect(hard(s)).not.toEqual({ type: 'PLAY', player: 0, card: 'XB' });
+    s = play(s, 'S14', 'H14', 'H8');
+    expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'XB' });
   });
 
   it('wins a trick as cheaply as possible', () => {
     let s = position({
       trump: 'S', bidder: 0, bid: 9, leader: 1, tricksPlayed: 5, tricksWon: [5, 0],
-      hands: [['H14', 'H13', 'H7', 'XR'], ['H10', 'C9', 'D9', 'D10'], ['H8', 'C8', 'D8', 'C10'], ['H12', 'C7', 'D7', 'C11']],
+      // (no joker here: a joker can never be led, so with Larens at stake the solver rightly spends it on this trick)
+      hands: [['H14', 'H13', 'H7', 'S14'], ['H10', 'C9', 'D9', 'D10'], ['H8', 'C8', 'D8', 'C10'], ['H12', 'C7', 'D7', 'C11']],
     });
     s = play(s, 'H10', 'H8', 'H12');
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'H13' });

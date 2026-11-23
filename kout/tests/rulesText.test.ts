@@ -1,21 +1,39 @@
 import { describe, expect, it } from 'vitest';
 import { RULES, buildRules } from '../src/engine';
-import { describeJokerLead, describeJokerPlay, presetDescription } from '../src/ui/rulesText';
+import { describeBurnedJoker, describeJokerLead, describeJokerPlay, describePowerOrder, presetDescription } from '../src/ui/rulesText';
 
 describe('UI rule text is generated from rules.config.ts', () => {
-  it('describes each preset from its config', () => {
-    expect(presetDescription('default', RULES)).toBe('لارنس: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم');
-    expect(presetDescription('strict', RULES)).toBe('لارنس: أي جوكر · ٨: الأحمر فقط');
-    expect(presetDescription('stricter', RULES)).toContain('كل أوراق الحكم');
-    expect(presetDescription('relaxed', RULES)).toContain('ما عنده إكَه الحكم يجوز أي وقت');
+  it('the real game: never lead a joker, the power order and the burned joker come from the config', () => {
+    expect(describeJokerLead(RULES.jokers, RULES)).toBe('ما يجوز تبدأ أكلة بجوكر أبداً');
+    for (const p of ['default', 'strict', 'stricter', 'relaxed'] as const) expect(presetDescription(p, RULES)).toBe('ما يجوز تبدأ أكلة بجوكر أبداً');
+    expect(describePowerOrder(RULES)).toBe('القوة: الجوكر الأحمر › الجوكر الأسود › إكَه الحكم › باقي الحكم › باقي النقوش.');
+    const play = describeJokerPlay(RULES.jokers).join(' ');
+    expect(play).toContain('الجوكر المحترق 🔥');
+    expect(play).toContain('ينلعب بس على أكلة بداها غيرك');
+    expect(play).toContain('ينلعب ملغي');
+    // no burn sentence when the rule is switched off
+    expect(describeBurnedJoker(buildRules('default', { jokers: { burnBigJokerBeforeSmall: false } }).jokers)).toBeNull();
+    // the power line follows the config
+    const old = buildRules('default', { trumpPowerOrder: ['XR', 14, 'XB', 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2] });
+    expect(describePowerOrder(old)).toBe('القوة: الجوكر الأحمر › إكَه الحكم › الجوكر الأسود › باقي الحكم › باقي النقوش.');
+  });
+
+  it('describes each preset from its config (option jokerLeadAllowed = true)', () => {
+    const R = { ...RULES, jokerPresets: Object.fromEntries(Object.entries(RULES.jokerPresets).map(([k, j]) => [k, { ...j, jokerLeadAllowed: true }])) as typeof RULES.jokerPresets };
+    const on = (_p: string) => R;
+    expect(presetDescription('default', on('default'))).toBe('لارنس: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم');
+    expect(presetDescription('strict', on('strict'))).toBe('لارنس: أي جوكر · ٨: الأحمر فقط');
+    expect(presetDescription('stricter', on('stricter'))).toContain('كل أوراق الحكم');
+    expect(presetDescription('relaxed', on('relaxed'))).toContain('ما عنده إكَه الحكم يجوز أي وقت');
   });
 
   it('follows edits to the config', () => {
-    const r = buildRules('default', { jokers: { leadAllowedByBid: { 7: { red: false, black: true } }, leadUnlockedWhenTrumpsPlayed: ['A', 'K'] } });
+    const r = buildRules('default', { jokers: { jokerLeadAllowed: true, leadAllowedByBid: { 7: { red: false, black: true } }, leadUnlockedWhenTrumpsPlayed: ['A', 'K'] } });
     expect(describeJokerLead(r.jokers, r)).toBe('٧: الأسود فقط · أو بعد نزول إكَه وشايب الحكم');
-    const off = buildRules('default', { jokers: { ledJokerCountsAsTrump: false, illegalForcedLead: 'asTrump', canPlayWhileHoldingLedSuit: false } });
-    const on = describeJokerPlay(RULES.jokers);
-    const changed = describeJokerPlay(off.jokers);
+    const base = buildRules('default', { jokers: { jokerLeadAllowed: true } });
+    const off = buildRules('default', { jokers: { jokerLeadAllowed: true, ledJokerCountsAsTrump: false, illegalForcedLead: 'asTrump', canPlayWhileHoldingLedSuit: false } });
+    const on = describeJokerPlay(base.jokers).slice(1); // [0] is the burned-joker sentence (unchanged)
+    const changed = describeJokerPlay(off.jokers).slice(1);
     on.forEach((t, i) => expect(changed[i]).not.toBe(t));
   });
 });

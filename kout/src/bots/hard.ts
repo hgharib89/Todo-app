@@ -17,6 +17,7 @@
 import {
   Action,
   CardId,
+  BLACK_JOKER,
   RED_JOKER,
   GameState,
   RulesConfig,
@@ -30,6 +31,7 @@ import {
   handOutcome,
   handPoints,
   isJoker,
+  jokerBurns,
   legalPlays,
   nextSeat,
   rankOf,
@@ -77,10 +79,10 @@ function beats(rules: RulesConfig, challenger: CardId, current: CardId, ledSuit:
   return winningPlayIndex(rules, t, trump) === 1;
 }
 
-/** The trick after `player` plays `card` (approximate: sets the led suit like the engine does). */
-function withPlay(trick: Trick, player: number, card: CardId): Trick {
+/** The trick after `player` plays `card` (approximate: sets the led suit and burns the red joker like the engine does). */
+function withPlay(s: GameState, trick: Trick, player: number, card: CardId): Trick {
   const ledSuit = trick.ledSuit ?? (isJoker(card) ? null : suitOf(card));
-  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: false }] };
+  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: jokerBurns(s, card, trick) }] };
 }
 
 /** Seats still to play in the current trick after `me`. */
@@ -287,7 +289,7 @@ function opponentCanBeat(s: GameState, me: number, trick: Trick, card: CardId, l
     const hand = s.hands[p];
     const follow = trick.ledSuit ? hand.filter((c) => suitOf(c) === trick.ledSuit) : [];
     const options = follow.length ? [...follow, ...hand.filter(isJoker)] : hand;
-    if (options.some((c) => beats(s.rules, c, card, trick.ledSuit, trump))) return true;
+    if (options.some((c) => !jokerBurns(s, c, trick) && beats(s.rules, c, card, trick.ledSuit, trump))) return true;
   }
   return false;
 }
@@ -337,12 +339,12 @@ export function rolloutCard(s: GameState): CardId {
     return cheapest; // partner has it: feed a low card
   }
   const winners = byCost.filter((x) => {
-    const t = withPlay(trick, me, x);
+    const t = withPlay(s, trick, me, x);
     const w = winningPlayIndex(rules, t, trump);
     return w >= 0 && t.plays[w].player === me;
   });
   for (const x of winners) {
-    if (!opponentCanBeat(s, me, withPlay(trick, me, x), x, later)) return x;
+    if (!opponentCanBeat(s, me, withPlay(s, trick, me, x), x, later)) return x;
   }
   return cheapest;
 }
@@ -438,7 +440,7 @@ export function monteCarloScores(state: GameState, rng: Rng, samples = HARD_DEFA
     const expected = totals.get(card)! / samples;
     let score = expected - 0.0005 * cardCost(state.rules, card, trump);
     if (partnerWinning) {
-      const t = withPlay(trick, me, card);
+      const t = withPlay(state, trick, me, card);
       const w = winningPlayIndex(state.rules, t, trump);
       if (w >= 0 && t.plays[w].player === me) score -= 0.05; // don't overtake partner without a reason
     }
@@ -477,6 +479,8 @@ export function handStrength(state: Pick<GameState, 'rules' | 'mode' | 'numPlaye
     if (k === 0) v = 1;
     else if (L > k) v = k === 1 ? 0.75 : k === 2 ? 0.55 : 0.3;
     else v = k === 1 ? 0.4 : k === 2 ? 0.2 : 0.05;
+    // الجوكر المحترق: the red joker without the black one only wins once the black is out
+    if (c === RED_JOKER && rules.jokers.burnBigJokerBeforeSmall && !mine.has(BLACK_JOKER)) v = Math.min(v, 0.6);
     if (v >= 0.55) topWinners++;
     est += v;
   }
@@ -609,7 +613,8 @@ export function jokerAskValue(state: GameState, me: number, team: number): { ev:
   const unseen = buildDeck(r, state.mode).length - state.hands[me].length;
   const partnerCards = state.hands.reduce((n, h, p) => (p !== me && teamOf(state, p) === teamOf(state, me) ? n + h.length : n), 0);
   const pYes = partnerCards / Math.max(1, unseen);
-  const jokerTricks = other === RED_JOKER ? 1 : 0.85;
+  // with both jokers on the team neither has to burn: play the black (small) one first
+  const jokerTricks = other === RED_JOKER ? 1 : 0.9;
   const estYes = team + jokerTricks;
   const estNo = team - 0.3;
   const yes = bidValue(state, ja.jokerAskYesBid, false, makeChance(estYes, ja.jokerAskYesBid, r.bidding.larens));

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { applyAction, buildRules, canLeadJoker, legalPlays, GameState, JokerPresetId } from '../src/engine';
+import { applyAction, buildRules, canLeadJoker, legalPlays, GameState, JokerPresetId, JokerRules } from '../src/engine';
 import { playingState, Setup } from './helpers';
 
 function play(s: GameState, ...cards: string[]): GameState {
@@ -14,11 +14,17 @@ const HANDS = [
   ['D8', 'C9', 'S7', 'H9'],
 ];
 
+// The real game never lets a joker be led (jokers.jokerLeadAllowed = false, see jokerRules.test.ts).
+// The lead-permission machinery stays in rules.config.ts as an option; these tests switch it back on
+// (and the burned-joker rule off) to keep that option covered.
+const LEAD_ON = { jokerLeadAllowed: true, burnBigJokerBeforeSmall: false };
+const leadOn = (preset: JokerPresetId = 'default', jokers: Partial<JokerRules> = {}) => buildRules(preset, { jokers: { ...LEAD_ON, ...jokers } });
+
 function st(over: Partial<Setup> = {}): GameState {
-  return playingState({ trump: 'S', bidder: 0, bid: 5, hands: HANDS, ...over });
+  return playingState({ rules: leadOn(), trump: 'S', bidder: 0, bid: 5, hands: HANDS, ...over });
 }
 
-describe('joker lead — default preset', () => {
+describe('joker lead — default preset with jokerLeadAllowed = true (option)', () => {
   it('bid 9 → either joker may be led', () => {
     expect(legalPlays(st({ bid: 9 }))).toEqual(expect.arrayContaining(['XR', 'XB']));
   });
@@ -90,12 +96,12 @@ describe('illegal forced joker lead (cancel)', () => {
   });
 
   it('both jokers forced-led: still only one is offered when one is legal', () => {
-    const s = playingState({ trump: 'S', bidder: 0, bid: 8, hands: [['XR', 'XB'], ['H7'], ['H8'], ['H9']] });
+    const s = playingState({ rules: leadOn(), trump: 'S', bidder: 0, bid: 8, hands: [['XR', 'XB'], ['H7'], ['H8'], ['H9']] });
     expect(legalPlays(s)).toEqual(['XR']);
   });
 
   it("'asTrump' resolution makes a forced joker lead count as trump", () => {
-    const rules = buildRules('default', { jokers: { illegalForcedLead: 'asTrump' } });
+    const rules = leadOn('default', { illegalForcedLead: 'asTrump' });
     let s = playingState({ rules, trump: 'S', bidder: 1, bid: 6, leader: 0, hands: [['XR'], ['S6', 'H7'], ['H12'], ['D14']] });
     s = play(s, 'XR');
     expect(s.trick.plays[0].cancelled).toBe(false);
@@ -106,9 +112,9 @@ describe('illegal forced joker lead (cancel)', () => {
   });
 });
 
-describe('joker presets', () => {
+describe('joker presets (with jokerLeadAllowed = true)', () => {
   const lead = (preset: JokerPresetId, over: Partial<Setup> = {}) =>
-    legalPlays(playingState({ preset, trump: 'S', bidder: 0, bid: 5, hands: HANDS, ...over }));
+    legalPlays(playingState({ rules: leadOn(preset), trump: 'S', bidder: 0, bid: 5, hands: HANDS, ...over }));
 
   it('strict: only bid 8/9 allows joker lead (played trumps do not unlock)', () => {
     expect(lead('strict', { played: ['S14', 'S13', 'S12', 'S11'] })).not.toContain('XR');
@@ -142,7 +148,7 @@ describe('joker presets', () => {
   });
 
   it('relaxed: bidderHeldUnlockCard is computed when trump is chosen', () => {
-    const g = playingState({ preset: 'relaxed', trump: 'S', bidder: 0, bid: 5, hands: HANDS });
+    const g = playingState({ rules: leadOn('relaxed'), trump: 'S', bidder: 0, bid: 5, hands: HANDS });
     const choosing = { ...g, phase: 'choosingTrump' as const, currentPlayer: 0 };
     const a = applyAction(choosing, { type: 'CHOOSE_TRUMP', player: 0, suit: 'S' });
     expect(a.contract?.bidderHeldUnlockCard).toBe(false);
@@ -156,20 +162,20 @@ describe('joker presets', () => {
   });
 
   it('bid permissions table is editable', () => {
-    const rules = buildRules('default', { jokers: { leadAllowedByBid: { 7: { red: false, black: true } } } });
+    const rules = leadOn('default', { leadAllowedByBid: { 7: { red: false, black: true } } });
     const l = legalPlays(playingState({ rules, trump: 'S', bidder: 0, bid: 7, hands: HANDS }));
     expect(l).toContain('XB');
     expect(l).not.toContain('XR');
   });
 
   it('required trump list is editable', () => {
-    const rules = buildRules('default', { jokers: { leadUnlockedWhenTrumpsPlayed: ['A', 'K'] } });
+    const rules = leadOn('default', { leadUnlockedWhenTrumpsPlayed: ['A', 'K'] });
     expect(legalPlays(playingState({ rules, trump: 'S', bidder: 0, bid: 5, hands: HANDS, played: ['S14', 'S13'] }))).toContain('XR');
   });
 });
 
-describe('joker option — ledJokerCountsAsTrump', () => {
-  const off = () => playingState({ rules: buildRules('default', { jokers: { ledJokerCountsAsTrump: false } }), trump: 'S', bidder: 0, bid: 9, hands: HANDS });
+describe('joker option — ledJokerCountsAsTrump (with jokerLeadAllowed = true)', () => {
+  const off = () => playingState({ rules: leadOn('default', { ledJokerCountsAsTrump: false }), trump: 'S', bidder: 0, bid: 9, hands: HANDS });
 
   it('true (default): a legally led joker sets trump as the led suit', () => {
     const s = play(st({ bid: 9 }), 'XB');

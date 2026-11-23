@@ -5,7 +5,8 @@
  *
  * Partnership:  never overtake a partner who already has the trick; play low under them.
  * Jokers:       used to win a trick that matters when nothing cheaper wins it for sure — not hoarded,
- *               never thrown on a trick that is already won by partner or cannot be won.
+ *               never thrown on a trick that is already won by partner or cannot be won. The red joker
+ *               played before the black one burns (no value), so it never counts as a winner then.
  * Bidders:      draw the opponents' trumps with sure winners, cash sure side winners, lead to partner.
  * Defenders:    lead to partner's sure winners, attack trumps when they hold the top ones, otherwise
  *               lead short suits (to ruff later) or through the bidding team's weak suits.
@@ -17,6 +18,7 @@ import {
   type Trick,
   applyAction,
   canLeadJoker,
+  jokerBurns,
   isJoker,
   legalPlays,
   nextSeat,
@@ -46,9 +48,10 @@ export function cost(s: GameState, c: CardId, trump: Suit, owner: number = s.cur
   return suitPower(s.rules, rankOf(c)!);
 }
 
-function withPlay(trick: Trick, player: number, card: CardId): Trick {
+function withPlay(s: GameState, trick: Trick, player: number, card: CardId): Trick {
   const ledSuit = trick.ledSuit ?? (isJoker(card) ? null : suitOf(card));
-  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: false }] };
+  const burned = jokerBurns(s, card, trick); // الجوكر المحترق
+  return { ...trick, ledSuit, plays: [...trick.plays, { player, card, cancelled: burned }] };
 }
 
 function laterSeats(s: GameState, me: number): number[] {
@@ -72,7 +75,7 @@ function oppCanBeat(s: GameState, me: number, trick: Trick, later: number[]): bo
     const jokersOk = s.rules.jokers.canPlayWhileHoldingLedSuit || trick.ledSuit === trump;
     const options = follow.length ? [...follow, ...(jokersOk ? hand.filter(isJoker) : [])] : hand;
     for (const c of options) {
-      const t = withPlay(trick, p, c);
+      const t = withPlay(s, trick, p, c);
       const w = winningPlayIndex(s.rules, t, trump);
       if (w >= 0 && t.plays[w].player === p) return true;
     }
@@ -82,7 +85,7 @@ function oppCanBeat(s: GameState, me: number, trick: Trick, later: number[]): bo
 
 function wins(s: GameState, me: number, card: CardId): Trick | null {
   const trump = s.contract!.trump as Suit;
-  const t = withPlay(s.trick, me, card);
+  const t = withPlay(s, s.trick, me, card);
   const w = winningPlayIndex(s.rules, t, trump);
   return w >= 0 && t.plays[w].player === me ? t : null;
 }
