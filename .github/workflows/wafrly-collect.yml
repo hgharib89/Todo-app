@@ -1,0 +1,52 @@
+# Wafrly offers agent: reads the current supermarket flyers and updates the offers in Supabase.
+# Runs every Monday and Thursday at 06:00 UAE time, or on demand (Actions → "Wafrly offers agent" → Run workflow).
+# Needs repository secrets ANTHROPIC_API_KEY and SUPABASE_SERVICE_KEY.
+name: Wafrly offers agent
+
+on:
+  schedule:
+    - cron: "0 2 * * 1,4"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Read flyers but do not save (1 = yes)"
+        default: "0"
+      stores:
+        description: "Only these ClicFlyer store slugs, comma-separated (empty = all)"
+        default: ""
+      max_pages:
+        description: "Max pages per flyer"
+        default: "40"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: wafrly-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests==2.32.3 pillow==11.0.0
+      - name: Collect offers
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+          DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
+          STORES: ${{ github.event.inputs.stores || '' }}
+          MAX_PAGES: ${{ github.event.inputs.max_pages || '40' }}
+        run: python ration/collector/collect.py
+      - name: Save the run report to the wafrly-runs branch
+        if: always()
+        run: |
+          mkdir -p /tmp/out && cp -r collect-out/. /tmp/out/ 2>/dev/null || true
+          git config user.name "wafrly-bot" && git config user.email "actions@users.noreply.github.com"
+          git checkout --orphan wafrly-runs && git rm -rfq . && cp -r /tmp/out/. . 2>/dev/null || true
+          git add -A && git commit -qm "run $(date -u +%F_%H%M)" && git push -f origin wafrly-runs || true

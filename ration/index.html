@@ -225,7 +225,7 @@ en: {
   loggedAs: e => `Signed in as ${e}`, checkEmail: 'We sent a confirmation link to your email. Confirm it, then sign in.', loginFail: 'Wrong email or password.',
   notAdmin: 'This account is not an admin.'
 }};
-const STORE_EN = {'جمعية الشارقة التعاونية':'Sharjah Co-op','تعاونية الاتحاد':'Union Coop','كارفور':'Carrefour','لولو هايبرماركت':'Lulu Hypermarket','نستو':'Nesto'};
+const STORE_EN = {'جمعية الشارقة التعاونية':'Sharjah Co-op','تعاونية الاتحاد':'Union Coop','كارفور':'Carrefour','لولو هايبرماركت':'Lulu Hypermarket','نستو':'Nesto','تشويترامز':'Choithrams','جمعية الإمارات التعاونية':'Emirates Co-op','جرانديوز':'Grandiose','تعاونية أبوظبي':'Abu Dhabi Co-op'};
 let lang = 'ar';
 try { const saved = localStorage.getItem('ration-lang'); if (saved === 'ar' || saved === 'en') lang = saved; } catch {}
 const t = (k, ...a) => { const v = T[lang][k]; return typeof v === 'function' ? v(...a) : v; };
