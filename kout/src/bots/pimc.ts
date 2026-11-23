@@ -57,8 +57,15 @@ export interface PimcOptions {
 }
 
 const DEFAULTS = { deals: 200, timeMs: 1000, minDeals: 24, bidDeals: 60 };
-/** chance of making a bid the bot requires before it bids voluntarily */
-export const PIMC_MIN_MAKE = 0.7;
+/**
+ * chance of making a bid (in the full-information simulations) the bot requires before it bids.
+ * The simulations see every card, so they overstate what a real bidder makes; a high bar keeps the
+ * bot from overbidding (a failed bid costs double).
+ */
+export let PIMC_MIN_MAKE = 0.7;
+export function setPimcMinMake(v: number) {
+  PIMC_MIN_MAKE = v;
+}
 
 function withDefaults(opts: PimcOptions) {
   const o = { ...DEFAULTS };
