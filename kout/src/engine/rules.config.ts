@@ -97,6 +97,21 @@ export type TrumpRankName = 'A' | 'K' | 'Q' | 'J';
 
 export interface JokerRules {
   /**
+   * هل يجوز البدء بالجوكر أصلاً؟ false = ما يجوز تبدأ أكلة بجوكر أبداً (كل شروط البدء تحت تُتجاهل).
+   * إذا ما بقى عند اللاعب إلا جوكرات ومضطر يبدأ، يطبّق illegalForcedLead.
+   * May a joker ever be LED? false = a trick can never be started with a joker (all the
+   * lead-permission rules below are ignored). A player left with only jokers falls under illegalForcedLead.
+   */
+  jokerLeadAllowed: boolean;
+  /**
+   * الجوكر المحترق: إذا انلعب الجوكر الأحمر (الكبير) قبل ما ينلعب الأسود (الصغير) في هذه اليد
+   * (في أكلة سابقة أو قبله في نفس الأكلة)، يحترق: ما له قيمة وما يقدر ياخذ الأكلة.
+   * Burned big joker: if the red (big) joker is played while the black (small) joker has NOT been
+   * played yet this hand (in an earlier trick, or earlier in the same trick), it is burned: no value,
+   * cannot win the trick. Once the small joker is out, the big joker is the strongest card as usual.
+   */
+  burnBigJokerBeforeSmall: boolean;
+  /**
    * أي جوكر يُسمح بالبدء (اللعب أولاً) به حسب مزايدة فريق اللاعب البادئ.
    * يطبّق فقط على الفريق اللي فاز بالمزايدة.
    * Which joker may be LED depending on the leader's team bid.
@@ -332,6 +347,9 @@ export interface JokerAskRules {
 // ---------------------------------------------------------------------------
 
 /** مشترك: من زايد ٩ يبدأ بأي جوكر، من زايد ٨ يبدأ بالأحمر فقط / bid 9 → any joker, bid 8 → red only */
+/** مشترك بين كل الإعدادات: ممنوع البدء بالجوكر، والأحمر يحترق قبل الأسود. Shared by every preset. */
+const JOKER_COMMON = { jokerLeadAllowed: false, burnBigJokerBeforeSmall: true } as const;
+
 const BID_8_9_LEAD: JokerRules['leadAllowedByBid'] = {
   9: { red: true, black: true },
   8: { red: true, black: false },
@@ -343,6 +361,7 @@ export const JOKER_PRESETS: Record<JokerPresetId, JokerRules> = {
    * Default: bid 9 → either joker, bid 8 → red only, or once trump A, K, Q, J have all been played.
    */
   default: {
+    ...JOKER_COMMON,
     leadAllowedByBid: BID_8_9_LEAD,
     leadUnlockedWhenTrumpsPlayed: ['A', 'K', 'Q', 'J'],
     leadUnlockedIfBidderLacks: null,
@@ -355,6 +374,7 @@ export const JOKER_PRESETS: Record<JokerPresetId, JokerRules> = {
    * Strict: only a bid of 8/9 allows leading a joker.
    */
   strict: {
+    ...JOKER_COMMON,
     leadAllowedByBid: BID_8_9_LEAD,
     leadUnlockedWhenTrumpsPlayed: null,
     leadUnlockedIfBidderLacks: null,
@@ -367,6 +387,7 @@ export const JOKER_PRESETS: Record<JokerPresetId, JokerRules> = {
    * Stricter: all trump cards must be played first, unless bid 8/9.
    */
   stricter: {
+    ...JOKER_COMMON,
     leadAllowedByBid: BID_8_9_LEAD,
     leadUnlockedWhenTrumpsPlayed: 'all',
     leadUnlockedIfBidderLacks: null,
@@ -380,6 +401,7 @@ export const JOKER_PRESETS: Record<JokerPresetId, JokerRules> = {
    * a joker can be led any time.
    */
   relaxed: {
+    ...JOKER_COMMON,
     leadAllowedByBid: BID_8_9_LEAD,
     leadUnlockedWhenTrumpsPlayed: ['A'],
     leadUnlockedIfBidderLacks: 'A',
@@ -426,8 +448,9 @@ export const RULES: RulesConfig = {
   // A K Q J 10 9 8 7 6 5 4 3 2
   suitRankOrder: [14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 
-  // Red Joker > A > Black Joker > K Q J 10 ... 2
-  trumpPowerOrder: ['XR', 14, 'XB', 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
+  // الجوكر الأحمر › الجوكر الأسود › إكَه الحكم › شايب … ٢  (الأحمر يحترق إذا انلعب قبل الأسود: jokers.burnBigJokerBeforeSmall)
+  // Red Joker > Black Joker > trump A > K Q J 10 ... 2  (the red one burns if played before the black: see jokers.burnBigJokerBeforeSmall)
+  trumpPowerOrder: ['XR', 'XB', 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2],
 
   bidding: {
     values: [5, 6, 7, 8, 9],

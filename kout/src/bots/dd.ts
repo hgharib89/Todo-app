@@ -2,7 +2,7 @@
  * Exact double-dummy solver: with every hand known (one sampled deal), find the best result
  * for one team by alpha-beta search to the end of the hand.
  *
- * It follows the engine's rules exactly (follow suit, joker leads and their unlocks, a cancelled
+ * It follows the engine's rules exactly (follow suit, joker leads and their unlocks, the burned big joker, a cancelled
  * forced joker lead, trick winner), and scores the hand the way the engine does (normal bids,
  * Malzoom, Larens, Bawn). Speed comes from a compact representation, a transposition table at
  * trick boundaries, equivalent-card pruning and stopping as soon as the result is decided.
@@ -95,6 +95,9 @@ class DD {
   private ledCounts: boolean;
   private cancelIllegal: boolean;
   private jokerWhileHolding: boolean;
+  private leadAllowed: boolean; // jokers.jokerLeadAllowed
+  private burnRule: boolean; // jokers.burnBigJokerBeforeSmall
+  private blackOut: boolean; // has the black (small) joker been played this hand?
 
   // dynamic
   private trick: Play[] = [];
@@ -147,6 +150,9 @@ class DD {
     this.ledCounts = jr.ledJokerCountsAsTrump;
     this.cancelIllegal = jr.illegalForcedLead === 'cancel';
     this.jokerWhileHolding = jr.canPlayWhileHoldingLedSuit;
+    this.leadAllowed = jr.jokerLeadAllowed;
+    this.burnRule = jr.burnBigJokerBeforeSmall;
+    this.blackOut = state.playedCards.includes('XB');
 
     // live cards: in hands and in the current trick
     const add = (card: CardId, own: number) => {
@@ -211,6 +217,7 @@ class DD {
   }
 
   private canLeadJoker(p: number, c: number): boolean {
+    if (!this.leadAllowed) return false;
     const t = this.teamOf(p);
     if (this.red[c] ? this.permRed[t] : this.permBlack[t]) return true;
     if (this.bidderLacksUnlock) return true;
@@ -281,11 +288,11 @@ class DD {
 
   // ---- make / unmake ---------------------------------------------------------
 
-  private undoStack: { ledSuit: number; leader: number; won: [number, number]; played: number; trick: Play[] | null; reqDelta: number }[] = [];
+  private undoStack: { ledSuit: number; leader: number; won: [number, number]; played: number; trick: Play[] | null; reqDelta: number; blackOut: boolean }[] = [];
 
   push(c: number) {
     const p = this.toMove();
-    const saved = { ledSuit: this.ledSuit, leader: this.leader, won: [this.won[0], this.won[1]] as [number, number], played: this.played, trick: null as Play[] | null, reqDelta: 0 };
+    const saved = { ledSuit: this.ledSuit, leader: this.leader, won: [this.won[0], this.won[1]] as [number, number], played: this.played, trick: null as Play[] | null, reqDelta: 0, blackOut: this.blackOut };
     let cancelled = false;
     if (this.trick.length === 0) {
       if (this.joker[c]) {
@@ -298,6 +305,12 @@ class DD {
       if (this.joker[c]) {
         if (this.trick.some((t) => t.cancelled)) cancelled = true;
       } else this.ledSuit = this.suit[c];
+    }
+    // الجوكر المحترق: the red joker before the black one has no value
+    if (this.joker[c]) {
+      if (this.red[c]) {
+        if (this.burnRule && !this.blackOut) cancelled = true;
+      } else this.blackOut = true;
     }
     const h = this.hands[p];
     h.splice(h.indexOf(c), 1);
@@ -334,6 +347,7 @@ class DD {
     const last = this.trick.pop()!;
     this.hands[last.p].push(last.c);
     if (saved.reqDelta) this.reqRemaining++;
+    this.blackOut = saved.blackOut;
     this.ledSuit = saved.ledSuit;
     this.leader = saved.leader;
     this.won = saved.won;

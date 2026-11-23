@@ -171,8 +171,9 @@ describe('catching (أكاشف)', () => {
     expect(s.lastResult).toMatchObject({ made: true, points: [6, 0], caught: null });
   });
 
-  it('a renege on a trick led by a legal joker (trump) is caught too', () => {
+  it('a renege on a trick led by a legal joker (trump) is caught too (option jokerLeadAllowed)', () => {
     let s = playingState({
+      rules: buildRules('default', { jokers: { jokerLeadAllowed: true, burnBigJokerBeforeSmall: false } }),
       trump: 'S', bidder: 0, bid: 9, tricksPlayed: 7, tricksWon: [7, 0],
       hands: [['XR', 'C14'], ['S9', 'D9'], ['H8', 'C8'], ['H7', 'C7']],
     });

@@ -17,6 +17,7 @@ function bidName(rules: RulesConfig, v: number): string {
 
 /** When may a joker be led? e.g. "لارنس: أي جوكر · ٨: الأحمر فقط · أو بعد نزول إكَه وشايب وبنت وولد الحكم" */
 export function describeJokerLead(jr: JokerRules, rules: RulesConfig): string {
+  if (!jr.jokerLeadAllowed) return 'ما يجوز تبدأ أكلة بجوكر أبداً';
   const parts: string[] = [];
   const bids = Object.keys(jr.leadAllowedByBid)
     .map(Number)
@@ -37,15 +38,42 @@ export function describeJokerLead(jr: JokerRules, rules: RulesConfig): string {
   return parts.join(' · ');
 }
 
-/** The remaining joker rules (following, counting as trump, forced lead), as full sentences. */
+/** Card power, from rules.trumpPowerOrder: "القوة: الجوكر الأحمر › الجوكر الأسود › إكَه الحكم › باقي الحكم › باقي النقوش." */
+export function describePowerOrder(rules: RulesConfig): string {
+  // the jokers and the trump Ace, in config order; the other trumps follow them
+  const top: string[] = [];
+  for (const x of rules.trumpPowerOrder) {
+    if (x === 'XR') top.push('الجوكر الأحمر');
+    else if (x === 'XB') top.push('الجوكر الأسود');
+    else if (x === 14) top.push('إكَه الحكم');
+  }
+  return `القوة: ${[...top, 'باقي الحكم', 'باقي النقوش'].join(' › ')}.`;
+}
+
+/** The burned big joker (الجوكر المحترق) as a sentence, or null when the rule is off. */
+export function describeBurnedJoker(jr: JokerRules): string | null {
+  if (!jr.burnBigJokerBeforeSmall) return null;
+  return 'الجوكر المحترق 🔥: إذا انلعب الجوكر الأحمر (الكبير) قبل ما ينلعب الجوكر الأسود (الصغير) في نفس اليد — في أكلة قبل أو قبله في نفس الأكلة — يحترق: ما له قيمة وما ياخذ الأكلة. وإذا الأسود انلعب قبله، الأحمر أقوى ورقة.';
+}
+
+/** The remaining joker rules (following, counting as trump, forced lead, burning), as full sentences. */
 export function describeJokerPlay(jr: JokerRules): string[] {
+  const burned = describeBurnedJoker(jr);
+  if (!jr.jokerLeadAllowed) {
+    return [
+      jr.canPlayWhileHoldingLedSuit
+        ? 'الجوكر ينلعب بس على أكلة بداها غيرك، في أي وقت، حتى لو عندك النقش.'
+        : 'الجوكر ينلعب بس على أكلة بداها غيرك، وما ينلعب إذا عندك النقش المطلوب (إلا إذا النقش حكم).',
+      ...(burned ? [burned] : []),
+      jr.illegalForcedLead === 'cancel'
+        ? 'إذا ما بقى عندك إلا جوكر وجا دورك تبدأ، ينلعب ملغي (بدون قيمة) والورقة اللي بعده تحدد النقش (وإذا انلعب جوكر بعده يُلغى بعد).'
+        : 'إذا ما بقى عندك إلا جوكر وجا دورك تبدأ، يُحسب حكم.',
+    ];
+  }
   return [
-    jr.canPlayWhileHoldingLedSuit
-      ? 'الجوكر ينلعب على أكلة غيرك في أي وقت، حتى لو عندك النقش.'
-      : 'الجوكر ما ينلعب على أكلة غيرك إذا عندك النقش المطلوب (إلا إذا النقش حكم).',
-    jr.ledJokerCountsAsTrump
-      ? 'إذا بدأت بالجوكر بشكل قانوني يحسب حكم، والباقي لازم يلعبون حكم إذا عندهم.'
-      : 'إذا بدأت بالجوكر ما يحدد النقش، وأول ورقة عادية بعده تحدد النقش.',
+    ...(burned ? [burned] : []),
+    jr.canPlayWhileHoldingLedSuit ? 'الجوكر ينلعب على أكلة غيرك في أي وقت، حتى لو عندك النقش.' : 'الجوكر ما ينلعب على أكلة غيرك إذا عندك النقش المطلوب (إلا إذا النقش حكم).',
+    jr.ledJokerCountsAsTrump ? 'إذا بدأت بالجوكر بشكل قانوني يحسب حكم، والباقي لازم يلعبون حكم إذا عندهم.' : 'إذا بدأت بالجوكر ما يحدد النقش، وأول ورقة عادية بعده تحدد النقش.',
     jr.illegalForcedLead === 'cancel'
       ? 'إذا اضطر لاعب يبدأ بجوكر وهو آخر ورقة عنده بدون ما يحق له، يُلغى الجوكر والورقة اللي بعده تحدد النقش (وإذا انلعب جوكر بعده يُلغى بعد).'
       : 'إذا اضطر لاعب يبدأ بجوكر وهو آخر ورقة عنده، يُحسب كبداية قانونية.',

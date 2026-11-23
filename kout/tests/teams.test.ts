@@ -3,6 +3,7 @@ import { RULES, applyAction, buildRules, canLeadJoker, createGame, teamOf } from
 import { playingState } from './helpers';
 
 const halves = buildRules('default', {
+  jokers: { jokerLeadAllowed: true }, // joker leads are an option (off in the real game)
   modes: {
     bo6: { ...RULES.modes.bo6, teamLayout: 'halves' },
     bo4: { ...RULES.modes.bo4, teamLayout: 'halves' },

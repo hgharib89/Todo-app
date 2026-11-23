@@ -394,7 +394,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
             return (
               <div
                 key={`${pl.player}-${pl.card}`}
-                className={`trick-card ${fly ? 'fly' : ''} ${pl.cancelled ? 'void' : ''} ${isWinner && collecting?.stage === 'show' ? 'win' : ''}`}
+                className={`trick-card ${fly ? 'fly' : ''} ${pl.cancelled ? 'void' : ''} ${pl.burned ? 'burned' : ''} ${isWinner && collecting?.stage === 'show' ? 'win' : ''}`}
                 style={{
                   left: fly ? `${fly.x}%` : `calc(50% + ${off.dx}px)`,
                   top: fly ? `${fly.y}%` : `calc(48% + ${off.dy}px)`,
@@ -403,7 +403,7 @@ export function GameScreen({ settings, initial, online, onExit, onToggleSound }:
                 }}
               >
                 <Card id={pl.card} />
-                {pl.cancelled && <span className="void-tag">ملغي</span>}
+                {pl.burned ? <span className="void-tag burned-tag">محترق 🔥</span> : pl.cancelled && <span className="void-tag">ملغي</span>}
               </div>
             );
           })}

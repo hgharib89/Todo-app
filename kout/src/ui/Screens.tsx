@@ -3,9 +3,12 @@ import type { Difficulty } from '../bots';
 import { Card } from './Card';
 import { ar } from './layout';
 import { DIFFICULTY_LABELS, MODE_LABELS, PRESET_NAMES, SPEED_LABELS, Settings, Speed } from './settings';
-import { describeBawn, describeDealer, describeFirstLead, describeJokerAsk, describeJokerPlay, describeLarens, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
+import { describeBawn, describeDealer, describeFirstLead, describeJokerAsk, describeJokerPlay, describeLarens, describePowerOrder, describeRemovedCards, describeRenege, presetDescription } from './rulesText';
 import { bidLabel } from './panels';
 import { useInstall } from '../pwa/install';
+
+/** Do the joker presets differ at all? Not when no preset allows leading a joker (then the picker is hidden). */
+const PRESETS_MATTER = Object.values(RULES.jokerPresets).some((j) => j.jokerLeadAllowed);
 
 export function Home({ settings, hasSaved, onPlay, onResume, onOnline, onSettings, onRules }: {
   settings: Settings;
@@ -54,7 +57,7 @@ export function Home({ settings, hasSaved, onPlay, onResume, onOnline, onSetting
       </div>
       <InstallHint />
       <p className="home-meta muted small">
-        الجوكر: {PRESET_NAMES[settings.preset]} · البوتات: {DIFFICULTY_LABELS[settings.difficulty]} · السرعة: {SPEED_LABELS[settings.speed]}
+        {PRESETS_MATTER && <>الجوكر: {PRESET_NAMES[settings.preset]} · </>}البوتات: {DIFFICULTY_LABELS[settings.difficulty]} · السرعة: {SPEED_LABELS[settings.speed]}
       </p>
     </div>
   );
@@ -86,17 +89,19 @@ export function SettingsScreen({ settings, onChange, onBack }: { settings: Setti
         <label>نوع اللعبة</label>
         <Seg<ModeId> value={settings.mode} onChange={(v) => set('mode', v)} options={[['bo6', MODE_LABELS.bo6], ['bo4', MODE_LABELS.bo4]]} />
       </div>
-      <div className="field">
-        <label>قوانين الجوكر</label>
-        <div className="preset-list">
-          {(Object.keys(RULES.jokerPresets) as JokerPresetId[]).map((p) => (
-            <button key={p} className={`preset ${settings.preset === p ? 'on' : ''}`} onClick={() => set('preset', p)}>
-              <b>{PRESET_NAMES[p]}</b>
-              <span>{presetDescription(p, RULES)}</span>
-            </button>
-          ))}
+      {PRESETS_MATTER && (
+        <div className="field">
+          <label>قوانين الجوكر</label>
+          <div className="preset-list">
+            {(Object.keys(RULES.jokerPresets) as JokerPresetId[]).map((p) => (
+              <button key={p} className={`preset ${settings.preset === p ? 'on' : ''}`} onClick={() => set('preset', p)}>
+                <b>{PRESET_NAMES[p]}</b>
+                <span>{presetDescription(p, RULES)}</span>
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       <div className="field">
         <label>مستوى البوتات</label>
         <Seg<Difficulty> value={settings.difficulty} onChange={(v) => set('difficulty', v)} options={(['easy', 'medium', 'hard'] as Difficulty[]).map((d) => [d, DIFFICULTY_LABELS[d]])} />
@@ -131,7 +136,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
         <p>
           بو ٦: {ar(buildDeck(r, 'bo6').length)} ورقة (٥٢ + جوكرين) · بو ٤: {ar(buildDeck(r, 'bo4').length)} ورقة (بدون {ar(Math.min(...r.modes.bo4.removeRanks))}–{ar(Math.max(...r.modes.bo4.removeRanks))} و{describeRemovedCards(r, 'bo4')} + جوكرين). كل لاعب {ar(r.modes.bo6.handSize)} أوراق.
         </p>
-        <p>القوة: الجوكر الأحمر › إكَه الحكم › الجوكر الأسود › باقي الحكم › باقي النقوش.</p>
+        <p>{describePowerOrder(r)}</p>
       </section>
       <section>
         <h3>الخبّاص</h3>
@@ -151,7 +156,7 @@ export function RulesScreen({ settings, onBack }: { settings: Settings; onBack: 
         <h3>اللعب</h3>
         <p>لازم تلحق النقش إذا عندك. إذا ما عندك تلعب أي ورقة. اللعب عكس عقارب الساعة.</p>
         <p>
-          <b>البدء بالجوكر ({PRESET_NAMES[settings.preset]}):</b> {presetDescription(settings.preset, r)}.
+          <b>البدء بالجوكر{PRESETS_MATTER && <> ({PRESET_NAMES[settings.preset]})</>}:</b> {presetDescription(settings.preset, r)}.
         </p>
         {describeJokerPlay(r.jokerPresets[settings.preset]).map((t) => (
           <p key={t}>{t}</p>

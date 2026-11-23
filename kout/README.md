@@ -54,7 +54,7 @@ The engine reads every rule value from this file, and each option has a comment 
 |---|---|
 | `modes.bo6` / `modes.bo4` | players, cards per player, removed ranks/cards (`removeRanks`, `removeCards`, which accepts `'H6'` or `'6H'`), jokers, dealing chunk size, `teamLayout` (`'alternate'`: partners on every other seat; `'halves'`: partners side by side) |
 | `suitRankOrder` | rank order inside a suit (A K Q J 10 … 2) |
-| `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
+| `trumpPowerOrder` | trump strength including jokers, default `XR > XB > A > K > Q > …` (both jokers beat the trump Ace) |
 | `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / لارنس), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
 | `firstLead` | who leads the first card of the hand: `'rightOfBidder'` (default: the player to the winning bidder's right; the bidder still chooses trump), `'bidder'` or `'rightOfDealer'`. After that the trick winner leads |
 | `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6D', '6C']` (the 6♠ and 6♥ stay), giving 36 cards |
@@ -69,10 +69,20 @@ The engine reads every rule value from this file, and each option has a comment 
 | `bawn` | باون: `bawnOnBid` (7; `null` = off), `bawnAskAtTricks` (6), `bawnWinPoints` (36), `bawnFailPoints` (18) |
 | `jokerAsk` | سؤال الجوكر: `allowJokerAsk`, `jokerAskYesBid` (9 = Larens), `jokerAskNoBid` (8) |
 
+### Joker rules of the game
+
+- **Ranking:** red (big) joker › black (small) joker › trump Ace › other trumps › other suits.
+- **الجوكر المحترق (burned big joker):** if the red joker is played while the black one has not been played yet this hand (in an earlier trick, or earlier in the same trick), it is burned: no value, cannot win the trick, and the table shows «محترق 🔥» on it. Once the black joker is out, the red one is the strongest card.
+- **No joker leads:** a trick can never be started with a joker. A player left with only jokers must lead one; it is void («ملغي») and the next card sets the suit.
+
+The bots know all three (engine `jokerBurns()`, the exact solver, the playout policy and the hand-strength estimates).
+
 ### Joker options (inside each preset)
 
 | Option | Meaning |
 |---|---|
+| `jokerLeadAllowed` | `false` in every preset: a joker can never be led, and the lead options below are ignored. Set it to `true` to bring back joker leads under those options |
+| `burnBigJokerBeforeSmall` | `true`: the red joker played before the black one is burned (الجوكر المحترق) |
 | `leadAllowedByBid` | which joker the bidding team may **lead** at each bid, e.g. `{ 9: {red:true, black:true}, 8: {red:true, black:false} }` |
 | `leadUnlockedWhenTrumpsPlayed` | trump cards that must all be played before anyone may lead a joker: `['A','K','Q','J']`, `'all'`, or `null` (never) |
 | `leadUnlockedIfBidderLacks` | e.g. `'A'`: if the bidder didn't hold the trump Ace when trump was chosen, jokers may be led any time |
@@ -82,7 +92,9 @@ The engine reads every rule value from this file, and each option has a comment 
 
 ### Presets
 
-| Preset | Joker lead allowed when… |
+The presets differ only in their joker-lead options, so while `jokerLeadAllowed` is `false` they play the same and the Settings screen hides the picker.
+
+| Preset | Joker lead allowed (only with `jokerLeadAllowed: true`) when… |
 |---|---|
 | `default` | team bid 9 → either joker; team bid 8 → red only; or trump A, K, Q, J have all been played |
 | `strict` | only team bid 8/9 |

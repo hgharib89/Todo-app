@@ -72,7 +72,7 @@ describe('hard bot — card counting', () => {
     });
     let c = countCards(s0, 0);
     expect(c.jokersOut.sort()).toEqual(['XB', 'XR']);
-    expect(c.trumpsOut).toEqual(['XR', 'S14', 'XB', 'S13', 'S6']); // strongest first
+    expect(c.trumpsOut).toEqual(['XR', 'XB', 'S14', 'S13', 'S6']); // strongest first: both jokers beat the trump Ace
     expect(c.highestOut.H).toBe('H13');
     const s1 = play(s0, 'H14', 'XR'); // seat 1 drops the red joker
     c = countCards(s1, 0);
@@ -155,8 +155,16 @@ describe('hard bot — hand evaluation, trump and bidding', () => {
   it('values jokers, the trump Ace, trump length and side winners', () => {
     const s = createGame(buildRules(), 'bo4', 1);
     const base = handStrength(s, ['S9', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S');
-    expect(handStrength(s, ['XR', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S')).toBeGreaterThan(base + 0.6);
-    expect(handStrength(s, ['S14', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S')).toBeGreaterThan(base + 0.6); // only the red joker ranks above it
+    const xr = handStrength(s, ['XR', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S');
+    const xb = handStrength(s, ['XB', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S');
+    const both = handStrength(s, ['XR', 'XB', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S');
+    const ace = handStrength(s, ['S14', 'S8', 'H7', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S');
+    expect(xb).toBeGreaterThan(base + 0.6);
+    expect(xr).toBeGreaterThan(base + 0.4);
+    expect(xr).toBeLessThan(xb); // alone, the red joker burns unless the black one is out first (الجوكر المحترق)
+    expect(both).toBeGreaterThan(base + 1.5); // with both: black first, then the red one is the top card
+    expect(ace).toBeGreaterThan(base);
+    expect(ace).toBeLessThan(xb); // both jokers rank above the trump Ace
     expect(handStrength(s, ['S9', 'S8', 'S7', 'S6', 'S10', 'C8', 'D7', 'D8', 'C9'], 'S')).toBeGreaterThan(base + 1);
     expect(handStrength(s, ['S9', 'S8', 'H14', 'H8', 'C7', 'C8', 'D7', 'D8', 'C9'], 'S')).toBeGreaterThan(base + 0.5);
     expect(handStrength(s, MONSTER, 'S')).toBeGreaterThan(7.5);
@@ -231,13 +239,14 @@ describe('hard bot — card play', () => {
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'H13' });
   });
 
-  it('saves jokers: ruffs with a small trump instead of a joker', () => {
+  it('ruffs with a joker it can never lead rather than keep it to a void last-card lead', () => {
+    // jokers can never be led: ruffing with S9 would leave XB + C7, then a C7 lead and a forced (void) XB lead
     let s = consistent({
       trump: 'S', bidder: 1, bid: 6, leader: 1,
       hands: [['XB', 'S9', 'C7'], ['D14', 'H9', 'C9'], ['D8', 'H8', 'C8'], ['D7', 'H7', 'C10']],
     });
     s = play(s, 'D14', 'D8', 'D7');
-    expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'S9' });
+    expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'XB' });
   });
 
   it('keeps the trump Ace when a lower trump is enough', () => {

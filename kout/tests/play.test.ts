@@ -78,10 +78,15 @@ describe('trick winner', () => {
   it('higher trump wins', () => {
     expect(trickWinner(rules, t('H', ['H14', 'S7', 'S12', 'H13']), 'S')).toBe(2);
   });
-  it('Red Joker > trump Ace > Black Joker > trump King', () => {
+  it('Red Joker > Black Joker > trump Ace > trump King (both jokers beat the trump Ace)', () => {
     expect(trickWinner(rules, t('S', ['S13', 'XB', 'S14', 'XR']), 'S')).toBe(3);
-    expect(trickWinner(rules, t('S', ['S13', 'XB', 'S14', 'C2']), 'S')).toBe(2);
-    expect(trickWinner(rules, t('S', ['S13', 'XB', 'S12', 'C2']), 'S')).toBe(1);
+    expect(trickWinner(rules, t('S', ['S13', 'XB', 'S14', 'C2']), 'S')).toBe(1);
+    expect(trickWinner(rules, t('S', ['S13', 'S14', 'XB', 'C2']), 'S')).toBe(2);
+    expect(trickWinner(rules, t('S', ['S13', 'S14', 'C2', 'C3']), 'S')).toBe(1);
+    expect(trickWinner(rules, t('H', ['H14', 'S14', 'XR', 'C3']), 'S')).toBe(2);
+  });
+  it('the config order is Red Joker › Black Joker › trump Ace › K … 2', () => {
+    expect(rules.trumpPowerOrder.slice(0, 4)).toEqual(['XR', 'XB', 14, 13]);
   });
   it('a joker played on a plain-suit trick beats it', () => {
     expect(trickWinner(rules, t('H', ['H14', 'XB', 'H13', 'H12']), 'S')).toBe(1);
