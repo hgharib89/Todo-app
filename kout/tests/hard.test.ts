@@ -52,7 +52,7 @@ function biddingState(hands: string[][], dealer = 0, rules: RulesConfig = buildR
 }
 
 // Bo 4 deck: S6–A, H7–A, D6–A, C7–A + both jokers
-const WEAK = ['S6', 'S7', 'H7', 'H8', 'C7', 'C8', 'D6', 'D7', 'D8'];
+const WEAK = ['S6', 'S7', 'H6', 'H7', 'C7', 'C8', 'D7', 'D8', 'H8'];
 const MONSTER = ['XR', 'XB', 'S14', 'S13', 'S12', 'S11', 'S10', 'H14', 'D14'];
 const GOOD = ['XR', 'S14', 'S13', 'S9', 'S8', 'H14', 'H13', 'C9', 'D9'];
 
@@ -148,7 +148,7 @@ describe('hard bot — sampling hidden hands', () => {
 describe('hard bot — hand evaluation, trump and bidding', () => {
   it('chooses the trump suit that suits its hand', () => {
     const s = createGame(buildRules(), 'bo4', 1);
-    expect(chooseTrump(s, ['XR', 'XB', 'H14', 'H13', 'H10', 'H9', 'S7', 'C8', 'D6']).suit).toBe('H');
+    expect(chooseTrump(s, ['XR', 'XB', 'H14', 'H13', 'H10', 'H9', 'S7', 'C8', 'D7']).suit).toBe('H');
     expect(chooseTrump(s, ['C14', 'C13', 'C12', 'C9', 'C8', 'H7', 'S7', 'D8', 'D9']).suit).toBe('C');
   });
 
@@ -234,18 +234,18 @@ describe('hard bot — card play', () => {
   it('saves jokers: ruffs with a small trump instead of a joker', () => {
     let s = consistent({
       trump: 'S', bidder: 1, bid: 6, leader: 1,
-      hands: [['XB', 'S9', 'C7'], ['D14', 'H9', 'C9'], ['D6', 'H8', 'C8'], ['D7', 'H7', 'C10']],
+      hands: [['XB', 'S9', 'C7'], ['D14', 'H9', 'C9'], ['D8', 'H8', 'C8'], ['D7', 'H7', 'C10']],
     });
-    s = play(s, 'D14', 'D6', 'D7');
+    s = play(s, 'D14', 'D8', 'D7');
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'S9' });
   });
 
   it('keeps the trump Ace when a lower trump is enough', () => {
     let s = consistent({
       trump: 'S', bidder: 1, bid: 6, leader: 1,
-      hands: [['S14', 'S9', 'C7'], ['D14', 'H9', 'C9'], ['D6', 'H8', 'C8'], ['D7', 'H7', 'C10']],
+      hands: [['S14', 'S9', 'C7'], ['D14', 'H9', 'C9'], ['D8', 'H8', 'C8'], ['D7', 'H7', 'C10']],
     });
-    s = play(s, 'D14', 'D6', 'D7');
+    s = play(s, 'D14', 'D8', 'D7');
     expect(hard(s)).toEqual({ type: 'PLAY', player: 0, card: 'S9' });
   });
 

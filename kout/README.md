@@ -57,7 +57,7 @@ The engine reads every rule value from this file, and each option has a comment 
 | `trumpPowerOrder` | trump strength including jokers, default `XR > A > XB > K > Q > …` |
 | `bidding` | contract values (5–9), `minVoluntaryBid` (6: players may bid 6, 7, 8 or 9), `malzoomBid` (5: only the forced dealer may take it), names (ملزوم / لارنس), single round, minimum raise, end on max bid, whether the forced dealer may raise instead |
 | `firstLead` | who leads the first card of the hand: `'rightOfBidder'` (default: the player to the winning bidder's right; the bidder still chooses trump), `'bidder'` or `'rightOfDealer'`. After that the trick winner leads |
-| `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6H', '6C']` (the 6♠ and 6♦ stay), giving 36 cards |
+| `bo4Removed6s` | the 6s removed from the Bo 4 deck, written rank + suit: default `['6D', '6C']` (the 6♠ and 6♥ stay), giving 36 cards |
 | `firstDealer` | first dealer (الخبّاص) of each game: `'lowestCardDraw'` (default: everyone draws a face-up card, no jokers; the lowest deals, 2 lowest and Ace highest; ties draw again), `'random'`, or a seat number |
 | `dealerRotation` | `'loserKeepsDeal'` (default: if the dealer's team scored 0 in the hand, including being caught reneging, the same player deals again; if it scored, the deal passes to the right) or `'alwaysRotate'` |
 | `jokerPresets` + `activeJokerPreset` | the four joker presets (see below) |

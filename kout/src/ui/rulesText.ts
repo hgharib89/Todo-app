@@ -69,7 +69,7 @@ export function describeFirstLead(rules: RulesConfig): string {
   }
 }
 
-/** Arabic list of the specific cards removed from a mode's deck, e.g. "٦ هاص و٦ سبيت". */
+/** Arabic list of the specific cards removed from a mode's deck, e.g. "٦ ديمن و٦ كلفس". */
 export function describeRemovedCards(rules: RulesConfig, mode: 'bo4' | 'bo6'): string {
   return removedCards(rules, mode)
     .map((id) => {

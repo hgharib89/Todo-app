@@ -66,10 +66,10 @@ describe('bots', () => {
   it('medium bot uses a joker when last and nothing else wins', () => {
     const s0 = playingState({
       trump: 'S', bidder: 1, bid: 6, leader: 1,
-      hands: [['XB', 'C7', 'C9'], ['D14', 'S2'], ['D6'], ['D7']],
+      hands: [['XB', 'C7', 'C9'], ['D14', 'S2'], ['D8'], ['D7']],
     });
     const s = applyAction(s0, { type: 'PLAY', player: 1, card: 'D14' });
-    let t = applyAction(s, { type: 'PLAY', player: 2, card: 'D6' });
+    let t = applyAction(s, { type: 'PLAY', player: 2, card: 'D8' });
     t = applyAction(t, { type: 'PLAY', player: 3, card: 'D7' });
     // last player: black joker would win (red joker & trump ace unseen don't matter when last)
     expect(chooseBotAction(t, 'medium')).toEqual({ type: 'PLAY', player: 0, card: 'XB' });
@@ -78,7 +78,7 @@ describe('bots', () => {
   it('medium bot saves a beatable black joker when not last', () => {
     const s0 = playingState({
       trump: 'S', bidder: 1, bid: 6, leader: 3,
-      hands: [['XB', 'C7', 'C9'], ['D6'], ['D7'], ['D14', 'S2']],
+      hands: [['XB', 'C7', 'C9'], ['D8'], ['D7'], ['D14', 'S2']],
     });
     const s = applyAction(s0, { type: 'PLAY', player: 3, card: 'D14' });
     // seat 0 plays 2nd; red joker / trump ace are unseen → XB is not a sure winner

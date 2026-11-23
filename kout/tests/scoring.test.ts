@@ -38,7 +38,7 @@ describe('hand end: play to the last card (playToLastCard)', () => {
     ['S14', 'S13', 'S12', 'S11', 'S10', 'H7'],
     ['H14', 'H13', 'H12', 'H11', 'H10', 'H9'],
     ['C7', 'C8', 'C9', 'C10', 'C11', 'C12'],
-    ['D6', 'D7', 'D8', 'D9', 'D10', 'D11'],
+    ['D7', 'D8', 'D9', 'D10', 'D11', 'D12'],
   ];
   const leadAll = (s: GameState) => {
     for (const c of ['S14', 'S13', 'S12', 'S11', 'S10']) {
@@ -68,7 +68,7 @@ describe('hand end: play to the last card (playToLastCard)', () => {
 
   it('keeps playing after the bid is lost', () => {
     let s = playingState({ trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
-    s = play(s, 'S14', 'H14', 'C7', 'D6');
+    s = play(s, 'S14', 'H14', 'C7', 'D7');
     expect(s.phase).toBe('playing');
   });
 
@@ -81,7 +81,7 @@ describe('hand end: play to the last card (playToLastCard)', () => {
 
   it('playToLastCard: false ends the hand as soon as the bid can no longer be made', () => {
     let s = playingState({ rules: early, trump: 'S', bidder: 1, bid: 9, leader: 0, hands: hands() });
-    s = play(s, 'S14', 'H14', 'C7', 'D6');
+    s = play(s, 'S14', 'H14', 'C7', 'D7');
     expect(s.phase).toBe('handOver');
     expect(s.lastResult).toMatchObject({ made: false, endedEarly: true, points: [18, 0] });
   });

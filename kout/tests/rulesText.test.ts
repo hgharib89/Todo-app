@@ -41,7 +41,7 @@ describe('rules text for the first lead and the Bo 4 deck', () => {
   });
   it('lists the removed Bo 4 sixes from rules.bo4Removed6s', async () => {
     const { describeRemovedCards } = await import('../src/ui/rulesText');
-    expect(describeRemovedCards(RULES, 'bo4')).toBe('٦ هاص و٦ شريحة');
+    expect(describeRemovedCards(RULES, 'bo4')).toBe('٦ ديمن و٦ كلفس');
     expect(describeRemovedCards(buildRules('default', { bo4Removed6s: ['6D'] }), 'bo4')).toBe('٦ ديمن');
   });
 });
@@ -60,7 +60,7 @@ describe('rules text for reneging and catching', () => {
     const { catchMessage } = await import('../src/ui/panels');
     const { createGame } = await import('../src/engine');
     const g = createGame(RULES, 'bo4', 1);
-    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خالد قطع في الأكلة ٣ (ما لحق هاص) — صاده أنت: +١٢ لنا');
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خالد قطع في الأكلة ٣ (ما لحق هاس) — صاده أنت: +١٢ لنا');
     expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('صاد غلط');
   });
 });

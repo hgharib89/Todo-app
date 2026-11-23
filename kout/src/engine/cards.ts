@@ -103,7 +103,7 @@ export function rankLabel(rank: Rank): string {
 }
 
 export const SUIT_SYMBOL: Record<Suit, string> = { S: '♠', H: '♥', D: '♦', C: '♣' };
-export const SUIT_NAME_AR: Record<Suit, string> = { S: 'سبيت', H: 'هاص', D: 'ديمن', C: 'شريحة' };
+export const SUIT_NAME_AR: Record<Suit, string> = { S: 'سبيت', H: 'هاس', D: 'ديمن', C: 'كلفس' };
 export function isRedSuit(s: Suit): boolean {
   return s === 'H' || s === 'D';
 }
