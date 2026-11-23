@@ -310,7 +310,8 @@ describe('bots play full games with Larens, Bawn and the joker question', () => 
   it('questions get asked and answered, and every action is legal', () => {
     let jokerAsks = 0;
     let bawnQs = 0;
-    for (let g = 0; g < 30; g++) {
+    // (Bawn needs 6–0, so it is rare: play enough games to see some)
+    for (let g = 0; g < 150 && (jokerAsks === 0 || bawnQs === 0 || g < 30); g++) {
       let s = createGame(buildRules(), 'bo4', 900 + g);
       const rng = seeded(g + 1);
       let guard = 0;

@@ -109,19 +109,19 @@ describe('new Hard bot (PIMC) — key decisions', () => {
     const a = hard(strong);
     expect(['BID', 'JOKER_ASK']).toContain(a.type);
     if (a.type === 'BID') expect(a.value).toBeGreaterThanOrEqual(7);
-    const weak = deal(['S6', 'S7', 'H7', 'H8', 'C7', 'C8', 'D6', 'D7', 'D8']);
+    const weak = deal(['S6', 'S7', 'H6', 'H7', 'C7', 'C8', 'D7', 'D8', 'H8']);
     expect(hard(weak)).toEqual({ type: 'PASS', player: 0 });
   });
 
   it('takes the forced Malzoom with a weak hand instead of raising', () => {
-    let s = deal(['S6', 'S7', 'H7', 'H8', 'C7', 'C8', 'D6', 'D7', 'D8']) as GameState;
+    let s = deal(['S6', 'S7', 'H6', 'H7', 'C7', 'C8', 'D7', 'D8', 'H8']) as GameState;
     s = { ...s, dealer: 0, currentPlayer: 1 };
     for (const p of [1, 2, 3]) s = applyAction(s, { type: 'PASS', player: p });
     expect(hard(s)).toEqual({ type: 'BID', player: 0, value: 5 });
   });
 
   it('chooses the trump suit its hand is built around', () => {
-    let s = deal(['XR', 'H14', 'H13', 'H12', 'H10', 'H9', 'S7', 'C8', 'D6']) as GameState;
+    let s = deal(['XR', 'H14', 'H13', 'H12', 'H10', 'H9', 'S7', 'C8', 'D7']) as GameState;
     s = { ...s, dealer: 3, currentPlayer: 0 };
     s = applyAction(s, { type: 'BID', player: 0, value: 7 });
     for (const p of [1, 2, 3]) s = applyAction(s, { type: 'PASS', player: p });
