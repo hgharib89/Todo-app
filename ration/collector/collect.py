@@ -65,10 +65,26 @@ def log(*a):
 
 
 # ---------- ClicFlyer ----------
+_browser = None
+
+
 def get_html(url: str) -> str:
-    r = http.get(url, timeout=45)
-    r.raise_for_status()
-    return r.text
+    """Load a page in a real browser (ClicFlyer fills its flyer lists with JavaScript)."""
+    global _browser
+    if _browser is None:
+        from playwright.sync_api import sync_playwright
+        pw = sync_playwright().start()
+        _browser = pw.chromium.launch().new_context(viewport={"width": 1280, "height": 900}, locale="en-AE", user_agent=UA)
+    pg = _browser.new_page()
+    try:
+        pg.goto(url, wait_until="domcontentloaded", timeout=60000)
+        pg.wait_for_timeout(5000)
+        for _ in range(5):
+            pg.mouse.wheel(0, 2500)
+            pg.wait_for_timeout(600)
+        return pg.content()
+    finally:
+        pg.close()
 
 
 def parse_date(text: str) -> str | None:
