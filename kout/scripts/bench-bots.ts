@@ -5,7 +5,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { applyAction, buildRules, createGame, type GameState, isJoker, teamOf } from '../src/engine';
-import { chooseBotAction, chooseBotCatch, handDecidedNow, legacyHardAction, setPimcMinMake } from '../src/bots';
+import { chooseBotAction, chooseBotCatch, handDecidedNow, legacyHardAction, setPimcBlend, setPimcMinMake } from '../src/bots';
 
 const arg = (k: string, d: string) => {
   const i = process.argv.indexOf(`--${k}`);
@@ -22,6 +22,7 @@ const OUT = arg('out', '');
 const NEW_BID = arg('newBid', 'new');
 const NEW_PLAY = arg('newPlay', 'new');
 if (arg('minMake', '')) setPimcMinMake(Number(arg('minMake', '0.7')));
+if (arg('blend', '')) setPimcBlend(Number(arg('blend', '0.5')));
 
 type Side = 'new' | 'old';
 const blank = () => ({ games: 0, wins: 0, contracts: 0, made: 0, forced: 0, forcedMade: 0, larens: 0, larensMade: 0, bawn: 0, bawnMade: 0, jokerAsks: 0, jokerPlays: 0, jokerTrickSum: 0, jokerLastTrick: 0, jokerWon: 0, liveJokerPlays: 0, liveJokerTrickSum: 0, liveJokerWon: 0, liveJokerLost: 0, jokersLeftAtDecision: 0, decidedHands: 0, hands: 0, points: 0, catches: 0 });

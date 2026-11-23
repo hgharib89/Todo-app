@@ -43,7 +43,7 @@ import {
   trumpPower,
 } from '../engine';
 import { cardsPerPlayer, solveCandidates, solvePosition } from './dd';
-import { handStrength, inferVoids, sampleHands, unseenCards, type Rng } from './hard';
+import { handStrength, inferVoids, makeChance, sampleHands, teamEstimate, unseenCards, type Rng } from './hard';
 import { cost, playout } from './policy';
 
 export interface PimcOptions {
@@ -65,6 +65,11 @@ const DEFAULTS = { deals: 200, timeMs: 1000, minDeals: 24, bidDeals: 60 };
 export let PIMC_MIN_MAKE = 0.7;
 export function setPimcMinMake(v: number) {
   PIMC_MIN_MAKE = v;
+}
+/** weight of the simulation in the bid's make-chance (the rest is the hand-strength estimate) */
+export let BLEND = 0.5;
+export function setPimcBlend(v: number) {
+  BLEND = v;
 }
 
 function withDefaults(opts: PimcOptions) {
@@ -355,12 +360,18 @@ export function pimcBid(state: GameState, rng: Rng, opts: PimcOptions = {}): Act
   const b = state.rules.bidding;
   const opt = bidOptions(state, me);
   const sims = simulateSuits(state, me, rng, o.bidDeals);
+  // blend the simulation (sees every card: optimistic) with the calibrated hand-strength estimate
+  const est = teamEstimate(state, me);
+  const chance = (v: number) => {
+    const sim = Math.max(...sims.map((s) => s.atLeast[v]));
+    return BLEND * sim + (1 - BLEND) * makeChance(est.team, v, b.larens);
+  };
   const partnerHolds = state.highBid !== null && teamOf(state, state.highBid.player) === teamOf(state, me);
   const need = partnerHolds ? 0.85 : PIMC_MIN_MAKE;
   let best: { value: number; ev: number } | null = null;
   for (const v of opt.values) {
     const forced = opt.forced && v === b.malzoomBid;
-    const p = Math.max(...sims.map((s) => s.atLeast[v]));
+    const p = chance(v);
     if (!forced && p < (v >= b.larens ? Math.max(need, 0.75) : need)) continue;
     const ev = bidEV(state, v, forced, p);
     if (!best || ev > best.ev) best = { value: v, ev };
