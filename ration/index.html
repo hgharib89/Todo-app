@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#D7261E">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="راشن">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icons/icon-192.png">
+<title>راشن | Ration</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* VOICE: a friendly neighbourhood-flyer voice — quick, clear, money-first.
+   IDEA: the app behaves like a supermarket promo flyer: red band, yellow price tags.
+   PICTURE: the working list + price tags are the picture; prices sit in tag shapes.
+   COLOUR and TYPE: flyer red #D7261E, tag yellow #FFD23F, ink; Cairo 800 for prices.
+   LAYOUT: one phone-width column, red header band, bottom tab bar. */
+:root{color-scheme:light dark;
+--bg:light-dark(#F6F4F1,#141211);--card:light-dark(#FFFFFF,#1F1C1A);--ink:light-dark(#1D1A17,#F3EFEA);
+--muted:light-dark(#6E675F,#A8A097);--line:light-dark(#E7E2DB,#34302C);--red:#D7261E;--redSoft:light-dark(#FCE6E4,#3A1A18);
+--tag:#FFD23F;--tagInk:#1D1A17;--green:light-dark(#127A4B,#4CC38A)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Cairo,Tahoma,sans-serif;overflow-x:clip}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
+header{background:var(--red);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;display:flex;align-items:center;gap:12px}
+header h1{margin:0;font-size:32px;line-height:1.05;font-weight:800}
+header h1 span{font-size:22px;font-weight:700;opacity:.85}
+header p{margin:2px 0 0;font-size:14px;opacity:.9}
+.hside{margin-inline-start:auto;display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
+.lang{min-height:36px;border:2px solid #fff;background:transparent;color:#fff;border-radius:18px;padding:0 14px;font-weight:800;cursor:pointer}
+main{flex:1;padding:16px 16px 96px}
+.view{display:none}.view.on{display:block}
+h2{font-size:20px;margin:4px 0 10px;font-weight:800}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.muted{color:var(--muted);font-size:14px}
+.note{background:var(--redSoft);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+textarea,input,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px}
+textarea{min-height:56px;resize:vertical}
+:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{min-height:46px;border:0;border-radius:12px;padding:0 16px;font-weight:700;cursor:pointer;background:var(--redSoft);color:var(--red)}
+.btn.main{background:var(--red);color:#fff;width:100%;font-size:17px;margin-top:12px}
+.btn[disabled]{opacity:.5;cursor:default}
+.grow{flex:1}
+.item{display:flex;align-items:center;gap:8px}
+.item .name{flex:1;font-weight:600}
+.qty{display:flex;align-items:center;gap:4px}
+.qty button,.x{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-weight:700}
+.x{color:var(--red);border-color:transparent}
+.tag{display:inline-flex;align-items:center;background:var(--tag);color:var(--tagInk);font-weight:800;border-radius:8px 4px 4px 8px;padding:2px 10px 2px 8px;white-space:nowrap}
+.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--card);margin-inline-end:6px}
+.old{text-decoration:line-through;color:var(--muted);font-size:13px;white-space:nowrap}
+.big{font-size:clamp(30px,8vw,40px);font-weight:800;line-height:1.1}
+.tabs{display:flex;gap:6px;margin-bottom:12px}
+.tabs button{flex:1;min-height:44px;border-radius:10px;border:0;background:var(--redSoft);color:var(--red);font-weight:700;cursor:pointer}
+.tabs button.on{background:var(--red);color:#fff}
+.line{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px dashed var(--line)}
+.line:first-of-type{border-top:0}
+.save{color:var(--green);font-weight:700}
+nav{position:fixed;bottom:0;inset-inline:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+nav .in{display:flex;max-width:560px;width:100%}
+nav button{flex:1;min-height:62px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+nav button.on{color:var(--red)}
+nav svg{width:22px;height:22px}
+.bubble{max-width:88%;padding:10px 12px;border-radius:14px;margin-bottom:8px;white-space:pre-wrap}
+.bubble.me{background:var(--redSoft);margin-inline-start:auto}
+.bubble.ai{background:var(--card);border:1px solid var(--line)}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+@keyframes s{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation:none}}
+.store{font-weight:800;margin:14px 0 6px}
+.empty{text-align:center;padding:30px 10px;color:var(--muted)}
+.mic.on{background:var(--red);color:#fff}
+</style>
+</head>
+<body>
+<div class="app">
+<header>
+  <div>
+    <h1 id="brand"></h1>
+    <p data-i="tagline"></p>
+  </div>
+  <div class="hside">
+    <svg width="54" height="54" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 30 30 8h22a4 4 0 0 1 4 4v22L34 56a4 4 0 0 1-6 0L8 36a4 4 0 0 1 0-6z" fill="#FFD23F"/><path d="M8 30 30 8h8L14 36z" fill="#fff" opacity=".35"/><circle cx="44" cy="20" r="5" fill="#D7261E"/><text x="30" y="40" font-family="Cairo" font-weight="800" font-size="15" fill="#1D1A17" text-anchor="middle" transform="rotate(-45 30 36)">%</text></svg>
+    <button class="lang" id="langBtn"></button>
+  </div>
+</header>
+
+<main>
+  <section class="view on" id="v-list">
+    <div id="demoNote" class="note" hidden data-i="demoNote"></div>
+    <label for="draft" class="muted" data-i="addLabel"></label>
+    <textarea id="draft" data-ph="draftPh"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn grow" id="addBtn" data-i="add"></button>
+      <button class="btn mic" id="micBtn" hidden></button>
+      <label class="btn" id="photoLbl" style="display:inline-flex;align-items:center" hidden><span data-i="photo"></span><input type="file" id="listPhoto" accept="image/*" hidden></label>
+    </div>
+    <div id="listBusy" class="muted" style="margin-top:8px"></div>
+    <h2 style="margin-top:18px"><span data-i="myList"></span> <span class="muted" id="count"></span></h2>
+    <div id="items"></div>
+    <button class="btn main" id="findBtn" data-i="find"></button>
+  </section>
+
+  <section class="view" id="v-results"><div id="results"></div></section>
+
+  <section class="view" id="v-chat">
+    <div id="chatLog"></div>
+    <div class="row" style="position:sticky;bottom:76px;background:var(--bg);padding-top:8px">
+      <input id="chatIn" class="grow" data-ph="askPh" autocomplete="off">
+      <button class="btn" id="chatSend" style="background:var(--red);color:#fff" data-i="send"></button>
+    </div>
+  </section>
+
+  <section class="view" id="v-offers">
+    <div id="adminBox" hidden>
+      <h2 data-i="addOffers"></h2>
+      <p class="muted" data-i="addOffersHint"></p>
+      <label class="muted" for="storeIn" data-i="store"></label>
+      <input id="storeIn" list="storeList" data-ph="storePh">
+      <datalist id="storeList"></datalist>
+      <label class="muted" for="untilIn" style="display:block;margin-top:8px" data-i="validUntil"></label>
+      <input id="untilIn" type="date">
+      <label class="btn main" style="display:flex;align-items:center;justify-content:center"><span data-i="pickFlyer"></span><input type="file" id="flyerIn" accept="image/*" multiple hidden></label>
+      <div id="flyerBusy" class="muted" style="margin-top:8px"></div>
+      <div id="preview"></div>
+    </div>
+    <h2 style="margin-top:20px"><span data-i="savedOffers"></span> <span class="muted" id="offerCount"></span></h2>
+    <div class="row" id="demoTools" hidden><button class="btn" id="clearDemo" data-i="clearDemo"></button></div>
+    <div id="offerList"></div>
+  </section>
+</main>
+
+<nav><div class="in">
+  <button data-v="list" class="on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg><span data-i="tabList"></span></button>
+  <button data-v="results"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 2h8a2 2 0 0 1 2 2v8l-9 9a2 2 0 0 1-3 0l-7-7a2 2 0 0 1 0-3z"/><circle cx="17" cy="7" r="1.5"/></svg><span data-i="tabResults"></span></button>
+  <button data-v="chat"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a8 8 0 0 1-12 7l-6 2 2-5a8 8 0 1 1 16-4z"/></svg><span data-i="tabChat"></span></button>
+  <button data-v="offers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4zM4 9h16M9 9v11"/></svg><span data-i="tabOffers"></span></button>
+</div></nav>
+</div>
+
+<script>
+{
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+/* ---------- language ---------- */
+const T = {
+ar: {
+  brandMain: 'راشن', brandSub: 'Ration', langBtn: 'English',
+  tagline: 'اكتب أغراضك، ونلقى لك أرخص العروض في الجمعيات والسوبرماركتات',
+  demoNote: 'الأسعار الموجودة الحين تجريبية للعرض فقط. ارفع بروشورات حقيقية من تبويب "العروض".',
+  addLabel: 'أضف غرض أو الصق قائمة كاملة', draftPh: 'مثال: حليب المراعي ٢ لتر، رز بسمتي ٥ كيلو، بيض ٣٠ حبة',
+  add: 'إضافة', photo: '📷 صورة القائمة', mic: '🎤 بالصوت', micStop: '⏹ وقف', myList: 'قائمتي', find: 'دوّر على أرخص العروض',
+  emptyList: 'قائمتك فاضية', organizing: 'أرتب القائمة...', organizeFail: 'ما قدرت أرتبها، أضفتها سطر سطر.',
+  readingPhoto: 'أقرأ القائمة من الصورة...', photoFail: 'ما قدرت أقرأ الصورة، جرب صورة أوضح.',
+  noOffersYet: 'ما في عروض محفوظة بعد. أضف عروض من تبويب "العروض".', searching: 'أدور على العروض...',
+  resultsEmpty: 'سوِّ قائمتك واضغط "دوّر على أرخص العروض"',
+  tSplit: 'أوفر خطة', tSingle: 'محل واحد', tItems: 'لكل منتج', noneFound: 'ما لقينا عروض على أغراضك',
+  twoStores: 'اشترِ من محلين', oneStore: 'كل شي من محل واحد', saving: s => `توفّر ${s} مقارنة بأرخص محل واحد`,
+  notFound: 'ما لقينا', ofAvail: (a, b) => `${a} من ${b} متوفر`, missing: 'ناقص', noResults: 'ما في نتائج',
+  noOffer: 'ما في عرض', each: 'للحبة', until: 'لين', demo: 'تجريبي',
+  askPh: 'اكتب سؤالك', send: 'إرسال', chatEmpty: 'اسأل مثلاً: وين أرخص رز بسمتي ٥ كيلو هالأسبوع؟',
+  noAnswer: 'ما عندي جواب الحين.', busy: 'ضغط كبير الحين، جرب بعد شوي.', error: 'صار خطأ، جرب مرة ثانية.',
+  chatOff: 'المساعد غير متاح في هذا العرض.',
+  addOffers: 'إضافة عروض من بروشور', addOffersHint: 'صوّر البروشور أو حمّل صوره، والمساعد يقرأ المنتجات والأسعار.',
+  store: 'المحل', storePh: 'مثال: جمعية الشارقة التعاونية', validUntil: 'العرض ساري لين (اختياري)', pickFlyer: 'اختر صور البروشور',
+  savedOffers: 'العروض المحفوظة', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
+  foundN: n => `لقيت ${n} عرض — راجعها قبل الحفظ`, saveN: n => `احفظ ${n} عرض`, savingN: n => `أحفظ... ${n}`, savedN: n => `انحفظ ${n} عرض ✓`,
+  full: 'المساحة امتلت، احذف عروض قديمة.', saveFail: 'ما قدرت أحفظ كل العروض.', storeFirst: 'اكتب اسم المحل أول.',
+  readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
+  signIn: 'سجّل دخولك عشان تشوف العروض.', slow: 'العروض ما وصلت بعد، تأكد من الاتصال.', loadFail: 'ما قدرت أجيب العروض.',
+  tabList: 'قائمتي', tabResults: 'النتائج', tabChat: 'المساعد', tabOffers: 'العروض',
+  del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، '
+},
+en: {
+  brandMain: 'Ration', brandSub: 'راشن', langBtn: 'عربي',
+  tagline: 'Add your groceries and we find the cheapest offers at co-ops and supermarkets',
+  demoNote: 'Current prices are demo data for testing only. Upload real flyers from the "Offers" tab.',
+  addLabel: 'Add an item or paste a whole list', draftPh: 'e.g. Almarai milk 2L, basmati rice 5kg, eggs 30 pcs',
+  add: 'Add', photo: '📷 List photo', mic: '🎤 Voice', micStop: '⏹ Stop', myList: 'My list', find: 'Find the cheapest offers',
+  emptyList: 'Your list is empty', organizing: 'Organizing your list...', organizeFail: "Couldn't organize it, added line by line.",
+  readingPhoto: 'Reading your list from the photo...', photoFail: "Couldn't read the photo, try a clearer one.",
+  noOffersYet: 'No saved offers yet. Add offers from the "Offers" tab.', searching: 'Searching offers...',
+  resultsEmpty: 'Build your list and tap "Find the cheapest offers"',
+  tSplit: 'Best plan', tSingle: 'One store', tItems: 'Per item', noneFound: 'No offers found for your items',
+  twoStores: 'Buy from two stores', oneStore: 'Everything from one store', saving: s => `Save ${s} vs. the cheapest single store`,
+  notFound: 'Not found', ofAvail: (a, b) => `${a} of ${b} available`, missing: 'Missing', noResults: 'No results',
+  noOffer: 'No offer', each: 'each', until: 'until', demo: 'demo',
+  askPh: 'Type your question', send: 'Send', chatEmpty: 'Try: Where is 5kg basmati rice cheapest this week?',
+  noAnswer: 'No answer right now.', busy: 'Busy right now, try again shortly.', error: 'Something went wrong, try again.',
+  chatOff: 'The assistant is not available in this view.',
+  addOffers: 'Add offers from a flyer', addOffersHint: 'Snap or upload the flyer pages and the assistant reads products and prices.',
+  store: 'Store', storePh: 'e.g. Sharjah Co-op', validUntil: 'Offer valid until (optional)', pickFlyer: 'Choose flyer photos',
+  savedOffers: 'Saved offers', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
+  foundN: n => `Found ${n} offers — review before saving`, saveN: n => `Save ${n} offers`, savingN: n => `Saving... ${n}`, savedN: n => `Saved ${n} offers ✓`,
+  full: 'Storage is full, delete old offers.', saveFail: "Couldn't save all offers.", storeFirst: 'Enter the store name first.',
+  readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
+  signIn: 'Sign in to see the offers.', slow: "Offers haven't arrived yet, check your connection.", loadFail: "Couldn't load offers.",
+  tabList: 'My list', tabResults: 'Results', tabChat: 'Assistant', tabOffers: 'Offers',
+  del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', '
+}};
+const STORE_EN = {'جمعية الشارقة التعاونية':'Sharjah Co-op','تعاونية الاتحاد':'Union Coop','كارفور':'Carrefour','لولو هايبرماركت':'Lulu Hypermarket','نستو':'Nesto'};
+let lang = 'ar';
+try { const saved = localStorage.getItem('ration-lang'); if (saved === 'ar' || saved === 'en') lang = saved; } catch {}
+const t = (k, ...a) => { const v = T[lang][k]; return typeof v === 'function' ? v(...a) : v; };
+const storeName = s => lang === 'en' && STORE_EN[s] ? STORE_EN[s] : s;
+const aed = n => n == null ? '-' : lang === 'ar' ? n.toFixed(2) + ' ' + t('cur') : t('cur') + ' ' + n.toFixed(2);
+
+function applyLang(){
+  document.documentElement.lang = lang; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  document.title = lang === 'ar' ? 'راشن | Ration' : 'Ration | راشن';
+  $('brand').innerHTML = `${esc(t('brandMain'))} <span dir="${lang === 'ar' ? 'ltr' : 'rtl'}">${esc(t('brandSub'))}</span>`;
+  $('langBtn').textContent = t('langBtn');
+  document.querySelectorAll('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
+  document.querySelectorAll('[data-ph]').forEach(el => el.placeholder = t(el.dataset.ph));
+  $('micBtn').textContent = listening ? t('micStop') : t('mic');
+  renderList(); renderOffers(); renderChat();
+  if (report) renderResults(); else $('results').innerHTML = `<div class="empty">${esc(t('resultsEmpty'))}</div>`;
+}
+$('langBtn').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('ration-lang', lang); } catch {} applyLang(); };
+
+const DEFAULT_STORES = Object.keys(STORE_EN);
+/* Demo prices for testing only (shown with a 'demo' label). Used when no shared offers store is connected. */
+const DEMO = [{"store":"جمعية الشارقة التعاونية","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.75,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.5,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.25,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":10.95,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.5,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":39.5,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":38.75,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":41.0,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":40.5,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":37.95,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":18.5,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":19.0,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":18.25,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":17.5,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":16.95,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":17.5,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":15.95,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":16.5,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":17.25,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.95,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":14.5,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.5,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.75,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.95,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.75,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"سكر","brand":"الخليج","size":"2 كغ","price":8.25,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.5,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.95,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.95,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.5,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":7.25,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.75,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.25,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":36.0,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":33.5,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":35.5,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":34.0,"oldPrice":42.0,"until":"2026-11-30","source":"demo"}];
+const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n) : Promise.resolve(null);
+let db = null, sample = null, user = null, uid = null, canEdit = false, listening = false;
+let offers = [], items = [], report = null, chat = [], resTab = 'split', extracted = [];
+
+/* ---------- tabs ---------- */
+function show(v){
+  document.querySelectorAll('.view').forEach(s => s.classList.toggle('on', s.id === 'v-' + v));
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => show(b.dataset.v));
+
+/* ---------- text matching ---------- */
+function norm(s){
+  return String(s || '').toLowerCase()
+    .replace(/[٠-٩]/g, d => d.charCodeAt(0) - 0x660)
+    .replace(/[ً-ْ]/g, '').replace(/[أإآ]/g, 'ا').replace(/ة/g, 'ه').replace(/ى/g, 'ي')
+    .replace(/(\d)\s*(لتر|ltr|litre|liter|l)\b/g, '$1l').replace(/(\d)\s*(كيلو|كغ|كجم|kg)/g, '$1kg')
+    .replace(/(\d)\s*(مل|ml)\b/g, '$1ml').replace(/(\d)\s*(جرام|غرام|غ|gm|g)\b/g, '$1g');
+}
+const toks = s => norm(s).split(/[^\p{L}\p{N}.]+/u).filter(x => x.length > 1 || /\d/.test(x));
+const offerText = o => [o.brand, o.name, o.size].filter(Boolean).join(' ');
+function localScore(q, o){
+  const a = toks(q), b = new Set(toks(offerText(o)));
+  if (!a.length) return 0;
+  return a.filter(x => b.has(x)).length / a.length;
+}
+function localSearch(q, n = 12){
+  return offers.map(o => [localScore(q, o), o]).filter(x => x[0] >= 0.5)
+    .sort((x, y) => y[0] - x[0] || x[1].price - y[1].price).slice(0, n).map(x => x[1]);
+}
+
+/* ---------- basket math ---------- */
+function cheapestPerStore(list){ const m = {}; for (const o of list) if (!m[o.store] || o.price < m[o.store].price) m[o.store] = o; return m; }
+function costFor(basket, stores){
+  let total = 0, covered = 0; const missing = [], lines = [];
+  for (const it of basket){
+    const per = cheapestPerStore(it.offers), opts = stores.filter(s => per[s]).map(s => per[s]);
+    if (!opts.length){ missing.push(it.text); continue; }
+    const o = opts.reduce((a, b) => b.price < a.price ? b : a);
+    covered++; total += o.price * it.quantity;
+    lines.push({ item: it.text, qty: it.quantity, store: o.store, price: o.price, total: o.price * it.quantity, until: o.until });
+  }
+  return { stores, total: Math.round(total * 100) / 100, covered, missing, lines };
+}
+const rank = arr => arr.sort((a, b) => b.covered - a.covered || a.total - b.total);
+function buildReport(basket){
+  const stores = [...new Set(basket.flatMap(it => it.offers.map(o => o.store)))];
+  const single = rank(stores.map(s => costFor(basket, [s])));
+  const combos = [...stores.map(s => [s])];
+  for (let i = 0; i < stores.length; i++) for (let j = i + 1; j < stores.length; j++) combos.push([stores[i], stores[j]]);
+  const best = stores.length ? rank(combos.map(c => costFor(basket, c)))[0] : null;
+  if (best && single[0] && single[0].covered === best.covered) best.saving = Math.round((single[0].total - best.total) * 100) / 100;
+  const perItem = basket.map(it => {
+    if (!it.offers.length) return { item: it.text, qty: it.quantity, found: false };
+    const o = it.offers.reduce((a, b) => b.price < a.price ? b : a);
+    return { item: it.text, qty: it.quantity, found: true, store: o.store, price: o.price, old: o.oldPrice, total: o.price * it.quantity, until: o.until, name: offerText(o) };
+  });
+  return { single, best, perItem, count: basket.length };
+}
+
+/* ---------- list ---------- */
+function renderList(){
+  $('count').textContent = items.length ? `(${items.length})` : '';
+  $('items').innerHTML = items.length ? items.map((it, i) => `
+    <div class="card item"><span class="name">${esc(it.text)}</span>
+      <span class="qty"><button data-q="${i}" data-d="1" aria-label="${t('inc')}">+</button><b>${it.quantity}</b><button data-q="${i}" data-d="-1" aria-label="${t('dec')}">−</button></span>
+      <button class="x" data-del="${i}" aria-label="${t('del')}">✕</button></div>`).join('')
+    : `<div class="empty">${esc(t('emptyList'))}</div>`;
+}
+$('items').onclick = e => {
+  const q = e.target.closest('[data-q]'), d = e.target.closest('[data-del]');
+  if (q){ const it = items[+q.dataset.q]; it.quantity = Math.max(1, it.quantity + +q.dataset.d); }
+  else if (d) items.splice(+d.dataset.del, 1); else return;
+  renderList(); saveList();
+};
+let saveT;
+function saveList(){
+  if (!db || !uid){ try { localStorage.setItem('ration-list', JSON.stringify(items)); } catch {} return; }
+  clearTimeout(saveT);
+  saveT = setTimeout(() => db.doc(`data/users/${uid}/list`).set({ items }).catch(() => {}), 800);
+}
+const spin = msg => `<span class="spin"></span> ${esc(msg)}`;
+async function parseWithAI(text, image){
+  const prompt = `Turn this shopping list into JSON only, in this exact shape:
+{"items":[{"text":"product name with brand and size if given","quantity":1}]}
+- One item per product, kept in the customer's own language (Arabic or English).
+- quantity is a number of pieces or packs, default 1.
+${text ? 'List:\n' + text : 'The list is in the attached image.'}`;
+  const r = await sample.json(prompt, image ? { images: [image] } : {});
+  return (r.items || []).filter(i => i && i.text).map(i => ({ text: String(i.text).slice(0, 120), quantity: Math.max(1, +i.quantity || 1) }));
+}
+const splitLines = s => s.split(/[\n،,]/).map(x => x.trim()).filter(Boolean).map(x => ({ text: x, quantity: 1 }));
+$('addBtn').onclick = async () => {
+  const txt = $('draft').value.trim(); if (!txt) return;
+  if (/[\n،,]/.test(txt) && sample){
+    $('listBusy').innerHTML = spin(t('organizing'));
+    try { items.push(...await parseWithAI(txt)); $('listBusy').textContent = ''; }
+    catch { items.push(...splitLines(txt)); $('listBusy').textContent = t('organizeFail'); }
+  } else items.push(...splitLines(txt));
+  $('draft').value = ''; renderList(); saveList();
+};
+$('listPhoto').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = ''; if (!f || !sample) return;
+  $('listBusy').innerHTML = spin(t('readingPhoto'));
+  try { items.push(...await parseWithAI('', f)); $('listBusy').textContent = ''; renderList(); saveList(); }
+  catch { $('listBusy').textContent = t('photoFail'); }
+};
+
+/* ---------- find offers ---------- */
+async function matchItems(){
+  if (sample && offers.length){
+    const cat = offers.slice(0, 600).map((o, i) => `${i}|${o.store}|${offerText(o)}|${o.price}`).join('\n');
+    const prompt = `You match a UAE shopping list (Arabic or English) against supermarket offers (Arabic or English).
+For each list item, give the numbers of the offers that are the same product the customer would accept:
+- Same product type. If the customer names a brand, keep to it; if not, any brand is fine.
+- Size close to what was asked (2L accepts "2 لتر", not 200ml). If no size, accept usual sizes.
+Return JSON only: {"matches":[[numbers for item 0],[numbers for item 1],...]} in list order and the same length.
+
+List:
+${items.map((it, i) => `${i}. ${it.text}`).join('\n')}
+
+Offers (number|store|product|price):
+${cat}`;
+    try {
+      const r = await sample.json(prompt);
+      if (Array.isArray(r.matches) && r.matches.length === items.length)
+        return items.map((it, i) => ({ ...it, offers: (r.matches[i] || []).map(n => offers[+n]).filter(Boolean) }));
+    } catch {}
+  }
+  return items.map(it => ({ ...it, offers: localSearch(it.text, 30) }));
+}
+$('findBtn').onclick = async () => {
+  if (!items.length) return;
+  if (!offers.length){ $('results').innerHTML = `<div class="empty">${esc(t('noOffersYet'))}</div>`; show('results'); return; }
+  const b = $('findBtn'); b.disabled = true; b.innerHTML = spin(t('searching'));
+  try { report = buildReport(await matchItems()); resTab = 'split'; renderResults(); show('results'); }
+  finally { b.disabled = false; b.textContent = t('find'); }
+};
+function renderResults(){
+  const r = report; if (!r) return;
+  const sep = t('sep');
+  const tb = (id, l) => `<button data-t="${id}" class="${resTab === id ? 'on' : ''}">${esc(t(l))}</button>`;
+  let h = `<div class="tabs">${tb('split', 'tSplit')}${tb('single', 'tSingle')}${tb('items', 'tItems')}</div>`;
+  if (resTab === 'split'){
+    if (!r.best) h += `<div class="empty">${esc(t('noneFound'))}</div>`;
+    else h += `<div class="card"><div class="muted">${esc(t(r.best.stores.length > 1 ? 'twoStores' : 'oneStore'))}</div>
+      <div style="font-weight:800">${r.best.stores.map(s => esc(storeName(s))).join(' + ')}</div>
+      <div class="big">${aed(r.best.total)}</div>
+      ${r.best.saving > 0 ? `<div class="save">${esc(t('saving', aed(r.best.saving)))}</div>` : ''}
+      ${r.best.missing.length ? `<div class="muted">${esc(t('notFound'))}: ${r.best.missing.map(esc).join(sep)}</div>` : ''}</div>
+      <div class="card">${r.best.lines.map(l => `<div class="line"><span>${esc(l.item)} × ${l.qty}<br><span class="muted">${esc(storeName(l.store))}</span></span><span class="tag">${aed(l.total)}</span></div>`).join('')}</div>`;
+  } else if (resTab === 'single'){
+    h += r.single.map((s, i) => `<div class="card"><div class="line" style="border:0"><b>${i === 0 ? '⭐ ' : ''}${esc(storeName(s.stores[0]))}</b><span class="tag">${aed(s.total)}</span></div>
+      <div class="muted">${esc(t('ofAvail', s.covered, r.count))}${s.missing.length ? ' · ' + esc(t('missing')) + ': ' + s.missing.map(esc).join(sep) : ''}</div></div>`).join('') || `<div class="empty">${esc(t('noResults'))}</div>`;
+  } else {
+    h += r.perItem.map(p => `<div class="card"><div class="line" style="border:0"><b>${esc(p.item)} × ${p.qty}</b>${p.found ? `<span class="tag">${aed(p.total)}</span>` : `<span class="muted">${esc(t('noOffer'))}</span>`}</div>
+      ${p.found ? `<div class="muted">${esc(storeName(p.store))} · ${esc(p.name)} · ${aed(p.price)} ${esc(t('each'))} ${p.old ? `<span class="old">${aed(p.old)}</span>` : ''}${p.until ? ' · ' + esc(t('until')) + ' ' + esc(p.until) : ''}</div>` : ''}</div>`).join('');
+  }
+  $('results').innerHTML = h;
+}
+$('results').onclick = e => { const b = e.target.closest('[data-t]'); if (b){ resTab = b.dataset.t; renderResults(); } };
+
+/* ---------- assistant ---------- */
+const sys = () => lang === 'ar'
+  ? `أنت "راشن"، مساعد تسوق في الإمارات. تساعد الزبون يلقى أرخص العروض في الجمعيات والسوبرماركتات.
+- استخدم الأداة search_offers لكل سعر. لا تخترع أي سعر أو محل أو عرض.
+- رد بالعربي بلهجة إماراتية بسيطة ومختصرة، واذكر المحل والسعر ونهاية العرض إذا موجودة.
+- إذا ما في عرض على منتج، قول ذلك بوضوح.`
+  : `You are "Ration", a shopping assistant in the UAE. You help the customer find the cheapest offers at co-ops and supermarkets.
+- Use the search_offers tool for every price. Never invent a price, store or offer.
+- Reply in clear, short English. Mention the store, price and offer end date when known. Store and product names may be in Arabic; translate them.
+- If there is no offer for a product, say so plainly.`;
+function renderChat(){
+  $('chatLog').innerHTML = chat.length ? chat.map(m => `<div class="bubble ${m.role === 'user' ? 'me' : 'ai'}">${m.content ? esc(m.content) : '<span class="spin"></span>'}</div>`).join('')
+    : `<div class="empty">${esc(sample === false ? t('chatOff') : t('chatEmpty'))}</div>`;
+}
+async function sendChat(){
+  const q = $('chatIn').value.trim(); if (!q || !sample) return;
+  $('chatIn').value = ''; chat.push({ role: 'user', content: q }); const ans = { role: 'assistant', content: '' }; chat.push(ans); renderChat();
+  const hist = chat.slice(0, -1).slice(-16);
+  while (hist.length && hist[0].role !== 'user') hist.shift();
+  const msgs = hist.map((m, i) => ({ role: m.role, content: i === 0 ? sys() + '\n\n' + m.content : m.content }));
+  try {
+    const r = await sample(msgs, { cache: false, onText: ({ text }) => { ans.content = text; renderChat(); },
+      tools: [{ name: 'search_offers', description: 'Search saved supermarket offers by product name (Arabic or English). Returns matching offers with store, price, old price and end date.',
+        inputSchema: { type: 'object', properties: { query: { type: 'string' } }, required: ['query'] },
+        execute: ({ query }) => { let hits = localSearch(query, 15); if (!hits.length) hits = offers.slice(0, 200);
+          return hits.map(o => ({ store: o.store, store_en: STORE_EN[o.store] || null, product: offerText(o), price: o.price, old_price: o.oldPrice || null, until: o.until || null })); } }] });
+    ans.content = r.text || ans.content || t('noAnswer');
+  } catch (e) { ans.content = e && e.code === 'rate_limited' ? t('busy') : t('error'); }
+  renderChat();
+}
+$('chatSend').onclick = sendChat;
+$('chatIn').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
+
+/* ---------- offers admin ---------- */
+function renderOffers(){
+  $('offerCount').textContent = offers.length ? `(${offers.length})` : '';
+  const demo = offers.some(o => o.source === 'demo');
+  $('demoNote').hidden = !demo; $('demoTools').hidden = !(demo && canEdit);
+  const stores = [...new Set([...DEFAULT_STORES, ...offers.map(o => o.store)])];
+  $('storeList').innerHTML = stores.map(s => `<option value="${esc(s)}">`).join('');
+  if (!offers.length){ if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
+  const by = {}; offers.forEach(o => (by[o.store] = by[o.store] || []).push(o));
+  $('offerList').innerHTML = Object.keys(by).map(s => `<div class="store">${esc(storeName(s))} <span class="muted">(${by[s].length})</span></div>` +
+    by[s].sort((a, b) => offerText(a).localeCompare(offerText(b), 'ar')).map(o => `<div class="card item"><span class="name">${esc(offerText(o))}${o.source === 'demo' ? ` <span class="muted">· ${esc(t('demo'))}</span>` : ''}<br><span class="muted">${o.until ? esc(t('until')) + ' ' + esc(o.until) : ''}</span></span>
+      ${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}<span class="tag">${aed(o.price)}</span>
+      ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`).join('')).join('');
+}
+function offerMsg(k){ $('offerList').dataset.msg = k; $('offerList').innerHTML = `<div class="empty">${esc(t(k))}</div>`; }
+$('offerList').onclick = async e => {
+  const b = e.target.closest('[data-off]'); if (!b || !db) return;
+  b.disabled = true; try { await db.doc('offers/' + b.dataset.off).delete(); } catch { b.disabled = false; }
+};
+$('clearDemo').onclick = async () => {
+  const b = $('clearDemo'); b.disabled = true; b.textContent = t('deleting');
+  for (const o of offers.filter(o => o.source === 'demo')) { try { await db.doc('offers/' + o.id).delete(); } catch {} }
+  b.disabled = false; b.textContent = t('clearDemo');
+};
+const FLYER_PROMPT = `This is a page of a UAE supermarket promotional flyer. Extract every product that has a clear price.
+Return JSON only:
+{"valid_to":"YYYY-MM-DD or null","offers":[{"name":"product name exactly as printed","brand":"brand or null","size":"e.g. 2L, 1kg, 1L x 4 or null","price":12.95,"original_price":15.5}]}
+- price is the promotional price the customer pays, in AED. A price printed as 12^95 is 12.95.
+- original_price is the price before discount, or null.
+- Skip anything without a clear price. Never invent products or prices.`;
+function renderPreview(){
+  if (!extracted.length){ $('preview').innerHTML = ''; return; }
+  $('preview').innerHTML = `<h2 style="margin-top:14px">${esc(t('foundN', extracted.length))}</h2>` +
+    extracted.map((o, i) => `<div class="card item"><span class="name">${esc(offerText(o))}</span>${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}<span class="tag">${aed(o.price)}</span><button class="x" data-rm="${i}" aria-label="${t('del')}">✕</button></div>`).join('') +
+    `<button class="btn main" id="saveOffers">${esc(t('saveN', extracted.length))}</button>`;
+}
+$('preview').onclick = async e => {
+  const rm = e.target.closest('[data-rm]');
+  if (rm){ extracted.splice(+rm.dataset.rm, 1); renderPreview(); return; }
+  if (e.target.id !== 'saveOffers' || !db) return;
+  const b = e.target; b.disabled = true; let n = 0;
+  for (const o of extracted){
+    try { await db.collection('offers').add({ ...o, createdAt: new Date().toISOString() }); n++; b.textContent = t('savingN', n); }
+    catch (err) { $('flyerBusy').textContent = err && err.code === 'quota_exceeded' ? t('full') : t('saveFail'); break; }
+  }
+  extracted = extracted.slice(n); renderPreview(); if (!extracted.length) $('flyerBusy').textContent = t('savedN', n);
+};
+$('flyerIn').onchange = async e => {
+  const files = [...e.target.files]; e.target.value = '';
+  const store = $('storeIn').value.trim();
+  if (!store){ $('flyerBusy').textContent = t('storeFirst'); return; }
+  if (!files.length || !sample) return;
+  let failed = '';
+  for (let i = 0; i < files.length; i++){
+    $('flyerBusy').innerHTML = spin(t('readingPage', i + 1, files.length));
+    try {
+      const r = await sample.json(FLYER_PROMPT, { images: [files[i]], modelTier: 'complex' });
+      const until = $('untilIn').value || r.valid_to || null;
+      for (const o of r.offers || []){
+        const price = +o.price; if (!o.name || !(price > 0)) continue;
+        extracted.push({ store, name: String(o.name).slice(0, 120), brand: o.brand || null, size: o.size || null, price,
+          oldPrice: +o.original_price > price ? +o.original_price : null, until, source: 'flyer' });
+      }
+    } catch { failed = t('pageFail', i + 1); }
+    renderPreview();
+  }
+  $('flyerBusy').textContent = failed;
+};
+
+/* ---------- boot ---------- */
+applyLang();
+(async () => {
+  [db, sample, user] = await Promise.all([use('db'), use('sample'), use('user')]);
+  if (!sample) sample = false;
+  if (user){ canEdit = !!(await user.canEdit()); uid = await user.id(); }
+  $('adminBox').hidden = !canEdit;
+  if (sample){
+    $('photoLbl').hidden = false;
+    try { if (!(await sample.limits()).images) $('photoLbl').hidden = true; } catch {}
+  }
+  renderChat();
+  if (!db){
+    offers = DEMO.map((o, i) => ({ id: 'demo' + i, ...o })); renderOffers();
+    try { const s = JSON.parse(localStorage.getItem('ration-list') || '[]'); if (Array.isArray(s) && !items.length){ items = s.filter(i => i && i.text).map(i => ({ text: String(i.text), quantity: +i.quantity || 1 })); renderList(); } } catch {}
+    return;
+  }
+  const timer = setTimeout(() => { if (!offers.length) offerMsg('slow'); }, 10000);
+  db.collection('offers').onSnapshot(snap => {
+    if (!snap.metadata.fromCache){ clearTimeout(timer); delete $('offerList').dataset.msg; }
+    offers = snap.docs.map(d => { const x = d.data(); return { id: d.id, store: String(x.store || ''), name: String(x.name || ''), brand: x.brand || null, size: x.size || null,
+      price: +x.price || 0, oldPrice: +x.oldPrice || null, until: x.until || null, source: x.source || '' }; }).filter(o => o.price > 0 && o.store);
+    renderOffers();
+  }, () => { clearTimeout(timer); offerMsg('loadFail'); });
+  if (uid){
+    try { const s = await db.doc(`data/users/${uid}/list`).get(); if (s.exists && Array.isArray(s.data().items) && !items.length){ items = s.data().items.map(i => ({ text: String(i.text || ''), quantity: +i.quantity || 1 })).filter(i => i.text); renderList(); } } catch {}
+  }
+})();
+(async () => {
+  const d = await use('dictation'); if (!d) return;
+  const mic = $('micBtn'); mic.hidden = false;
+  d.onFinal(({ text }) => { const el = $('draft'); el.value = (el.value ? el.value + t('sep') : '') + text; });
+  d.onState(({ state }) => { listening = state === 'listening'; mic.classList.toggle('on', listening); mic.textContent = listening ? t('micStop') : t('mic'); });
+  mic.onclick = () => { if (listening) d.stop().catch(() => {}); else d.start().catch(e => { if (e && e.code === 'not_granted') mic.hidden = true; }); };
+})();
+}
+</script>
+<script>if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));</script>
+</body>
+</html>
