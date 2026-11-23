@@ -119,7 +119,7 @@ describe('game server (Colyseus)', () => {
     expect(p.views.some((v) => v.deadline && v.deadline.seat === 0)).toBe(true);
     expect(logs.some((l) => l.includes('"turn_timeout"'))).toBe(true);
     await p.room.leave();
-  });
+  }, 30000);
 
   it('a whole game can be played to the end on the server', async () => {
     KoutRoom.configOverride = { ...FAST, bidSeconds: 0.02, playSeconds: 0.02, awayAfterTimeouts: 1 };

@@ -10,8 +10,8 @@
  *  every rule from this file — no rule value is hard-coded anywhere else.
  *
  *  ترميز الأوراق / Card notation:
- *    - النقش / suits:  'S' = سبيت ♠ spades, 'H' = هاص ♥ hearts,
- *                      'D' = ديمن ♦ diamonds, 'C' = شريحة ♣ clubs
+ *    - النقش / suits:  'S' = سبيت ♠ spades, 'H' = هاس ♥ hearts,
+ *                      'D' = ديمن ♦ diamonds, 'C' = كلفس ♣ clubs
  *    - الرتبة / ranks: 2..10, 11 = J (ولد), 12 = Q (بنت), 13 = K (شايب), 14 = A (إكَه)
  *    - الجوكر / jokers: 'XR' = الجوكر الأحمر (red joker), 'XB' = الجوكر الأسود (black joker)
  *    - ورقة / card id: suit + rank, e.g. 'S14' = A♠, 'H6' = 6♥, 'D10' = 10♦
@@ -215,8 +215,8 @@ export interface RulesConfig {
    */
   firstLead: 'rightOfBidder' | 'bidder' | 'rightOfDealer';
   /**
-   * الستات المحذوفة من ورق بو ٤ (تُضاف لـ modes.bo4.removeCards). تُكتب رقم + نقش: '6H' = ٦♥.
-   * The 6s removed from the Bo 4 deck (added to modes.bo4.removeCards), written rank + suit: '6H' = 6♥.
+   * الستات المحذوفة من ورق بو ٤ (تُضاف لـ modes.bo4.removeCards). تُكتب رقم + نقش: '6D' = ٦♦ ديمن، '6C' = ٦♣ كلفس.
+   * The 6s removed from the Bo 4 deck (added to modes.bo4.removeCards), written rank + suit: '6D' = 6♦, '6C' = 6♣.
    */
   bo4Removed6s: string[];
   /**
@@ -406,10 +406,10 @@ export const RULES: RulesConfig = {
       dealChunk: 3,
     },
     /**
-     * كوت بو ٤: ٤ لاعبين، فريقين من ٢، بدون ٢-٥ وبدون ستة الهاص وستة الشريحة (bo4Removed6s) + جوكرين = ٣٦ ورقة.
-     * يبقى ستة السبيت وستة الديمن.
-     * Kout Bo 4: 4 players, 2 teams of 2, remove 2–5 and the 6♥ and 6♣ (bo4Removed6s), add both jokers = 36 cards.
-     * The 6♠ and 6♦ stay.
+     * كوت بو ٤: ٤ لاعبين، فريقين من ٢، بدون ٢-٥ وبدون ستة الديمن وستة الكلفس (bo4Removed6s) + جوكرين = ٣٦ ورقة.
+     * يبقى ستة السبيت وستة الهاس.
+     * Kout Bo 4: 4 players, 2 teams of 2, remove 2–5 and the 6♦ and 6♣ (bo4Removed6s), add both jokers = 36 cards.
+     * The 6♠ and 6♥ stay.
      */
     bo4: {
       players: 4,
@@ -442,7 +442,7 @@ export const RULES: RulesConfig = {
   },
 
   firstLead: 'rightOfBidder',
-  bo4Removed6s: ['6H', '6C'],
+  bo4Removed6s: ['6D', '6C'],
   firstDealer: 'lowestCardDraw',
   dealerRotation: 'loserKeepsDeal',
 

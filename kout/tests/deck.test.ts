@@ -12,8 +12,8 @@ describe('deck building', () => {
     expect(d).toContain('H14');
   });
 
-  it('Bo4: removes 2–5, the 6♥ and the 6♣, keeps the 6♠ and 6♦, adds jokers = 36 cards', () => {
-    expect(RULES.bo4Removed6s).toEqual(['6H', '6C']);
+  it('Bo4: removes 2–5, the 6♦ and the 6♣, keeps the 6♠ and 6♥, adds jokers = 36 cards', () => {
+    expect(RULES.bo4Removed6s).toEqual(['6D', '6C']);
     const d = buildDeck(RULES, 'bo4');
     expect(d).toHaveLength(36);
     expect(new Set(d).size).toBe(36);
@@ -21,16 +21,16 @@ describe('deck building', () => {
       const r = rankOf(c);
       if (r !== null) expect(r).toBeGreaterThanOrEqual(6);
     }
-    expect(d).not.toContain('H6');
+    expect(d).not.toContain('D6');
     expect(d).not.toContain('C6');
     expect(d).toContain('S6');
-    expect(d).toContain('D6');
+    expect(d).toContain('H6');
     expect(d).toContain('XR');
     expect(d).toContain('XB');
-    expect(d.filter((c) => suitOf(c) === 'H')).toHaveLength(8);
+    expect(d.filter((c) => suitOf(c) === 'D')).toHaveLength(8);
     expect(d.filter((c) => suitOf(c) === 'C')).toHaveLength(8);
     expect(d.filter((c) => suitOf(c) === 'S')).toHaveLength(9);
-    expect(d.filter((c) => suitOf(c) === 'D')).toHaveLength(9);
+    expect(d.filter((c) => suitOf(c) === 'H')).toHaveLength(9);
   });
 
   it.each(['bo6', 'bo4'] as const)('%s deals 9 cards to each player, no duplicates', (mode) => {
