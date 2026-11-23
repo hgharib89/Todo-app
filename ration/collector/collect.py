@@ -83,6 +83,9 @@ def parse_date(text: str) -> str | None:
 
 def find_flyers(slug: str) -> list[dict]:
     html = get_html(f"{CLICFLYER}/retailers/{slug}")
+    if DRY_RUN:
+        OUT.mkdir(exist_ok=True)
+        (OUT / f"{slug}.html").write_text(html)
     flyers, seen = [], set()
     for m in re.finditer(r'href="(?:https://clicflyer\.com/shoppers/en/[a-z]+/[a-z-]+)?(/flyers/[a-z0-9-]+--(\d+))"', html):
         path, fid = m.group(1), m.group(2)
