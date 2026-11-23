@@ -13,7 +13,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
-      - run: python ration/collector/probe.py
+      - run: python ration/collector/discover.py
       - name: Save results to the wafrly-probe branch
         if: always()
         run: |
