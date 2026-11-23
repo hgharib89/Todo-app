@@ -60,7 +60,7 @@ describe('rules text for reneging and catching', () => {
     const { catchMessage } = await import('../src/ui/panels');
     const { createGame } = await import('../src/engine');
     const g = createGame(RULES, 'bo4', 1);
-    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خالد قطع في الأكلة ٣ (ما لحق هاس) — صاده أنت: +١٢ لنا');
+    expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: true, suit: 'H' }, [12, 0])).toBe('خليفة قطع في الأكلة ٣ (ما لحق هاس) — صاده أنت: +١٢ لنا');
     expect(catchMessage(g, { catcher: 0, accused: 1, trick: 2, success: false, suit: null })).toContain('صاد غلط');
   });
 });

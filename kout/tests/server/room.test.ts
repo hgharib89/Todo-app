@@ -67,6 +67,7 @@ describe('game server (Colyseus)', () => {
     expect(lobby.seats[0]).toEqual({ name: 'سعود', bot: false });
     const v = await waitFor(() => p.last());
     expect(v.names[0]).toBe('سعود');
+    expect(v.names.slice(1)).toEqual(['خليفة', 'محمد', 'حمدان']); // Bo 4 bots: the first three names
     expect(v.bots).toEqual([false, true, true, true]);
     expect(v.game.phase).toBe('bidding');
     expect(v.rulesHash).toBeTruthy();

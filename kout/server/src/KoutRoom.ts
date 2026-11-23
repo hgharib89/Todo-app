@@ -21,6 +21,7 @@ import {
 } from '../../src/engine';
 import { chooseBotCatch } from '../../src/bots';
 import { botPool } from './botPool';
+import { botNamesFor } from '../../src/bots/names';
 import { loadConfig, type ServerConfig } from './config';
 import { cleanName, roomCode } from './codes';
 import { log } from './log';
@@ -28,7 +29,7 @@ import { stats } from './stats';
 import { RateLimiter } from './rateLimit';
 import { rotation, rulesHash, toRealAction, viewFor, type ClientGame } from './view';
 
-export const BOT_NAMES = ['خالد', 'سالم', 'ناصر', 'فهد', 'بو علي', 'مشاري', 'جاسم', 'حمد', 'بدر', 'عبدالله'];
+export { BOT_NAMES } from '../../src/bots/names';
 
 interface Seat {
   kind: 'empty' | 'human' | 'bot';
@@ -241,9 +242,9 @@ export class KoutRoom extends Room {
     this.startTimer = null;
     this.startsAt = null;
     if (!this.seats.some((s) => s.kind === 'human')) return;
-    const used = new Set(this.seats.map((s) => s.name));
-    const free = BOT_NAMES.filter((n) => !used.has(n));
-    this.seats = this.seats.map((s) => (s.kind === 'empty' ? { ...this.emptySeat(), kind: 'bot', name: free.shift() ?? 'بوت', connected: true } : s));
+    const empty = this.seats.filter((s) => s.kind === 'empty').length;
+    const free = botNamesFor(this.mode, empty, this.seats.filter((s) => s.kind === 'human').map((s) => s.name));
+    this.seats = this.seats.map((s) => (s.kind === 'empty' ? { ...this.emptySeat(), kind: 'bot', name: free.shift()!, connected: true } : s));
     this.game = createGame(this.rules, this.mode, randomInt(2 ** 31));
     this.lock();
     stats.games++;
