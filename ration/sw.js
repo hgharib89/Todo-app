@@ -1,9 +1,9 @@
 /* Ration service worker: makes the app installable and lets it open offline.
    Scope is ration/ only, so it never touches the other app in this repo. */
-var VERSION = 'ration-v1';
+var VERSION = 'ration-v2';
 var FONTS = 'ration-fonts';
 var ASSETS = [
-  './', './index.html', './manifest.webmanifest',
+  './', './index.html', './manifest.webmanifest', './vendor/supabase-2.118.0.js',
   './icons/icon-192.png', './icons/icon-512.png', './icons/maskable-512.png', './icons/apple-touch-icon.png'
 ];
 

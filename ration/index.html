@@ -132,6 +132,15 @@ nav svg{width:22px;height:22px}
       <div id="flyerBusy" class="muted" style="margin-top:8px"></div>
       <div id="preview"></div>
     </div>
+    <div id="loginBox" class="card" hidden>
+      <b data-i="adminLogin"></b>
+      <p class="muted" data-i="adminLoginHint"></p>
+      <input id="emailIn" type="email" autocomplete="email" data-ph="emailPh" style="margin-bottom:8px">
+      <input id="passIn" type="password" autocomplete="current-password" data-ph="passPh">
+      <div class="row" style="margin-top:8px"><button class="btn grow" id="loginBtn" data-i="login"></button><button class="btn" id="signupBtn" data-i="signup"></button></div>
+      <div id="loginMsg" class="muted" style="margin-top:6px"></div>
+    </div>
+    <div id="logoutRow" class="row" hidden style="margin-top:10px"><span class="muted grow" id="whoAmI"></span><button class="btn" id="logoutBtn" data-i="logout"></button></div>
     <h2 style="margin-top:20px"><span data-i="savedOffers"></span> <span class="muted" id="offerCount"></span></h2>
     <div class="row" id="demoTools" hidden><button class="btn" id="clearDemo" data-i="clearDemo"></button></div>
     <div id="offerList"></div>
@@ -146,6 +155,7 @@ nav svg{width:22px;height:22px}
 </div></nav>
 </div>
 
+<script src="vendor/supabase-2.118.0.js"></script>
 <script>
 {
 const $ = id => document.getElementById(id);
@@ -178,7 +188,11 @@ ar: {
   readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
   signIn: 'سجّل دخولك عشان تشوف العروض.', slow: 'العروض ما وصلت بعد، تأكد من الاتصال.', loadFail: 'ما قدرت أجيب العروض.',
   tabList: 'قائمتي', tabResults: 'النتائج', tabChat: 'المساعد', tabOffers: 'العروض',
-  del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، '
+  del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، ',
+  adminLogin: 'دخول المشرف', adminLoginHint: 'لإضافة العروض من البروشورات. المستخدم العادي ما يحتاج يسجل.',
+  emailPh: 'البريد الإلكتروني', passPh: 'كلمة السر (٨ أحرف أو أكثر)', login: 'دخول', signup: 'حساب جديد', logout: 'خروج',
+  loggedAs: e => `مسجل باسم ${e}`, checkEmail: 'أرسلنا لك رابط تأكيد على بريدك. أكّده وبعدها ادخل.', loginFail: 'البريد أو كلمة السر غلط.',
+  notAdmin: 'هذا الحساب مب مشرف.'
 },
 en: {
   brandMain: 'Ration', brandSub: 'راشن', langBtn: 'عربي',
@@ -205,7 +219,11 @@ en: {
   readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
   signIn: 'Sign in to see the offers.', slow: "Offers haven't arrived yet, check your connection.", loadFail: "Couldn't load offers.",
   tabList: 'My list', tabResults: 'Results', tabChat: 'Assistant', tabOffers: 'Offers',
-  del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', '
+  del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', ',
+  adminLogin: 'Admin sign-in', adminLoginHint: 'To add offers from flyers. Shoppers do not need an account.',
+  emailPh: 'Email', passPh: 'Password (8+ characters)', login: 'Sign in', signup: 'Create account', logout: 'Sign out',
+  loggedAs: e => `Signed in as ${e}`, checkEmail: 'We sent a confirmation link to your email. Confirm it, then sign in.', loginFail: 'Wrong email or password.',
+  notAdmin: 'This account is not an admin.'
 }};
 const STORE_EN = {'جمعية الشارقة التعاونية':'Sharjah Co-op','تعاونية الاتحاد':'Union Coop','كارفور':'Carrefour','لولو هايبرماركت':'Lulu Hypermarket','نستو':'Nesto'};
 let lang = 'ar';
@@ -230,7 +248,97 @@ $('langBtn').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localSt
 const DEFAULT_STORES = Object.keys(STORE_EN);
 /* Demo prices for testing only (shown with a 'demo' label). Used when no shared offers store is connected. */
 const DEMO = [{"store":"جمعية الشارقة التعاونية","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.75,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.5,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.25,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":10.95,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"حليب طازج كامل الدسم","brand":"المراعي","size":"2 لتر","price":11.5,"oldPrice":12.5,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":39.5,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":38.75,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":41.0,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":40.5,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"رز بسمتي","brand":"إنديا جيت","size":"5 كغ","price":37.95,"oldPrice":49.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":18.5,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":19.0,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":18.25,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"بيض","brand":"الجزيرة","size":"30 حبة","price":17.5,"oldPrice":21.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":16.95,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":17.5,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":15.95,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":16.5,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"زيت دوار الشمس","brand":"عافية","size":"1.8 لتر","price":17.25,"oldPrice":19.5,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.95,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":14.5,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.5,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"دجاج مجمد","brand":"ساديا","size":"1 كغ","price":13.75,"oldPrice":16.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.95,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.75,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"سكر","brand":"الخليج","size":"2 كغ","price":8.25,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.5,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"سكر","brand":"الخليج","size":"2 كغ","price":7.95,"oldPrice":9.0,"until":"2026-11-30","source":"demo"},{"store":"جمعية الشارقة التعاونية","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.95,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.5,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":7.25,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.75,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"ماء","brand":"مسافي","size":"1.5 لتر × 6","price":6.25,"oldPrice":8.0,"until":"2026-11-30","source":"demo"},{"store":"تعاونية الاتحاد","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":36.0,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"كارفور","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":33.5,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"لولو هايبرماركت","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":35.5,"oldPrice":42.0,"until":"2026-11-30","source":"demo"},{"store":"نستو","name":"مسحوق غسيل","brand":"آريال","size":"3 كغ","price":34.0,"oldPrice":42.0,"until":"2026-11-30","source":"demo"}];
-const use = n => (window.claude && typeof window.claude.use === 'function') ? window.claude.use(n) : Promise.resolve(null);
+/* ---------- backend: Claude artifact runtime, else Supabase, else demo-only ---------- */
+const SUPA_URL = 'https://xhitpiewnqjiljnhyvit.supabase.co';
+const SUPA_KEY = 'sb_publishable_XAsPY0yjOEs99oR3H2cDtw_hLcC_52c';
+let sb = null;
+const caps = (async () => {
+  if (window.claude && typeof window.claude.use === 'function') return null;
+  if (!window.supabase) return {};
+  try {
+    sb = window.supabase.createClient(SUPA_URL, SUPA_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+    let { data: { session } } = await sb.auth.getSession();
+    if (!session) { const r = await sb.auth.signInAnonymously(); session = r.data && r.data.session; }
+    return { db: supaDb(), sample: session ? supaSample() : null, user: supaUser() };
+  } catch { return {}; }
+})();
+const use = async n => { const c = await caps; if (c === null) return window.claude.use(n); return c[n] || null; };
+
+function supaDb(){
+  const subs = []; let t;
+  const load = async () => {
+    const { data, error } = await sb.from('offers').select('*').order('created_at');
+    if (error) { subs.forEach(s => s.err && s.err(error)); return; }
+    const snap = { metadata: { fromCache: false }, docs: data.map(r => ({ id: r.id, data: () => ({ store: r.store, name: r.name, brand: r.brand, size: r.size,
+      price: +r.price, oldPrice: r.old_price != null ? +r.old_price : null, until: r.until, source: r.source }) })) };
+    subs.forEach(s => s.next(snap));
+  };
+  const reload = () => { clearTimeout(t); t = setTimeout(load, 300); };
+  const day = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v : null;
+  return {
+    collection: path => ({
+      onSnapshot(next, err){ subs.push({ next, err }); load(); return () => {}; },
+      async add(o){
+        const { error } = await sb.from('offers').insert({ store: o.store, name: o.name, brand: o.brand, size: o.size, price: o.price,
+          old_price: o.oldPrice, until: day(o.until), source: o.source || 'flyer' });
+        if (error) throw error; reload();
+      }
+    }),
+    doc: path => path.startsWith('offers/') ? {
+      async delete(){ const { error } = await sb.from('offers').delete().eq('id', path.slice(7)); if (error) throw error; reload(); }
+    } : {
+      async get(){ const { data } = await sb.from('lists').select('items').maybeSingle(); return { exists: !!data, data: () => data || {} }; },
+      async set(v){ const { data: u } = await sb.auth.getUser(); if (!u.user) return;
+        const { error } = await sb.from('lists').upsert({ user_id: u.user.id, items: v.items, updated_at: new Date().toISOString() }); if (error) throw error; }
+    }
+  };
+}
+function supaUser(){
+  return {
+    canEdit: async () => { const { data } = await sb.rpc('is_admin'); return data === true; },
+    id: async () => { const { data } = await sb.auth.getUser(); return data.user ? data.user.id : null; }
+  };
+}
+async function toB64(file){
+  const img = await createImageBitmap(file);
+  const k = Math.min(1, 1600 / Math.max(img.width, img.height));
+  const c = document.createElement('canvas'); c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return { media_type: 'image/jpeg', data: c.toDataURL('image/jpeg', 0.85).split(',')[1] };
+}
+function supaSample(){
+  const call = async body => {
+    const { data, error } = await sb.functions.invoke('ai', { body });
+    if (error) throw error; if (data && data.error) throw new Error(data.error); return data;
+  };
+  const fn = async (msgs, opts = {}) => {
+    const tools = opts.tools || [];
+    const apiTools = tools.map(x => ({ name: x.name, description: x.description, input_schema: x.inputSchema || { type: 'object', properties: {} } }));
+    const m = msgs.map(x => ({ role: x.role, content: x.content }));
+    for (let i = 0; i < 6; i++){
+      const r = await call({ mode: 'messages', messages: m, tools: apiTools });
+      if (r.stop_reason !== 'tool_use'){
+        const text = (r.content || []).filter(b => b.type === 'text').map(b => b.text).join('');
+        opts.onText && opts.onText({ text }); return { text };
+      }
+      m.push({ role: 'assistant', content: r.content });
+      const results = [];
+      for (const b of r.content) if (b.type === 'tool_use'){
+        const tool = tools.find(x => x.name === b.name); let out;
+        try { out = tool ? await tool.execute(b.input) : { error: 'unknown tool' }; } catch (e) { out = { error: String(e) }; }
+        results.push({ type: 'tool_result', tool_use_id: b.id, content: JSON.stringify(out) });
+      }
+      m.push({ role: 'user', content: results });
+    }
+    return { text: '' };
+  };
+  fn.json = async (prompt, opts = {}) => {
+    const images = []; for (const f of opts.images || []) images.push(await toB64(f));
+    return (await call({ mode: 'json', prompt, images, tier: opts.modelTier })).value;
+  };
+  fn.limits = async () => ({ images: true });
+  return fn;
+}
 let db = null, sample = null, user = null, uid = null, canEdit = false, listening = false;
 let offers = [], items = [], report = null, chat = [], resTab = 'split', extracted = [];
 
@@ -495,6 +603,21 @@ $('flyerIn').onchange = async e => {
   $('flyerBusy').textContent = failed;
 };
 
+/* ---------- admin sign-in (Supabase only) ---------- */
+async function authAct(kind){
+  const email = $('emailIn').value.trim(), password = $('passIn').value;
+  if (!email || password.length < 8){ $('loginMsg').textContent = t('loginFail'); return; }
+  $('loginMsg').innerHTML = spin('');
+  const r = kind === 'up' ? await sb.auth.signUp({ email, password, options: { emailRedirectTo: location.href.split('#')[0] } })
+                          : await sb.auth.signInWithPassword({ email, password });
+  if (r.error){ $('loginMsg').textContent = r.error.message || t('loginFail'); return; }
+  if (kind === 'up' && !r.data.session){ $('loginMsg').textContent = t('checkEmail'); return; }
+  location.reload();
+}
+$('loginBtn').onclick = () => authAct('in');
+$('signupBtn').onclick = () => authAct('up');
+$('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
 /* ---------- boot ---------- */
 applyLang();
 (async () => {
@@ -502,6 +625,12 @@ applyLang();
   if (!sample) sample = false;
   if (user){ canEdit = !!(await user.canEdit()); uid = await user.id(); }
   $('adminBox').hidden = !canEdit;
+  if (sb){
+    const { data: { user: u } } = await sb.auth.getUser();
+    const isReal = u && !u.is_anonymous && u.email;
+    $('loginBox').hidden = !!isReal; $('logoutRow').hidden = !isReal;
+    if (isReal) $('whoAmI').textContent = t('loggedAs', u.email) + (canEdit ? '' : ' · ' + t('notAdmin'));
+  }
   if (sample){
     $('photoLbl').hidden = false;
     try { if (!(await sample.limits()).images) $('photoLbl').hidden = true; } catch {}
