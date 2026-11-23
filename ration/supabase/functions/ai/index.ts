@@ -5,7 +5,7 @@
 // POST body:
 //   { mode: "json", prompt, images?: [{ media_type, data }], tier?: "quick"|"default"|"complex" }
 //     -> { value }            (Claude's answer parsed as JSON)
-//   { mode: "messages", messages, tools? }
+//   { mode: "messages", messages, tools?, tier? }
 //     -> { content, stop_reason }   (raw Claude turn; the app runs its own tools)
 
 const CORS = {
@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
       const messages = Array.isArray(body.messages) ? body.messages.slice(-40) : [];
       const tools = Array.isArray(body.tools) ? body.tools.slice(0, 8) : [];
       const msg = await claude({
-        model: MODELS.default,
+        model: MODELS[body.tier] || MODELS.default,
         max_tokens: 2000,
         messages,
         ...(tools.length ? { tools } : {}),
