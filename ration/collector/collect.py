@@ -54,10 +54,11 @@ SHJ = "https://www.sharjahcoop.ae"
 SHJ_JS = """() => [...document.querySelectorAll('.product-item-container')].map(c => {
   const a = c.querySelector('a[data-product-code]');
   const img = c.querySelector('.product-item-image img');
+  const src = c.querySelector('.product-item-image source[data-srcset]');
   const size = c.querySelector('.cont-ellip');
   const badge = c.querySelector('.product-item-badge');
   return a && {code: a.dataset.productCode, name: a.dataset.productName, price: a.dataset.productPrice,
-    img: img && (img.getAttribute('src') || img.dataset.src || ''), size: size && size.textContent.trim(),
+    img: (src && src.dataset.srcset.split(/[ ,]/)[0]) || (img && (img.dataset.src || img.getAttribute('src'))) || '', size: size && size.textContent.trim(),
     badge: badge && badge.textContent.trim(), text: c.innerText};
 }).filter(Boolean)"""
 
