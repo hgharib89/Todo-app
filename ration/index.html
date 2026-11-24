@@ -84,6 +84,7 @@ nav svg{width:22px;height:22px}
 .rowi{display:flex;gap:10px;align-items:center}
 .say{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:36px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;font-size:16px}
 .say.on{background:var(--redSoft);border-color:var(--red)}
+.vlang{padding:0 10px;min-width:44px;font-weight:800}
 </style>
 </head>
 <body>
@@ -106,6 +107,7 @@ nav svg{width:22px;height:22px}
     <textarea id="draft" data-ph="draftPh"></textarea>
     <div class="row" style="margin-top:8px">
       <button class="btn grow" id="addBtn" data-i="add"></button>
+      <button class="btn vlang" hidden aria-label="voice language"></button>
       <button class="btn mic" id="micBtn" hidden></button>
       <label class="btn" id="photoLbl" style="display:inline-flex;align-items:center" hidden><span data-i="photo"></span><input type="file" id="listPhoto" accept="image/*" hidden></label>
     </div>
@@ -121,6 +123,7 @@ nav svg{width:22px;height:22px}
     <div id="chatLog"></div>
     <div class="row" style="position:sticky;bottom:76px;background:var(--bg);padding-top:8px">
       <input id="chatIn" class="grow" data-ph="askPh" autocomplete="off">
+      <button class="btn vlang" hidden aria-label="voice language"></button>
       <button class="btn mic" id="chatMic" hidden data-i="micShort"></button>
       <button class="btn" id="chatSend" style="background:var(--red);color:#fff" data-i="send"></button>
     </div>
@@ -530,11 +533,11 @@ $('results').onclick = e => { const b = e.target.closest('[data-t]'); if (b){ re
 const sys = () => lang === 'ar'
   ? `أنت "وفرلي"، مساعد تسوق في الإمارات. تساعد الزبون يلقى أرخص العروض في الجمعيات والسوبرماركتات.
 - استخدم الأداة search_offers لكل سعر. لا تخترع أي سعر أو محل أو عرض.
-- رد بالعربي بلهجة إماراتية بسيطة ومختصرة، واذكر المحل والسعر ونهاية العرض إذا موجودة.
+- رد بنفس لغة آخر رسالة من الزبون: إذا كتب بالعربي رد بلهجة إماراتية بسيطة، وإذا كتب بالإنجليزي رد بالإنجليزي. خلك مختصر، واذكر المحل والسعر ونهاية العرض إذا موجودة.
 - إذا ما في عرض على منتج، قول ذلك بوضوح.`
   : `You are "Wafrly", a shopping assistant in the UAE. You help the customer find the cheapest offers at co-ops and supermarkets.
 - Use the search_offers tool for every price. Never invent a price, store or offer.
-- Reply in clear, short English. Mention the store, price and offer end date when known. Store and product names may be in Arabic; translate them.
+- Reply in the language of the customer's latest message: English if they wrote in English, simple Emirati Arabic if they wrote in Arabic. Keep it short. Mention the store, price and offer end date when known; translate Arabic names when replying in English.
 - If there is no offer for a product, say so plainly.`;
 /* ---------- spoken replies (the device's own text-to-speech) ---------- */
 const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
@@ -543,10 +546,11 @@ function speak(text, idx = -1){
   if (!canSpeak || !text) return;
   speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>]/g, ''));
-  u.lang = lang === 'ar' ? 'ar-AE' : 'en-US';
+  const arabic = (text.match(/[\u0600-\u06FF]/g) || []).length, latin = (text.match(/[A-Za-z]/g) || []).length;
+  u.lang = arabic >= latin ? 'ar-AE' : 'en-US';
   const voices = speechSynthesis.getVoices();
   u.voice = voices.find(v => v.lang === u.lang) || voices.find(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2))) || null;
-  u.rate = lang === 'ar' ? 0.95 : 1;
+  u.rate = u.lang === 'ar-AE' ? 0.95 : 1;
   speakingIdx = idx;
   u.onend = u.onerror = () => { speakingIdx = -1; renderChat(); };
   speechSynthesis.speak(u);
@@ -667,9 +671,16 @@ $('signupBtn').onclick = () => authAct('up');
 $('logoutBtn').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
 /* ---------- voice input with the browser's own speech recognition (Chrome, Edge, Safari) ---------- */
+let voiceLang = null; // language you speak into the mic; starts as the app language
 function browserVoice(){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) return;
+  try { voiceLang = localStorage.getItem('ration-voice'); } catch {}
+  if (voiceLang !== 'ar' && voiceLang !== 'en') voiceLang = lang;
+  const chips = document.querySelectorAll('.vlang');
+  const showChips = () => chips.forEach(c => { c.hidden = false; c.textContent = voiceLang === 'ar' ? 'ع' : 'EN'; });
+  showChips();
+  chips.forEach(c => c.onclick = () => { voiceLang = voiceLang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('ration-voice', voiceLang); } catch {} showChips(); });
   // one recogniser at a time; each button says where the words go and what happens at the end
   let rec = null, active = null;
   const stop = () => { try { rec && rec.stop(); } catch {} };
@@ -681,7 +692,7 @@ function browserVoice(){
       if (active === btn){ stop(); return; }
       stop();
       rec = new SR();
-      rec.lang = lang === 'ar' ? 'ar-AE' : 'en-US';
+      rec.lang = voiceLang === 'ar' ? 'ar-AE' : 'en-US';
       rec.interimResults = true; rec.continuous = btn.id === 'micBtn';
       const field = $(opts.field), start = field.value;
       let finalText = '';
