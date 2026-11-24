@@ -1,0 +1,20 @@
+name: Wafrly food probe
+on: workflow_dispatch
+permissions:
+  contents: write
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
+      - run: python ration/collector/food_probe.py
+      - name: Push results
+        if: always()
+        run: |
+          mkdir /tmp/r && cp -r probe-out/* /tmp/r/ || true
+          git config user.name "wafrly-bot"; git config user.email "bot@users.noreply.github.com"
+          git checkout --orphan food-probe && git rm -rfq . && cp -r /tmp/r/* . && git add -A && git commit -qm "food probe" && git push -f origin food-probe
