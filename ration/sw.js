@@ -1,6 +1,6 @@
 /* Wafrly service worker: makes the app installable and lets it open offline.
    Scope is ration/ only, so it never touches the other app in this repo. */
-var VERSION = 'ration-v14';
+var VERSION = 'ration-v15';
 var FONTS = 'ration-fonts';
 var ASSETS = [
   './', './index.html', './manifest.webmanifest', './vendor/supabase-2.118.0.js', './fonts/tajawal-arabic-400-normal.woff2', './fonts/tajawal-arabic-500-normal.woff2', './fonts/tajawal-arabic-700-normal.woff2', './fonts/tajawal-arabic-800-normal.woff2', './fonts/tajawal-latin-400-normal.woff2', './fonts/tajawal-latin-700-normal.woff2', './fonts/tajawal-latin-800-normal.woff2',

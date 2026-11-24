@@ -113,17 +113,40 @@ nav button.on i{filter:none;opacity:1;transform:translateY(-2px) scale(1.12)}
 .mic{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
 .mic.on{background:var(--rec);color:#fff;transform:scale(1.06)}
 #chatSend{background:var(--coral);color:#fff;box-shadow:none}
+.modes{display:flex;gap:8px;margin-top:14px;background:var(--fill);border-radius:22px;padding:5px}
+.modes button{flex:1;min-height:48px;border:0;border-radius:18px;background:transparent;color:var(--muted);font-weight:800;font-size:17px;cursor:pointer}
+.modes button.on{background:var(--dark);color:var(--sun)}
+body[data-mode=food] main .view{display:none}
+body[data-mode=food] main #v-food{display:block}
+body[data-mode=food] nav{display:none}
+body[data-mode=food] main{padding-bottom:40px}
+.app-chip{display:inline-flex;align-items:center;justify-content:center;min-width:86px;border-radius:12px;padding:4px 10px;font-weight:800;font-size:14px}
+.dish h3{margin:0;font-size:19px;font-weight:800}
+.dish .emo{font-size:40px;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;flex:none}
+.cheap{background:var(--dark);color:#fff;border-radius:18px;padding:12px 14px;margin:12px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cheap b{color:var(--sun);font-size:20px}
+.frow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:2px dashed var(--line)}
+.frow .d{flex:1;font-size:13px;color:var(--muted)}
+.frow .tot{font-weight:800;white-space:nowrap}
+.frow.best .tot{color:var(--good)}
 </style>
 </head>
 <body data-v="list">
 <div class="app">
 <header>
   <div class="hrow"><h1 id="brand"></h1><button class="lang" id="langBtn"></button></div>
+  <div class="modes" role="tablist"><button data-m="grocery" class="on" data-i="modeGrocery"></button><button data-m="food" data-i="modeFood"></button></div>
   <div class="hi" data-i="hello"></div>
   <p id="sub"></p>
 </header>
 
 <main>
+  <section class="view" id="v-food">
+    <div class="note" data-i="foodDemo"></div>
+    <input id="foodQ" data-ph="foodPh" autocomplete="off">
+    <div class="row" id="foodChips" style="margin:10px 0 6px"></div>
+    <div id="foodRes"></div>
+  </section>
   <section class="view on" id="v-list">
     <div id="demoNote" class="note" hidden data-i="demoNote"></div>
     <label for="draft" class="muted" data-i="addLabel"></label>
@@ -202,6 +225,8 @@ const T = {
 ar: {
   brandMain: 'وفرلي', brandSub: 'Wafrly', langBtn: 'English', hello: 'هلا 👋', subEmpty: 'شو ناقص البيت؟ زيد أغراضك وخلنا نوفّر', subN: n => n === 1 ? 'عندك غرض واحد في السلة، خلنا نوفّر' : n === 2 ? 'عندك غرضين في السلة، خلنا نوفّر' : `عندك ${n} أغراض في السلة، خلنا نوفّر`,
   tagline: 'اكتب أغراضك، ونلقى لك أرخص العروض في الجمعيات والسوبرماركتات',
+  modeGrocery: '🛒 بقالة', modeFood: '🍔 مطاعم', foodDemo: 'قسم المطاعم تجريبي: الأسعار أمثلة للعرض وليست أسعار حقيقية من التطبيقات.', foodPh: 'شو تشتهي؟ برجر، شاورما، بيتزا…', foodSub: 'قارن نفس الطلب بين تطبيقات التوصيل',
+  foodCheapest: 'الأرخص في', foodSave: (a) => `توفر ${a} عن الأغلى`, fPrice: 'السعر', fDel: 'توصيل', fFree: 'توصيل مجاني', fOff: (n) => `خصم ${n}٪`, foodNone: 'ما لقيت شي، جرب كلمة ثانية',
   demoNote: 'الأسعار الموجودة الحين تجريبية للعرض فقط. ارفع بروشورات حقيقية من تبويب "العروض".',
   addLabel: 'أضف غرض أو الصق قائمة كاملة', draftPh: 'مثال: حليب المراعي ٢ لتر، رز بسمتي ٥ كيلو، بيض ٣٠ حبة',
   add: 'إضافة', photo: '📷 صورة', mic: '🎤 بالصوت', micStop: '⏹ وقف', myList: 'سلتي', find: 'دوّر على أرخص العروض',
@@ -236,6 +261,8 @@ ar: {
 en: {
   brandMain: 'Wafrly', brandSub: 'وفرلي', langBtn: 'عربي', hello: 'Hey 👋', subEmpty: "What's missing at home? Add your items and let's save", subN: n => `${n} item${n === 1 ? '' : 's'} in your basket, let's save`,
   tagline: 'Add your groceries and we find the cheapest offers at co-ops and supermarkets',
+  modeGrocery: '🛒 Grocery', modeFood: '🍔 Restaurants', foodDemo: 'Restaurants is a demo: prices are examples, not real app prices.', foodPh: 'What are you craving? Burger, shawarma, pizza…', foodSub: 'Compare the same order across delivery apps',
+  foodCheapest: 'Cheapest on', foodSave: (a) => `Save ${a} vs the priciest`, fPrice: 'Price', fDel: 'delivery', fFree: 'Free delivery', fOff: (n) => `${n}% off`, foodNone: 'Nothing found, try another word',
   demoNote: 'Current prices are demo data for testing only. Upload real flyers from the "Offers" tab.',
   addLabel: 'Add an item or paste a whole list', draftPh: 'e.g. Almarai milk 2L, basmati rice 5kg, eggs 30 pcs',
   add: 'Add', photo: '📷 Photo', mic: '🎤 Voice', micStop: '⏹ Stop', myList: 'My basket', find: 'Find the cheapest offers',
@@ -282,7 +309,7 @@ function applyLang(){
   document.querySelectorAll('[data-i]').forEach(el => el.textContent = t(el.dataset.i));
   document.querySelectorAll('[data-ph]').forEach(el => el.placeholder = t(el.dataset.ph));
   $('micBtn').textContent = listening ? t('micStop') : t('mic');
-  renderList(); renderOffers(); renderChat();
+  renderList(); renderOffers(); renderChat(); if (mode === 'food') setMode('food');
   if (report) renderResults(); else $('results').innerHTML = `<div class="empty">${esc(t('resultsEmpty'))}</div>`;
 }
 $('langBtn').onclick = () => { lang = lang === 'ar' ? 'en' : 'ar'; try { localStorage.setItem('ration-lang', lang); } catch {} applyLang(); };
@@ -383,6 +410,60 @@ function supaSample(){
 }
 let db = null, sample = null, user = null, uid = null, canEdit = false, listening = false;
 let offers = [], items = [], report = null, chat = [], resTab = 'split', extracted = [];
+
+/* ---------- restaurants (demo) ---------- */
+const FAPPS = [
+  {id:'talabat', ar:'طلبات', en:'talabat', bg:'#FF5A00', fg:'#fff'},
+  {id:'keeta', ar:'كيتا', en:'Keeta', bg:'#FFD100', fg:'#26213A'},
+  {id:'deliveroo', ar:'ديليفرو', en:'Deliveroo', bg:'#00CCBC', fg:'#fff'},
+  {id:'smiles', ar:'سمايلز', en:'Smiles', bg:'#7B2D8E', fg:'#fff'},
+  {id:'noon', ar:'نون فود', en:'noon Food', bg:'#FEEE00', fg:'#26213A'},
+  {id:'careem', ar:'كريم', en:'Careem', bg:'#00B140', fg:'#fff'}];
+const FDISH = [
+  {e:'🍔', ar:'وجبة بيج ماك', en:'Big Mac meal', r:"McDonald's", k:'برجر burger ماك mac ماكدونالدز', p:32},
+  {e:'🍗', ar:'وجبة زنجر', en:'Zinger meal', r:'KFC', k:'دجاج chicken زنجر kfc كنتاكي', p:29},
+  {e:'🌯', ar:'شاورما دياي عربي', en:'Chicken shawarma arabi', r:'Shawarma House', k:'شاورما shawarma دجاج دياي', p:18},
+  {e:'🍕', ar:'بيتزا بيبروني وسط', en:'Medium pepperoni pizza', r:'Pizza Hut', k:'بيتزا pizza', p:45},
+  {e:'🍛', ar:'مندي دياي', en:'Chicken mandi', r:'Mandi Corner', k:'مندي mandi رز rice دجاج دياي', p:38},
+  {e:'☕', ar:'كرك ورقاق', en:'Karak & chapati', r:'Karak Spot', k:'كرك karak شاي tea رقاق', p:12},
+  {e:'🧆', ar:'ساندويش فلافل', en:'Falafel sandwich', r:'Falafel Street', k:'فلافل falafel ساندويش sandwich', p:9},
+  {e:'🍣', ar:'بوكس سوشي ١٢ حبة', en:'Sushi box 12 pcs', r:'Sushi Bay', k:'سوشي sushi', p:55}];
+const TINTS = ['--t1','--t2','--t3','--t4','--t5','--t6'];
+function hsh(str){ let h = 2166136261; for (const c of str) { h ^= c.charCodeAt(0); h = Math.imul(h, 16777619); } return (h >>> 0) / 4294967295; }
+function foodQuotes(d){
+  return FAPPS.map(a => {
+    const r1 = hsh(d.en + a.id), r2 = hsh(a.id + d.en + 'd'), r3 = hsh(d.r + a.id + 'o');
+    const price = Math.round(d.p * (0.92 + r1 * 0.22) * 2) / 2;
+    const del = r2 < 0.3 ? 0 : Math.round((3 + r2 * 7) * 2) / 2;
+    const off = r3 > 0.62 ? [10, 15, 20, 25, 30][Math.floor(r3 * 100) % 5] : 0;
+    return {a, price, del, off, total: Math.round((price * (1 - off / 100) + del) * 100) / 100};
+  }).sort((x, y) => x.total - y.total);
+}
+function renderFood(){
+  const q = norm($('foodQ').value.trim());
+  const list = FDISH.filter(d => !q || norm(d.ar + ' ' + d.en + ' ' + d.r + ' ' + d.k).includes(q));
+  $('foodChips').innerHTML = [['🍔','برجر','burger'],['🌯','شاورما','shawarma'],['🍕','بيتزا','pizza'],['🍛','مندي','mandi'],['☕','كرك','karak'],['🍣','سوشي','sushi']].map(c => `<button class="btn" data-fq="${c[lang === 'ar' ? 1 : 2]}">${c[0]} ${c[lang === 'ar' ? 1 : 2]}</button>`).join('');
+  if (!list.length) { $('foodRes').innerHTML = `<div class="empty">${esc(t('foodNone'))}</div>`; return; }
+  $('foodRes').innerHTML = list.map(d => {
+    const qs = foodQuotes(d), b = qs[0], w = qs[qs.length - 1], i = FDISH.indexOf(d);
+    const chip = a => `<span class="app-chip" style="background:${a.bg};color:${a.fg}">${esc(a[lang])}</span>`;
+    return `<div class="card dish">
+      <div class="rowi"><span class="emo" style="background:var(${TINTS[i % 6]})">${d.e}</span><div><h3>${esc(d[lang])}</h3><div class="muted">${esc(d.r)}</div></div></div>
+      <div class="cheap">${esc(t('foodCheapest'))} ${chip(b.a)} <b>${aed(b.total)}</b><span style="flex-basis:100%;font-size:14px;opacity:.8">${esc(t('foodSave', aed(w.total - b.total)))}</span></div>
+      ${qs.map((x, k) => `<div class="frow${k ? '' : ' best'}">${chip(x.a)}<span class="d">${esc(t('fPrice'))} ${aed(x.price)}${x.off ? ' · ' + esc(t('fOff', x.off)) : ''} · ${x.del ? '+' + aed(x.del) + ' ' + esc(t('fDel')) : esc(t('fFree'))}</span><span class="tot">${aed(x.total)}</span></div>`).join('')}
+    </div>`;
+  }).join('');
+}
+$('foodQ').oninput = renderFood;
+$('foodChips').onclick = e => { const b = e.target.closest('[data-fq]'); if (b) { $('foodQ').value = b.dataset.fq; renderFood(); } };
+let mode = 'grocery';
+function setMode(m){
+  mode = m; document.body.dataset.mode = m;
+  document.querySelectorAll('.modes button').forEach(b => b.classList.toggle('on', b.dataset.m === m));
+  if (m === 'food') { $('sub').textContent = t('foodSub'); renderFood(); } else renderList();
+  window.scrollTo(0, 0);
+}
+document.querySelectorAll('.modes button').forEach(b => b.onclick = () => setMode(b.dataset.m));
 
 /* ---------- tabs ---------- */
 function show(v){
