@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#FFF8EE" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#16131D" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#FFFFFF" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0F1115" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -206,6 +206,64 @@ body[data-mode=food] main{padding-bottom:40px}
 .frow .d{flex:1;font-size:13px;color:var(--muted)}
 .frow .tot{font-weight:800;white-space:nowrap}
 .frow.best .tot{color:var(--good)}
+
+/* ===== Professional theme: white canvas, one confident brand colour (coral-orange), ink navy for depth ===== */
+:root{--bg:light-dark(#FFFFFF,#0F1115);--card:light-dark(#FFFFFF,#171A21);--ink:light-dark(#101828,#F2F4F7);
+--muted:light-dark(#667085,#98A2B3);--line:light-dark(#EAECF0,#262A33);--fill:light-dark(#F2F4F7,#1F232B);
+--coral:#FF5A36;--brand2:#FF8A3D;--brandSoft:light-dark(#FFF1EC,#3A2219);--brandInk:light-dark(#D9411E,#FF8A6B);
+--sun:#FFB020;--dark:light-dark(#101828,#1F232B);--good:light-dark(#12B76A,#32D583);--accentSoft:var(--brandSoft);
+--t1:light-dark(#EFF6FF,#1B2433);--t2:light-dark(#FFF7E6,#2E2614);--t3:light-dark(#FFF1EC,#33201A);
+--t4:light-dark(#ECFDF3,#15291F);--t5:light-dark(#F4F0FF,#241E33);--t6:light-dark(#FFF0F7,#331E29);
+--shadow:0 1px 2px rgba(16,24,40,.05),0 1px 3px rgba(16,24,40,.06)}
+header{background:var(--bg);padding-bottom:4px}
+header h1{font-size:30px;letter-spacing:-.3px}
+header h1 .pill{background:linear-gradient(135deg,var(--coral),var(--brand2));border-radius:10px}
+.lang{background:var(--fill);color:var(--ink);border:1px solid var(--line);font-weight:700}
+.hi{font-size:22px;margin-top:12px}
+.modes{background:var(--fill);border-radius:14px;padding:4px;gap:4px}
+.modes button{border-radius:11px;min-height:44px;font-size:16px}
+.modes button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.card,.pcard,.bubble.ai{box-shadow:var(--shadow);border:1px solid var(--line);border-radius:16px}
+.btn{background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);border-radius:12px}
+.btn.main{background:linear-gradient(135deg,var(--coral),var(--brand2));color:#fff;border:0;border-radius:14px;min-height:56px;box-shadow:0 6px 16px rgba(255,90,54,.28)}
+textarea,input,select{border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+textarea:focus,input:focus{border-color:var(--coral);box-shadow:0 0 0 4px var(--brandSoft)}
+.composer{border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow)}
+.composer:focus-within{box-shadow:0 0 0 4px var(--brandSoft)}
+.composer textarea{box-shadow:none;border:0}
+.composer textarea:focus{box-shadow:none}
+.addround{background:linear-gradient(135deg,var(--coral),var(--brand2));border-radius:12px}
+.note{background:light-dark(#FFF8E6,#2E2614);border:1px solid light-dark(#FDE7B0,#4A3B17);border-radius:12px}
+.tile{background:var(--card)!important;border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px}
+.tile .emo{width:52px;height:52px;border-radius:14px;background:var(--fill);display:grid;place-items:center;font-size:30px}
+.tile .x{background:var(--fill)}
+.qty{background:var(--fill)}
+.tag{background:var(--brandSoft);color:var(--brandInk);border-radius:8px;padding:2px 10px}
+.tile .deal b{background:var(--brandSoft);color:var(--brandInk)}
+.sumcard,.hero,.cheap{background:linear-gradient(135deg,var(--coral),var(--brand2));color:#fff;box-shadow:0 10px 24px rgba(255,90,54,.25);border-radius:20px}
+.sumcard .v,.big,.cheap b,.hero .save{color:#fff}
+.sumcard .r span{background:rgba(255,255,255,.2)}
+.hero .muted,.hero .old{color:rgba(255,255,255,.85)}
+.tabs{background:var(--fill);border-radius:12px}
+.tabs button{border-radius:9px}
+.tabs button.on{background:var(--card);color:var(--ink);box-shadow:var(--shadow)}
+.strip button{background:var(--card);border:1px solid var(--line);box-shadow:none}
+.strip button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.empty{border:1.5px dashed var(--line);border-radius:16px}
+.dcat,.dprod{border:1px solid var(--line);box-shadow:var(--shadow);border-radius:16px;background:var(--card);color:var(--ink)}
+.dcat .im,.dprod .im{background:light-dark(#F9FAFB,#1F232B);border-radius:12px}
+.dprod .pr{color:var(--ink)}
+.dprod .off,.pcard .off{background:#F04438;border-radius:6px}
+.best{background:var(--good)}
+.addp{background:linear-gradient(135deg,var(--coral),var(--brand2));box-shadow:0 4px 10px rgba(255,90,54,.35)}
+.h2b{font-size:20px;letter-spacing:-.2px}
+.bubble.me{background:linear-gradient(135deg,var(--coral),var(--brand2))}
+.bubble.ai{background:var(--fill);box-shadow:none;border:0}
+nav{background:light-dark(#101828,#0B0D12);border-radius:22px 22px 0 0;box-shadow:0 -8px 24px rgba(16,24,40,.12)}
+nav button{color:rgba(255,255,255,.6)}
+nav button.on{color:#FF7A59}
+.app-chip{border-radius:8px}
+.prw .pct{color:#F04438}
 </style>
 </head>
 <body data-v="list">
