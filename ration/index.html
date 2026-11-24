@@ -206,6 +206,7 @@ ar: {
   del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، ',
   adminLogin: 'دخول المشرف', adminLoginHint: 'لإضافة العروض من البروشورات. المستخدم العادي ما يحتاج يسجل.',
   emailPh: 'البريد الإلكتروني', passPh: 'كلمة السر (٨ أحرف أو أكثر)', login: 'دخول', signup: 'حساب جديد', logout: 'خروج',
+  noArabicVoice: 'جهازك ما فيه صوت عربي. من الإعدادات ← تسهيلات الاستخدام ← المحتوى المنطوق ← الأصوات ← العربية، نزّل صوت "ماجد".',
   micHolding: '🔴 أسمعك...', holdHint: 'اضغط مطولاً على 🎤 وتكلم، وارفع إصبعك للإرسال', slideCancel: 'ارفع إصبعك للإرسال، أو اسحبه برا الزر للإلغاء', cancelled: 'انلغى التسجيل',
   listen: 'استمع', micShort: '🎤', listeningNow: 'أسمعك... تكلم', micDenied: 'اسمح للتطبيق باستخدام المايكروفون من إعدادات المتصفح.',
   loggedAs: e => `مسجل باسم ${e}`, checkEmail: 'أرسلنا لك رابط تأكيد على بريدك. أكّده وبعدها ادخل.', loginFail: 'البريد أو كلمة السر غلط.',
@@ -239,6 +240,7 @@ en: {
   del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', ',
   adminLogin: 'Admin sign-in', adminLoginHint: 'To add offers from flyers. Shoppers do not need an account.',
   emailPh: 'Email', passPh: 'Password (8+ characters)', login: 'Sign in', signup: 'Create account', logout: 'Sign out',
+  noArabicVoice: 'Your device has no Arabic voice. Settings → Accessibility → Spoken Content → Voices → Arabic, and download Majed.',
   micHolding: '🔴 Listening...', holdHint: 'Hold 🎤 and talk, release to send', slideCancel: 'Release to send, slide off to cancel', cancelled: 'Recording cancelled',
   listen: 'Listen', micShort: '🎤', listeningNow: 'Listening... speak now', micDenied: 'Allow microphone access in your browser settings.',
   loggedAs: e => `Signed in as ${e}`, checkEmail: 'We sent a confirmation link to your email. Confirm it, then sign in.', loginFail: 'Wrong email or password.',
@@ -541,23 +543,44 @@ const sys = () => lang === 'ar'
   ? `أنت "وفرلي"، مساعد تسوق في الإمارات. تساعد الزبون يلقى أرخص العروض في الجمعيات والسوبرماركتات.
 - استخدم الأداة search_offers لكل سعر. لا تخترع أي سعر أو محل أو عرض.
 - رد بنفس لغة آخر رسالة من الزبون: إذا كتب بالعربي رد بلهجة إماراتية بسيطة، وإذا كتب بالإنجليزي رد بالإنجليزي. خلك مختصر، واذكر المحل والسعر ونهاية العرض إذا موجودة.
+- اللهجة إماراتية صرفة، مب فصحى ولا خليجية عامة. استخدم كلمات مثل: هلا، الحين، وايد، شو، ليش، عندهم، يبالك، ترا، خلاص، زين، مب، حق (بمعنى لـ)، چي (بمعنى كذا). مثال: "هلا! الحين أرخص رز عند نستو بـ 37.95 درهم، وعرضه لين 30 نوفمبر. يبالك شي ثاني؟"
+- ردك ممكن يتقرا بصوت: إذا رديت بالعربي اكتب أسماء المنتجات والمحلات بالعربي فقط، واكتب السعر رقم وبعده كلمة "درهم"، ولا تستخدم رموز أو جداول أو نقاط.
 - إذا ما في عرض على منتج، قول ذلك بوضوح.`
   : `You are "Wafrly", a shopping assistant in the UAE. You help the customer find the cheapest offers at co-ops and supermarkets.
 - Use the search_offers tool for every price. Never invent a price, store or offer.
 - Reply in the language of the customer's latest message: English if they wrote in English, simple Emirati Arabic if they wrote in Arabic. Keep it short. Mention the store, price and offer end date when known; translate Arabic names when replying in English.
+- Your reply may be read aloud: keep it to one language (product and store names too), write prices as a number followed by "dirhams" (or "درهم" in Arabic), and use no symbols, tables or bullet points.
 - If there is no offer for a product, say so plainly.`;
 /* ---------- spoken replies (the device's own text-to-speech) ---------- */
 const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
 let speakingIdx = -1;
+// best installed voice for a language: enhanced/premium first, then any voice of that language
+let voiceList = [];
+const loadVoices = () => { if (canSpeak) voiceList = speechSynthesis.getVoices(); };
+if (canSpeak){ loadVoices(); speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', loadVoices); }
+function pickVoice(code){
+  const all = voiceList.length ? voiceList : (canSpeak ? speechSynthesis.getVoices() : []);
+  const mine = all.filter(v => (v.lang || '').toLowerCase().replace('_', '-').startsWith(code));
+  const score = v => (/premium|enhanced|natural|neural|siri/i.test(v.name) ? 4 : 0) + (v.localService ? 1 : 0) + (/^(ar-ae|ar-sa|ar-001|en-us|en-gb)$/i.test(v.lang.replace('_', '-')) ? 2 : 0);
+  return mine.sort((a, b) => score(b) - score(a))[0] || null;
+}
+// make a reply easy to read aloud: no symbols, currency in words, one language at a time
+function speechText(text, ar){
+  let s = text.replace(/[*_#`>|•]/g, ' ').replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/gu, ' ');
+  s = ar ? s.replace(/د\.إ|AED|Dhs?\.?/gi, ' درهم ').replace(/(\d)\s*[x×]\s*(\d)/g, '$1 في $2').replace(/\//g, ' ')
+         : s.replace(/AED\s*([\d.]+)/gi, '$1 dirhams').replace(/د\.إ/g, ' dirhams').replace(/(\d)\s*[x×]\s*(\d)/g, '$1 by $2');
+  return s.replace(/\s+/g, ' ').trim();
+}
 function speak(text, idx = -1){
   if (!canSpeak || !text) return;
   speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>]/g, ''));
-  const arabic = (text.match(/[\u0600-\u06FF]/g) || []).length, latin = (text.match(/[A-Za-z]/g) || []).length;
-  u.lang = arabic >= latin ? 'ar-AE' : 'en-US';
-  const voices = speechSynthesis.getVoices();
-  u.voice = voices.find(v => v.lang === u.lang) || voices.find(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2))) || null;
-  u.rate = u.lang === 'ar-AE' ? 0.95 : 1;
+  const arabic = (text.match(/[؀-ۿ]/g) || []).length, latin = (text.match(/[A-Za-z]/g) || []).length;
+  const ar = arabic >= latin;
+  const voice = pickVoice(ar ? 'ar' : 'en');
+  if (ar && !voice){ $('chatHint').textContent = t('noArabicVoice'); return; }
+  const u = new SpeechSynthesisUtterance(speechText(text, ar));
+  if (voice){ u.voice = voice; u.lang = voice.lang; } else u.lang = ar ? 'ar-SA' : 'en-US';
+  u.rate = ar ? 0.9 : 1;
   speakingIdx = idx;
   u.onend = u.onerror = () => { speakingIdx = -1; renderChat(); };
   speechSynthesis.speak(u);
