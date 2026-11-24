@@ -82,6 +82,8 @@ nav svg{width:22px;height:22px}
 .thumb img{position:absolute;max-width:none;left:0;top:0;opacity:0;transition:opacity .2s}
 .thumb img.ok{opacity:1}
 .rowi{display:flex;gap:10px;align-items:center}
+.say{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:36px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;font-size:16px}
+.say.on{background:var(--redSoft);border-color:var(--red)}
 </style>
 </head>
 <body>
@@ -196,7 +198,7 @@ ar: {
   del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، ',
   adminLogin: 'دخول المشرف', adminLoginHint: 'لإضافة العروض من البروشورات. المستخدم العادي ما يحتاج يسجل.',
   emailPh: 'البريد الإلكتروني', passPh: 'كلمة السر (٨ أحرف أو أكثر)', login: 'دخول', signup: 'حساب جديد', logout: 'خروج',
-  micShort: '🎤', listeningNow: 'أسمعك... تكلم', micDenied: 'اسمح للتطبيق باستخدام المايكروفون من إعدادات المتصفح.',
+  listen: 'استمع', micShort: '🎤', listeningNow: 'أسمعك... تكلم', micDenied: 'اسمح للتطبيق باستخدام المايكروفون من إعدادات المتصفح.',
   loggedAs: e => `مسجل باسم ${e}`, checkEmail: 'أرسلنا لك رابط تأكيد على بريدك. أكّده وبعدها ادخل.', loginFail: 'البريد أو كلمة السر غلط.',
   notAdmin: 'هذا الحساب مب مشرف.'
 },
@@ -228,7 +230,7 @@ en: {
   del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', ',
   adminLogin: 'Admin sign-in', adminLoginHint: 'To add offers from flyers. Shoppers do not need an account.',
   emailPh: 'Email', passPh: 'Password (8+ characters)', login: 'Sign in', signup: 'Create account', logout: 'Sign out',
-  micShort: '🎤', listeningNow: 'Listening... speak now', micDenied: 'Allow microphone access in your browser settings.',
+  listen: 'Listen', micShort: '🎤', listeningNow: 'Listening... speak now', micDenied: 'Allow microphone access in your browser settings.',
   loggedAs: e => `Signed in as ${e}`, checkEmail: 'We sent a confirmation link to your email. Confirm it, then sign in.', loginFail: 'Wrong email or password.',
   notAdmin: 'This account is not an admin.'
 }};
@@ -534,8 +536,30 @@ const sys = () => lang === 'ar'
 - Use the search_offers tool for every price. Never invent a price, store or offer.
 - Reply in clear, short English. Mention the store, price and offer end date when known. Store and product names may be in Arabic; translate them.
 - If there is no offer for a product, say so plainly.`;
+/* ---------- spoken replies (the device's own text-to-speech) ---------- */
+const canSpeak = 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+let speakingIdx = -1;
+function speak(text, idx = -1){
+  if (!canSpeak || !text) return;
+  speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text.replace(/[*_#`>]/g, ''));
+  u.lang = lang === 'ar' ? 'ar-AE' : 'en-US';
+  const voices = speechSynthesis.getVoices();
+  u.voice = voices.find(v => v.lang === u.lang) || voices.find(v => v.lang && v.lang.startsWith(u.lang.slice(0, 2))) || null;
+  u.rate = lang === 'ar' ? 0.95 : 1;
+  speakingIdx = idx;
+  u.onend = u.onerror = () => { speakingIdx = -1; renderChat(); };
+  speechSynthesis.speak(u);
+  renderChat();
+}
+function unlockSpeech(){ // iPhone only lets a page talk after a tap
+  if (canSpeak && !unlockSpeech.done){ unlockSpeech.done = true; speechSynthesis.speak(new SpeechSynthesisUtterance(' ')); }
+}
+let replyByVoice = false;
+
 function renderChat(){
-  $('chatLog').innerHTML = chat.length ? chat.map(m => `<div class="bubble ${m.role === 'user' ? 'me' : 'ai'}">${m.content ? esc(m.content) : '<span class="spin"></span>'}</div>`).join('')
+  $('chatLog').innerHTML = chat.length ? chat.map((m, i) => `<div class="bubble ${m.role === 'user' ? 'me' : 'ai'}">${m.content ? esc(m.content) : '<span class="spin"></span>'}${
+      m.role === 'assistant' && m.content && canSpeak ? `<br><button class="say${speakingIdx === i ? ' on' : ''}" data-say="${i}" aria-label="${t('listen')}">${speakingIdx === i ? '⏹' : '🔊'}</button>` : ''}</div>`).join('')
     : `<div class="empty">${esc(sample === false ? t('chatOff') : t('chatEmpty'))}</div>`;
 }
 async function sendChat(){
@@ -551,6 +575,7 @@ async function sendChat(){
         execute: ({ query }) => { let hits = localSearch(query, 15); if (!hits.length) hits = offers.slice(0, 200);
           return hits.map(o => ({ store: o.store, store_en: STORE_EN[o.store] || null, product: offerText(o), price: o.price, old_price: o.oldPrice || null, until: o.until || null })); } }] });
     ans.content = r.text || ans.content || t('noAnswer');
+    if (replyByVoice){ replyByVoice = false; renderChat(); speak(ans.content, chat.indexOf(ans)); }
   } catch (e) { ans.content = e && e.code === 'rate_limited' ? t('busy') : t('error'); }
   renderChat();
 }
@@ -676,8 +701,17 @@ function browserVoice(){
     };
   };
   setup($('micBtn'), { field: 'draft', append: true, msg: 'listBusy' });
-  setup($('chatMic'), { field: 'chatIn', onDone: () => sendChat() });
+  setup($('chatMic'), { field: 'chatIn', onDone: () => { replyByVoice = true; sendChat(); } });
+  $('chatMic').addEventListener('click', unlockSpeech);
 }
+
+$('chatLog').addEventListener('click', e => {
+  const b = e.target.closest('[data-say]'); if (!b) return;
+  const i = +b.dataset.say;
+  if (speakingIdx === i){ speechSynthesis.cancel(); speakingIdx = -1; renderChat(); return; }
+  speak(chat[i] && chat[i].content, i);
+});
+if (canSpeak) speechSynthesis.getVoices();
 
 /* ---------- boot ---------- */
 applyLang();
