@@ -172,7 +172,9 @@ body[data-mode=food] main{padding-bottom:40px}
 .tile .deal b{background:var(--sun);color:#26213A;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .tile .deal small{display:block;font-weight:600;opacity:.7;margin-top:2px}
 .tile .nodeal{font-size:12px;opacity:.6;margin:-4px 0 8px}
-.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dgrid{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 6px;scrollbar-width:none}
+.dgrid::-webkit-scrollbar{display:none}
+.dgrid .dcat{flex:none;width:118px;min-height:140px}
 .dcat{background:#fff;border:1.5px solid #ECE6DC;border-radius:12px;padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;color:#26213A;font-size:14px;font-weight:500;line-height:1.25;text-align:center;min-height:150px}
 .dcat .im{width:100%;height:86px;display:grid;place-items:center;font-size:52px;overflow:hidden}
 .dcat .im img{max-width:100%;max-height:86px;object-fit:contain}
@@ -864,7 +866,7 @@ const TYPES = [
   ['diapers','baby','👶','حفاضات','Diapers',/diaper|nappy|nappies|pampers|huggies|molfix|baby joy|حفاض|حفاظ/i],
   ['wipes','baby','🧻','مناديل مبللة','Wet wipes',/wipes|مبلل/i],
   ['perfume','personal','🌸','عطور ومزيلات','Perfume & deodorant',/perfume|edt|edp|eau de|deodorant|antiperspirant|body spray|عطر|مزيل|بخاخ جسم/i],
-  ['hair','personal','💇','شامبو والعناية بالشعر','Hair care',/shampoo|conditioner|hair|شامبو|بلسم|شعر/i],
+  ['hair','personal','💇','شامبو والعناية بالشعر','Hair care',/shampoo|conditioner|hair|creamsilk|cream silk|parachute|شامبو|بلسم|شعر/i],
   ['soap','personal','🧼','صابون وشاور','Soap & shower',/soap|body wash|shower|hand wash|صابون|شاور|غسول/i],
   ['oral','personal','🪥','العناية بالأسنان','Oral care',/tooth|mouthwash|colgate|signal|sensodyne|أسنان|اسنان|معجون اسنان/i],
   ['skin','personal','🧴','العناية بالبشرة','Skin care',/beauty|lotion|vaseline|nivea|dove|skin|face|hand cream|body cream|sunscreen|لوشن|بشرة|كريم للوجه|واقي/i],
@@ -965,8 +967,11 @@ function renderOffers(){
   const tys = Object.keys(SECS).flatMap(sk => TYPES.filter(ty => ty[1] === sk && count[ty[0]]));
   const deals = offers.filter(o => o.oldPrice && o.oldPrice > o.price).sort((x, y) => (1 - y.price / y.oldPrice) - (1 - x.price / x.oldPrice)).slice(0, 15);
   $('catGrid').innerHTML = '';
-  $('offerList').innerHTML = (deals.length ? `<div class="h2b">${esc(t('bigDeals'))}</div><div class="drow">${deals.map(o => dprod(o)).join('')}</div>` : '') +
-    `<div class="h2b">${esc(t('shopByCat'))}</div><div class="dgrid">${tys.map(ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] ? photo(pic[ty[0]]) : ty[2]}</span>${esc(tl(ty))}<small>${count[ty[0]]} ${esc(t('offersN'))}</small></button>`).join('')}</div>`;
+  const disc = o => o.oldPrice && o.oldPrice > o.price ? 1 - o.price / o.oldPrice : 0;
+  const secRows = Object.keys(SECS).map(sk => [sk, offers.filter(o => typeOf(o)[1] === sk).sort((x, y) => disc(y) - disc(x)).slice(0, 12)]).filter(x => x[1].length);
+  $('offerList').innerHTML = `<div class="h2b">${esc(t('shopByCat'))}</div><div class="dgrid">${tys.map(ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] && /sharjahcoop/.test(pic[ty[0]].image) ? photo(pic[ty[0]]) : ty[2]}</span>${esc(tl(ty))}<small>${count[ty[0]]} ${esc(t('offersN'))}</small></button>`).join('')}</div>` +
+    (deals.length ? `<div class="h2b">${esc(t('bigDeals'))}</div><div class="drow">${deals.map(o => dprod(o)).join('')}</div>` : '') +
+    secRows.map(([sk, list]) => `<div class="h2b">${SECS[sk][0]} ${esc(lang === 'ar' ? SECS[sk][1] : SECS[sk][2])}</div><div class="drow">${list.map(o => dprod(o)).join('')}</div>`).join('');
 }
 $('offQ').oninput = e => { offQ = e.target.value; offType = ''; renderOffers(); };
 document.addEventListener('click', e => {
