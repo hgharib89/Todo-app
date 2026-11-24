@@ -3,90 +3,93 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#D7261E">
+<meta name="theme-color" content="#F2F2F7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="وفرلي">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="icon" type="image/png" href="icons/icon-192.png">
 <title>وفرلي | Wafrly</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* VOICE: a friendly neighbourhood-flyer voice — quick, clear, money-first.
-   IDEA: the app behaves like a supermarket promo flyer: red band, yellow price tags.
-   PICTURE: the working list + price tags are the picture; prices sit in tag shapes.
-   COLOUR and TYPE: flyer red #D7261E, tag yellow #FFD23F, ink; Cairo 800 for prices.
-   LAYOUT: one phone-width column, red header band, bottom tab bar. */
+/* VOICE: calm and clear, like a well-made system app: the price is the only thing that shouts.
+   IDEA: an iOS grouped list: white cards on a soft grey ground, one green for "you save".
+   PICTURE: the list and the price rows are the picture; product photos sit in rounded squares.
+   COLOUR and TYPE: system grey ground, white cards, one green accent; SF / IBM Plex Sans Arabic.
+   LAYOUT: one phone-width column, large title, segmented controls, translucent tab bar. */
 :root{color-scheme:light dark;
---bg:light-dark(#F6F4F1,#141211);--card:light-dark(#FFFFFF,#1F1C1A);--ink:light-dark(#1D1A17,#F3EFEA);
---muted:light-dark(#6E675F,#A8A097);--line:light-dark(#E7E2DB,#34302C);--red:#D7261E;--redSoft:light-dark(#FCE6E4,#3A1A18);
---tag:#FFD23F;--tagInk:#1D1A17;--green:light-dark(#127A4B,#4CC38A)}
+--bg:light-dark(#F2F2F7,#000000);--card:light-dark(#FFFFFF,#1C1C1E);--ink:light-dark(#111111,#F5F5F7);
+--muted:light-dark(#8A8A8E,#98989F);--line:light-dark(#E5E5EA,#2C2C2E);--fill:light-dark(#EDEDF0,#2C2C2E);
+--accent:light-dark(#178A54,#30C77B);--accentSoft:light-dark(#E7F5EE,#163826);--onAccent:#FFFFFF;--rec:#FF3B30}
 :root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
 *{box-sizing:border-box;min-width:0}
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Cairo,Tahoma,sans-serif;overflow-x:clip}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 -apple-system,BlinkMacSystemFont,"SF Arabic","SF Pro Text","IBM Plex Sans Arabic","Segoe UI",Tahoma,sans-serif;overflow-x:clip;-webkit-font-smoothing:antialiased}
 button,input,select,textarea{font:inherit;color:inherit}
 .app{max-width:560px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
-header{background:var(--red);color:#fff;padding:calc(18px + env(safe-area-inset-top)) 18px 22px;display:flex;align-items:center;gap:12px}
-header h1{margin:0;font-size:32px;line-height:1.05;font-weight:800}
-header h1 span{font-size:22px;font-weight:700;opacity:.85}
-header p{margin:2px 0 0;font-size:14px;opacity:.9}
-.hside{margin-inline-start:auto;display:flex;flex-direction:column;align-items:center;gap:6px;flex:none}
-.lang{min-height:36px;border:2px solid #fff;background:transparent;color:#fff;border-radius:18px;padding:0 14px;font-weight:800;cursor:pointer}
-main{flex:1;padding:16px 16px 96px}
+header{padding:calc(14px + env(safe-area-inset-top)) 20px 6px;display:flex;align-items:flex-end;gap:12px}
+header h1{margin:0;font-size:34px;line-height:1.1;font-weight:700;letter-spacing:-.01em}
+header h1 span{font-size:17px;font-weight:600;color:var(--muted);margin-inline-start:6px}
+header p{margin:4px 0 0;font-size:15px;color:var(--muted)}
+.hside{margin-inline-start:auto;display:flex;align-items:center;gap:8px;flex:none;padding-bottom:4px}
+.hside svg{display:none}
+.lang{min-height:34px;border:0;background:var(--fill);color:var(--ink);border-radius:17px;padding:0 14px;font-size:14px;font-weight:600;cursor:pointer}
+main{flex:1;padding:12px 16px 104px}
 .view{display:none}.view.on{display:block}
-h2{font-size:20px;margin:4px 0 10px;font-weight:800}
-.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+h2{font-size:22px;margin:20px 4px 10px;font-weight:700;letter-spacing:-.01em}
+.card{background:var(--card);border-radius:16px;padding:14px 16px;margin-bottom:10px}
 .muted{color:var(--muted);font-size:14px}
-.note{background:var(--redSoft);border-radius:12px;padding:10px 12px;font-size:14px;margin-bottom:12px}
-textarea,input,select{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:16px}
-textarea{min-height:56px;resize:vertical}
-:focus-visible{outline:3px solid var(--tag);outline-offset:2px}
+.note{background:var(--card);border-radius:14px;padding:12px 14px;font-size:14px;color:var(--muted);margin-bottom:12px}
+textarea,input,select{width:100%;background:var(--card);border:0;border-radius:14px;padding:13px 14px;font-size:16px;outline:none}
+textarea{min-height:52px;resize:vertical}
+input::placeholder,textarea::placeholder{color:var(--muted)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+label.muted{display:block;margin:0 4px 6px}
 .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.btn{min-height:46px;border:0;border-radius:12px;padding:0 16px;font-weight:700;cursor:pointer;background:var(--redSoft);color:var(--red)}
-.btn.main{background:var(--red);color:#fff;width:100%;font-size:17px;margin-top:12px}
+.btn{min-height:44px;border:0;border-radius:12px;padding:0 16px;font-weight:600;cursor:pointer;background:var(--accentSoft);color:var(--accent);font-size:15px}
+.btn.main{background:var(--accent);color:var(--onAccent);width:100%;font-size:17px;min-height:52px;border-radius:14px;margin-top:14px}
 .btn[disabled]{opacity:.5;cursor:default}
 .grow{flex:1}
-.item{display:flex;align-items:center;gap:8px}
-.item .name{flex:1;font-weight:600}
-.qty{display:flex;align-items:center;gap:4px}
-.qty button,.x{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:transparent;cursor:pointer;font-weight:700}
-.x{color:var(--red);border-color:transparent}
-.tag{display:inline-flex;align-items:center;background:var(--tag);color:var(--tagInk);font-weight:800;border-radius:8px 4px 4px 8px;padding:2px 10px 2px 8px;white-space:nowrap}
-.tag::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--card);margin-inline-end:6px}
+.item{display:flex;align-items:center;gap:12px}
+.item .name{flex:1;font-weight:500}
+.qty{display:flex;align-items:center;gap:2px;background:var(--fill);border-radius:10px;padding:2px}
+.qty b{min-width:22px;text-align:center;font-weight:600}
+.qty button{width:32px;height:32px;border-radius:8px;border:0;background:transparent;cursor:pointer;font-size:18px;color:var(--ink)}
+.x{width:32px;height:32px;border-radius:16px;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px}
+.tag{display:inline-flex;align-items:center;color:var(--accent);font-weight:700;white-space:nowrap;font-size:17px}
 .old{text-decoration:line-through;color:var(--muted);font-size:13px;white-space:nowrap}
-.big{font-size:clamp(30px,8vw,40px);font-weight:800;line-height:1.1}
-.tabs{display:flex;gap:6px;margin-bottom:12px}
-.tabs button{flex:1;min-height:44px;border-radius:10px;border:0;background:var(--redSoft);color:var(--red);font-weight:700;cursor:pointer}
-.tabs button.on{background:var(--red);color:#fff}
-.line{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px dashed var(--line)}
+.big{font-size:clamp(32px,9vw,42px);font-weight:700;line-height:1.1;letter-spacing:-.02em;color:var(--ink);margin:4px 0}
+.tabs{display:flex;gap:0;margin-bottom:14px;background:var(--fill);border-radius:10px;padding:2px}
+.tabs button{flex:1;min-height:34px;border-radius:8px;border:0;background:transparent;color:var(--ink);font-weight:500;font-size:14px;cursor:pointer}
+.tabs button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12);font-weight:600}
+.line{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}
 .line:first-of-type{border-top:0}
-.save{color:var(--green);font-weight:700}
-nav{position:fixed;bottom:0;inset-inline:0;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
+.save{color:var(--accent);font-weight:600}
+nav{position:fixed;bottom:0;inset-inline:0;background:light-dark(rgba(249,249,249,.86),rgba(22,22,24,.86));-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);border-top:.5px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom)}
 nav .in{display:flex;max-width:560px;width:100%}
-nav button{flex:1;min-height:62px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-weight:700;font-size:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
-nav button.on{color:var(--red)}
-nav svg{width:22px;height:22px}
-.bubble{max-width:88%;padding:10px 12px;border-radius:14px;margin-bottom:8px;white-space:pre-wrap}
-.bubble.me{background:var(--redSoft);margin-inline-start:auto}
-.bubble.ai{background:var(--card);border:1px solid var(--line)}
-.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--red);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
+nav button{flex:1;min-height:56px;border:0;background:transparent;cursor:pointer;color:var(--muted);font-weight:500;font-size:11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+nav button.on{color:var(--accent)}
+nav svg{width:24px;height:24px}
+.bubble{max-width:86%;padding:10px 14px;border-radius:18px;margin-bottom:8px;white-space:pre-wrap;line-height:1.45}
+.bubble.me{background:var(--accent);color:var(--onAccent);margin-inline-start:auto;border-end-start-radius:6px}
+.bubble.ai{background:var(--card);border-end-end-radius:6px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:s 1s linear infinite;vertical-align:middle}
 @keyframes s{to{transform:rotate(360deg)}}
 @media (prefers-reduced-motion:reduce){.spin{animation:none}}
-.store{font-weight:800;margin:14px 0 6px}
-.empty{text-align:center;padding:30px 10px;color:var(--muted)}
-.mic.on{background:var(--red);color:#fff}
-.thumb{width:56px;height:56px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:#fff;border:1px solid var(--line)}
+.store{font-weight:600;margin:18px 4px 8px;font-size:15px;color:var(--muted)}
+.empty{text-align:center;padding:36px 12px;color:var(--muted)}
+.thumb{width:52px;height:52px;flex:none;border-radius:12px;overflow:hidden;position:relative;background:#fff}
 .thumb img{position:absolute;max-width:none;left:0;top:0;opacity:0;transition:opacity .2s}
 .thumb img.ok{opacity:1}
-.rowi{display:flex;gap:10px;align-items:center}
-.say{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:36px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;font-size:16px}
-.say.on{background:var(--redSoft);border-color:var(--red)}
-.vlang{padding:0 10px;min-width:44px;font-weight:800}
+.rowi{display:flex;gap:12px;align-items:center}
+.say{display:inline-flex;align-items:center;justify-content:center;min-width:40px;min-height:32px;margin-top:6px;border:0;border-radius:16px;background:var(--fill);cursor:pointer;font-size:15px}
+.say.on{background:var(--accentSoft)}
+.vlang{padding:0 10px;min-width:44px;font-weight:700;background:var(--fill);color:var(--ink)}
 .mic{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
-.mic.on{transform:scale(1.08)}
+.mic.on{background:var(--rec);color:#fff;transform:scale(1.06)}
 </style>
 </head>
 <body>
@@ -97,7 +100,6 @@ nav svg{width:22px;height:22px}
     <p data-i="tagline"></p>
   </div>
   <div class="hside">
-    <svg width="54" height="54" viewBox="0 0 64 64" aria-hidden="true"><path d="M8 30 30 8h22a4 4 0 0 1 4 4v22L34 56a4 4 0 0 1-6 0L8 36a4 4 0 0 1 0-6z" fill="#FFD23F"/><path d="M8 30 30 8h8L14 36z" fill="#fff" opacity=".35"/><circle cx="44" cy="20" r="5" fill="#D7261E"/><text x="30" y="40" font-family="Cairo" font-weight="800" font-size="15" fill="#1D1A17" text-anchor="middle" transform="rotate(-45 30 36)">%</text></svg>
     <button class="lang" id="langBtn"></button>
   </div>
 </header>
@@ -129,7 +131,7 @@ nav svg{width:22px;height:22px}
       <input id="chatIn" class="grow" data-ph="askPh" autocomplete="off">
       <button class="btn vlang" hidden aria-label="voice language"></button>
       <button class="btn mic" id="chatMic" hidden data-i="micShort"></button>
-      <button class="btn" id="chatSend" style="background:var(--red);color:#fff" data-i="send"></button>
+      <button class="btn" id="chatSend" style="background:var(--accent);color:var(--onAccent)" data-i="send"></button>
       </div>
     </div>
   </section>
