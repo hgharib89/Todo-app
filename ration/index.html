@@ -85,6 +85,8 @@ nav svg{width:22px;height:22px}
 .say{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:36px;margin-top:6px;border:1px solid var(--line);border-radius:10px;background:transparent;cursor:pointer;font-size:16px}
 .say.on{background:var(--redSoft);border-color:var(--red)}
 .vlang{padding:0 10px;min-width:44px;font-weight:800}
+.mic{user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:none}
+.mic.on{transform:scale(1.08)}
 </style>
 </head>
 <body>
@@ -121,11 +123,14 @@ nav svg{width:22px;height:22px}
 
   <section class="view" id="v-chat">
     <div id="chatLog"></div>
-    <div class="row" style="position:sticky;bottom:76px;background:var(--bg);padding-top:8px">
+    <div style="position:sticky;bottom:70px;background:var(--bg);padding-top:8px">
+      <div id="chatHint" class="muted" style="min-height:20px;margin-bottom:4px"></div>
+      <div class="row">
       <input id="chatIn" class="grow" data-ph="askPh" autocomplete="off">
       <button class="btn vlang" hidden aria-label="voice language"></button>
       <button class="btn mic" id="chatMic" hidden data-i="micShort"></button>
       <button class="btn" id="chatSend" style="background:var(--red);color:#fff" data-i="send"></button>
+      </div>
     </div>
   </section>
 
@@ -201,6 +206,7 @@ ar: {
   del: 'حذف', inc: 'زيادة', dec: 'نقص', cur: 'د.إ', sep: '، ',
   adminLogin: 'دخول المشرف', adminLoginHint: 'لإضافة العروض من البروشورات. المستخدم العادي ما يحتاج يسجل.',
   emailPh: 'البريد الإلكتروني', passPh: 'كلمة السر (٨ أحرف أو أكثر)', login: 'دخول', signup: 'حساب جديد', logout: 'خروج',
+  micHolding: '🔴 أسمعك...', holdHint: 'اضغط مطولاً على 🎤 وتكلم، وارفع إصبعك للإرسال', slideCancel: 'ارفع إصبعك للإرسال، أو اسحبه برا الزر للإلغاء', cancelled: 'انلغى التسجيل',
   listen: 'استمع', micShort: '🎤', listeningNow: 'أسمعك... تكلم', micDenied: 'اسمح للتطبيق باستخدام المايكروفون من إعدادات المتصفح.',
   loggedAs: e => `مسجل باسم ${e}`, checkEmail: 'أرسلنا لك رابط تأكيد على بريدك. أكّده وبعدها ادخل.', loginFail: 'البريد أو كلمة السر غلط.',
   notAdmin: 'هذا الحساب مب مشرف.'
@@ -233,6 +239,7 @@ en: {
   del: 'Delete', inc: 'More', dec: 'Less', cur: 'AED', sep: ', ',
   adminLogin: 'Admin sign-in', adminLoginHint: 'To add offers from flyers. Shoppers do not need an account.',
   emailPh: 'Email', passPh: 'Password (8+ characters)', login: 'Sign in', signup: 'Create account', logout: 'Sign out',
+  micHolding: '🔴 Listening...', holdHint: 'Hold 🎤 and talk, release to send', slideCancel: 'Release to send, slide off to cancel', cancelled: 'Recording cancelled',
   listen: 'Listen', micShort: '🎤', listeningNow: 'Listening... speak now', micDenied: 'Allow microphone access in your browser settings.',
   loggedAs: e => `Signed in as ${e}`, checkEmail: 'We sent a confirmation link to your email. Confirm it, then sign in.', loginFail: 'Wrong email or password.',
   notAdmin: 'This account is not an admin.'
@@ -684,36 +691,63 @@ function browserVoice(){
   // one recogniser at a time; each button says where the words go and what happens at the end
   let rec = null, active = null;
   const stop = () => { try { rec && rec.stop(); } catch {} };
+  // WhatsApp-style: hold to talk, release to send, slide off the button to cancel
   const setup = (btn, opts) => {
     btn.hidden = false;
     const idle = () => { btn.classList.remove('on'); btn.textContent = btn.id === 'micBtn' ? t('mic') : t('micShort'); };
+    const note = text => { const el = $(opts.msg); if (el) el.textContent = text; };
     idle();
-    btn.onclick = () => {
-      if (active === btn){ stop(); return; }
+    let field, before = '', finalText = '', cancelled = false, holding = false, pressedAt = 0, x0 = 0, y0 = 0;
+    btn.addEventListener('contextmenu', e => e.preventDefault());
+    btn.addEventListener('pointerdown', e => {
+      e.preventDefault();
+      try { btn.setPointerCapture(e.pointerId); } catch {}
+      x0 = e.clientX; y0 = e.clientY;
+      unlockSpeech();
       stop();
+      holding = true; cancelled = false; pressedAt = Date.now(); finalText = '';
+      field = $(opts.field); before = field.value;
       rec = new SR();
       rec.lang = voiceLang === 'ar' ? 'ar-AE' : 'en-US';
-      rec.interimResults = true; rec.continuous = btn.id === 'micBtn';
-      const field = $(opts.field), start = field.value;
-      let finalText = '';
-      rec.onresult = e => {
+      rec.interimResults = true; rec.continuous = true;
+      rec.onresult = ev => {
+        if (cancelled) return;
         let interim = '';
-        for (let i = e.resultIndex; i < e.results.length; i++){
-          if (e.results[i].isFinal) finalText += (finalText ? ' ' : '') + e.results[i][0].transcript.trim();
-          else interim += e.results[i][0].transcript;
+        for (let i = ev.resultIndex; i < ev.results.length; i++){
+          if (ev.results[i].isFinal) finalText += (finalText ? ' ' : '') + ev.results[i][0].transcript.trim();
+          else interim += ev.results[i][0].transcript;
         }
         const said = (finalText + (interim ? ' ' + interim : '')).trim();
-        field.value = opts.append && start ? start + t('sep') + said : said;
+        field.value = opts.append && before ? before + t('sep') + said : said;
       };
-      rec.onerror = e => { if (e.error === 'not-allowed' || e.error === 'service-not-allowed'){ (opts.msg ? $(opts.msg) : null) && ($(opts.msg).textContent = t('micDenied')); } };
-      rec.onend = () => { active = null; idle(); listening = false; field.placeholder = t(field.dataset.ph); if (opts.onDone && finalText) opts.onDone(); };
-      try { rec.start(); active = btn; listening = btn.id === 'micBtn'; btn.classList.add('on'); btn.textContent = t('micStop'); field.placeholder = t('listeningNow'); }
-      catch { active = null; idle(); }
+      rec.onerror = ev => { if (ev.error === 'not-allowed' || ev.error === 'service-not-allowed') note(t('micDenied')); };
+      rec.onend = () => {
+        active = null; listening = false; idle(); field.placeholder = t(field.dataset.ph);
+        if (cancelled){ field.value = before; return; }
+        if (finalText) opts.onDone();
+      };
+      try { rec.start(); active = btn; listening = true; btn.classList.add('on'); btn.textContent = t('micHolding'); field.placeholder = t('listeningNow'); note(t('slideCancel')); }
+      catch { holding = false; idle(); }
+    });
+    const release = cancel => () => {
+      if (!holding) return;
+      holding = false;
+      const tooShort = Date.now() - pressedAt < 400;
+      if (cancel || tooShort){
+        cancelled = true;
+        try { rec.abort(); } catch { stop(); }
+        note(tooShort && !cancel ? t('holdHint') : t('cancelled'));
+        return;
+      }
+      note('');
+      stop();
     };
+    btn.addEventListener('pointermove', e => { if (holding && Math.hypot(e.clientX - x0, e.clientY - y0) > 70) release(true)(); });
+    btn.addEventListener('pointerup', release(false));
+    btn.addEventListener('pointercancel', release(true));
   };
-  setup($('micBtn'), { field: 'draft', append: true, msg: 'listBusy' });
-  setup($('chatMic'), { field: 'chatIn', onDone: () => { replyByVoice = true; sendChat(); } });
-  $('chatMic').addEventListener('click', unlockSpeech);
+  setup($('micBtn'), { field: 'draft', append: true, msg: 'listBusy', onDone: () => $('addBtn').click() });
+  setup($('chatMic'), { field: 'chatIn', msg: 'chatHint', onDone: () => { replyByVoice = true; sendChat(); } });
 }
 
 $('chatLog').addEventListener('click', e => {
