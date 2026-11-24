@@ -172,6 +172,30 @@ body[data-mode=food] main{padding-bottom:40px}
 .tile .deal b{background:var(--sun);color:#26213A;border-radius:999px;padding:1px 8px;white-space:nowrap}
 .tile .deal small{display:block;font-weight:600;opacity:.7;margin-top:2px}
 .tile .nodeal{font-size:12px;opacity:.6;margin:-4px 0 8px}
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.dcat{background:#fff;border:1.5px solid #ECE6DC;border-radius:12px;padding:10px 6px 12px;display:flex;flex-direction:column;align-items:center;gap:8px;cursor:pointer;color:#26213A;font-size:14px;font-weight:500;line-height:1.25;text-align:center;min-height:150px}
+.dcat .im{width:100%;height:86px;display:grid;place-items:center;font-size:52px;overflow:hidden}
+.dcat .im img{max-width:100%;max-height:86px;object-fit:contain}
+.dcat .im .thumb{width:86px;height:86px;border-radius:8px}
+.dcat small{color:#8A8597;font-size:11px}
+.h2b{font-size:22px;font-weight:800;margin:18px 2px 12px;display:flex;justify-content:space-between;align-items:center}
+.h2b button{border:0;background:none;color:var(--coral);font-size:24px;cursor:pointer}
+.drow{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:0 16px 6px;scrollbar-width:none}
+.drow::-webkit-scrollbar{display:none}
+.dprod{background:#fff;border:1.5px solid #ECE6DC;border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative;color:#26213A}
+.drow .dprod{flex:none;width:150px}
+.dprods{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.dprod .im{height:120px;display:grid;place-items:center;overflow:hidden;font-size:54px;border-radius:8px}
+.dprod .im img.p{max-width:100%;max-height:120px;object-fit:contain}
+.dprod .im .thumb{width:110px;height:110px}
+.dprod .pn{font-size:14px;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:36px}
+.dprod .pr{font-weight:800;font-size:16px}
+.dprod .pr .old{font-weight:500;margin-inline-start:6px}
+.dprod .st{font-size:12px;color:#8A8597}
+.dprod .addp{position:absolute;top:92px;inset-inline-end:8px;width:36px;height:36px;font-size:22px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.dprod .off{position:absolute;top:8px;inset-inline-start:8px;background:var(--coral);color:#fff;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:800}
+.dprod .best{position:absolute;top:8px;inset-inline-end:8px}
+.dprod .x{position:absolute;top:36px;inset-inline-start:8px;background:#fff}
 .dish h3{margin:0;font-size:19px;font-weight:800}
 .dish .emo{font-size:40px;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;flex:none}
 .cheap{background:var(--dark);color:#fff;border-radius:18px;padding:12px 14px;margin:12px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -302,7 +326,7 @@ ar: {
   chatOff: 'المساعد غير متاح في هذا العرض.',
   addOffers: 'إضافة عروض من بروشور', addOffersHint: 'صوّر البروشور أو حمّل صوره، والمساعد يقرأ المنتجات والأسعار.',
   store: 'المحل', storePh: 'مثال: جمعية الشارقة التعاونية', validUntil: 'العرض ساري لين (اختياري)', pickFlyer: 'اختر صور البروشور',
-  savedOffers: 'العروض', cheapestTag: 'الأرخص', sortedCheap: 'مرتبة من الأرخص للأغلى، اضغط + عشان تضيفه لسلتك', addToList: 'أضف للسلة', offSearch: 'شو تبي؟ ماي، حليب، رز…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
+  savedOffers: 'العروض', cheapestTag: 'الأرخص', bigDeals: 'أكبر الخصومات', shopByCat: 'تسوّق حسب القسم', offersN: 'عرض', sortedCheap: 'مرتبة من الأرخص للأغلى، اضغط + عشان تضيفه لسلتك', addToList: 'أضف للسلة', offSearch: 'شو تبي؟ ماي، حليب، رز…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
   foundN: n => `لقيت ${n} عرض — راجعها قبل الحفظ`, saveN: n => `احفظ ${n} عرض`, savingN: n => `أحفظ... ${n}`, savedN: n => `انحفظ ${n} عرض ✓`,
   full: 'المساحة امتلت، احذف عروض قديمة.', saveFail: 'ما قدرت أحفظ كل العروض.', storeFirst: 'اكتب اسم المحل أول.',
   readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
@@ -338,7 +362,7 @@ en: {
   chatOff: 'The assistant is not available in this view.',
   addOffers: 'Add offers from a flyer', addOffersHint: 'Snap or upload the flyer pages and the assistant reads products and prices.',
   store: 'Store', storePh: 'e.g. Sharjah Co-op', validUntil: 'Offer valid until (optional)', pickFlyer: 'Choose flyer photos',
-  savedOffers: 'Offers', cheapestTag: 'Cheapest', sortedCheap: 'Sorted cheapest first. Tap + to add it to your basket', addToList: 'Add to basket', offSearch: 'What do you need? Water, milk, rice…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
+  savedOffers: 'Offers', cheapestTag: 'Cheapest', bigDeals: 'Biggest discounts', shopByCat: 'Shop by category', offersN: 'offers', sortedCheap: 'Sorted cheapest first. Tap + to add it to your basket', addToList: 'Add to basket', offSearch: 'What do you need? Water, milk, rice…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
   foundN: n => `Found ${n} offers — review before saving`, saveN: n => `Save ${n} offers`, savingN: n => `Saving... ${n}`, savedN: n => `Saved ${n} offers ✓`,
   full: 'Storage is full, delete old offers.', saveFail: "Couldn't save all offers.", storeFirst: 'Enter the store name first.',
   readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
@@ -892,6 +916,18 @@ const TYPES = [
 const typeOf = o => o._ty || (o._ty = TYPES.find(c => c[5].test([o.brand, o.name].filter(Boolean).join(' '))));
 const catOf = o => typeOf(o)[1];
 let offType = '', offQ = '';
+const photo = o => (o.image && /^https:\/\/www\.sharjahcoop\.ae\/medias\//.test(o.image)) ? `<img class="p" src="${esc(o.image)}" data-emo="${typeOf(o)[2]}" alt="" loading="lazy" referrerpolicy="no-referrer">` : (thumb(o) || typeOf(o)[2]);
+document.addEventListener('error', e => { const im = e.target; if (im instanceof HTMLImageElement && im.dataset.emo) im.replaceWith(document.createTextNode(im.dataset.emo)); }, true);
+function dprod(o, cheapest){
+  const pct = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
+  return `<div class="dprod"><div class="im">${photo(o)}</div>
+    ${pct ? `<span class="off">-${pct}٪</span>` : ''}${cheapest ? `<span class="best">${esc(t('cheapestTag'))}</span>` : ''}
+    <button class="addp" data-add="${esc(o.id)}" aria-label="${esc(t('addToList'))}">+</button>
+    <div class="pr">${aed(o.price)}${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}</div>
+    <div class="pn">${esc(offerText(o))}</div>
+    <div class="st">${esc(storeName(o.store))}${o.source === 'demo' ? ' · ' + esc(t('demo')) : ''}</div>
+    ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`;
+}
 function prow(o, cheapest){
   const pct = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
   return `<div class="card prw">
@@ -920,14 +956,17 @@ function renderOffers(){
       list = offers.filter(o => hit.includes(typeOf(o)) || norm(offerText(o) + ' ' + o.store).includes(q)); head = `🔎 ${esc(offQ.trim())}`; }
     list = byPrice(list);
     $('offerList').innerHTML = `<div class="sechead"><b>${head} <span class="muted">(${list.length})</span></b><button data-type="">${esc(t('back'))}</button></div>` +
-      (list.length ? `<p class="muted" style="margin:0 4px 8px">${esc(t('sortedCheap'))}</p>` + list.map((o, i) => prow(o, i === 0)).join('') : `<div class="empty">${esc(t('noMatch'))}</div>`);
+      (list.length ? `<p class="muted" style="margin:0 4px 10px">${esc(t('sortedCheap'))}</p><div class="dprods">` + list.map((o, i) => dprod(o, i === 0)).join('') + '</div>' : `<div class="empty">${esc(t('noMatch'))}</div>`);
     return;
   }
-  const count = {}; offers.forEach(o => { const k = typeOf(o)[0]; count[k] = (count[k] || 0) + 1; });
-  const secs = Object.keys(SECS).map(sk => [sk, TYPES.filter(ty => ty[1] === sk && count[ty[0]])]).filter(x => x[1].length);
+  const count = {}, pic = {}; offers.forEach(o => { const k = typeOf(o)[0]; count[k] = (count[k] || 0) + 1;
+    if (o.image && /^https:\/\/www\.sharjahcoop\.ae\/medias\//.test(o.image) && !pic[k]) pic[k] = o; });
+  offers.forEach(o => { const k = typeOf(o)[0]; if (!pic[k] && thumb(o)) pic[k] = o; });
+  const tys = Object.keys(SECS).flatMap(sk => TYPES.filter(ty => ty[1] === sk && count[ty[0]]));
+  const deals = offers.filter(o => o.oldPrice && o.oldPrice > o.price).sort((x, y) => (1 - y.price / y.oldPrice) - (1 - x.price / x.oldPrice)).slice(0, 15);
   $('catGrid').innerHTML = '';
-  $('offerList').innerHTML = secs.map(([sk, tys], si) => `<div class="sechead"><b>${SECS[sk][0]} ${esc(lang === 'ar' ? SECS[sk][1] : SECS[sk][2])}</b></div>
-    <div class="catgrid">${tys.map(ty => `<button class="cat" data-type="${ty[0]}" style="background:var(${TINTS[si % 6]})"><i>${ty[2]}</i>${esc(tl(ty))}<small>${count[ty[0]]}</small></button>`).join('')}</div>`).join('');
+  $('offerList').innerHTML = (deals.length ? `<div class="h2b">${esc(t('bigDeals'))}</div><div class="drow">${deals.map(o => dprod(o)).join('')}</div>` : '') +
+    `<div class="h2b">${esc(t('shopByCat'))}</div><div class="dgrid">${tys.map(ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] ? photo(pic[ty[0]]) : ty[2]}</span>${esc(tl(ty))}<small>${count[ty[0]]} ${esc(t('offersN'))}</small></button>`).join('')}</div>`;
 }
 $('offQ').oninput = e => { offQ = e.target.value; offType = ''; renderOffers(); };
 document.addEventListener('click', e => {
