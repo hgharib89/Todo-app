@@ -78,6 +78,10 @@ nav svg{width:22px;height:22px}
 .store{font-weight:800;margin:14px 0 6px}
 .empty{text-align:center;padding:30px 10px;color:var(--muted)}
 .mic.on{background:var(--red);color:#fff}
+.thumb{width:56px;height:56px;flex:none;border-radius:10px;overflow:hidden;position:relative;background:#fff;border:1px solid var(--line)}
+.thumb img{position:absolute;max-width:none;left:0;top:0;opacity:0;transition:opacity .2s}
+.thumb img.ok{opacity:1}
+.rowi{display:flex;gap:10px;align-items:center}
 </style>
 </head>
 <body>
@@ -270,7 +274,7 @@ function supaDb(){
     const { data, error } = await sb.from('offers').select('*').order('created_at');
     if (error) { subs.forEach(s => s.err && s.err(error)); return; }
     const snap = { metadata: { fromCache: false }, docs: data.map(r => ({ id: r.id, data: () => ({ store: r.store, name: r.name, brand: r.brand, size: r.size,
-      price: +r.price, oldPrice: r.old_price != null ? +r.old_price : null, until: r.until, source: r.source }) })) };
+      price: +r.price, oldPrice: r.old_price != null ? +r.old_price : null, until: r.until, source: r.source, image: r.image || null, box: r.box || null }) })) };
     subs.forEach(s => s.next(snap));
   };
   const reload = () => { clearTimeout(t); t = setTimeout(load, 300); };
@@ -379,7 +383,7 @@ function costFor(basket, stores){
     if (!opts.length){ missing.push(it.text); continue; }
     const o = opts.reduce((a, b) => b.price < a.price ? b : a);
     covered++; total += o.price * it.quantity;
-    lines.push({ item: it.text, qty: it.quantity, store: o.store, price: o.price, total: o.price * it.quantity, until: o.until });
+    lines.push({ item: it.text, qty: it.quantity, store: o.store, price: o.price, total: o.price * it.quantity, until: o.until, image: o.image, box: o.box });
   }
   return { stores, total: Math.round(total * 100) / 100, covered, missing, lines };
 }
@@ -394,10 +398,26 @@ function buildReport(basket){
   const perItem = basket.map(it => {
     if (!it.offers.length) return { item: it.text, qty: it.quantity, found: false };
     const o = it.offers.reduce((a, b) => b.price < a.price ? b : a);
-    return { item: it.text, qty: it.quantity, found: true, store: o.store, price: o.price, old: o.oldPrice, total: o.price * it.quantity, until: o.until, name: offerText(o) };
+    return { item: it.text, qty: it.quantity, found: true, store: o.store, price: o.price, old: o.oldPrice, total: o.price * it.quantity, until: o.until, name: offerText(o), image: o.image, box: o.box };
   });
   return { single, best, perItem, count: basket.length };
 }
+
+/* ---------- product images: a crop of the flyer page ---------- */
+const thumb = o => (o && o.image && /^https:\/\/cdn\.clicflyer\.net\//.test(o.image) && o.box)
+  ? `<span class="thumb"><img class="crop" src="${esc(o.image)}" data-box="${o.box.map(n => +n).join(',')}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>` : '';
+document.addEventListener('load', e => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || !img.classList.contains('crop')) return;
+  const [x0, y0, x1, y1] = img.dataset.box.split(',').map(n => +n / 1000);
+  const W = img.naturalWidth, H = img.naturalHeight, T = img.parentElement.clientWidth || 56;
+  const w = (x1 - x0) * W, hgt = (y1 - y0) * H, k = T / Math.max(w, hgt);
+  img.style.width = W * k + 'px';
+  img.style.left = (-x0 * W * k + (T - w * k) / 2) + 'px';
+  img.style.top = (-y0 * H * k + (T - hgt * k) / 2) + 'px';
+  img.classList.add('ok');
+}, true);
+document.addEventListener('error', e => { const img = e.target; if (img instanceof HTMLImageElement && img.classList.contains('crop')) img.parentElement.remove(); }, true);
 
 /* ---------- list ---------- */
 function renderList(){
@@ -489,12 +509,12 @@ function renderResults(){
       <div class="big">${aed(r.best.total)}</div>
       ${r.best.saving > 0 ? `<div class="save">${esc(t('saving', aed(r.best.saving)))}</div>` : ''}
       ${r.best.missing.length ? `<div class="muted">${esc(t('notFound'))}: ${r.best.missing.map(esc).join(sep)}</div>` : ''}</div>
-      <div class="card">${r.best.lines.map(l => `<div class="line"><span>${esc(l.item)} × ${l.qty}<br><span class="muted">${esc(storeName(l.store))}</span></span><span class="tag">${aed(l.total)}</span></div>`).join('')}</div>`;
+      <div class="card">${r.best.lines.map(l => `<div class="line"><span class="rowi">${thumb(l)}<span>${esc(l.item)} × ${l.qty}<br><span class="muted">${esc(storeName(l.store))}</span></span></span><span class="tag">${aed(l.total)}</span></div>`).join('')}</div>`;
   } else if (resTab === 'single'){
     h += r.single.map((s, i) => `<div class="card"><div class="line" style="border:0"><b>${i === 0 ? '⭐ ' : ''}${esc(storeName(s.stores[0]))}</b><span class="tag">${aed(s.total)}</span></div>
       <div class="muted">${esc(t('ofAvail', s.covered, r.count))}${s.missing.length ? ' · ' + esc(t('missing')) + ': ' + s.missing.map(esc).join(sep) : ''}</div></div>`).join('') || `<div class="empty">${esc(t('noResults'))}</div>`;
   } else {
-    h += r.perItem.map(p => `<div class="card"><div class="line" style="border:0"><b>${esc(p.item)} × ${p.qty}</b>${p.found ? `<span class="tag">${aed(p.total)}</span>` : `<span class="muted">${esc(t('noOffer'))}</span>`}</div>
+    h += r.perItem.map(p => `<div class="card"><div class="line" style="border:0"><span class="rowi">${thumb(p)}<b>${esc(p.item)} × ${p.qty}</b></span>${p.found ? `<span class="tag">${aed(p.total)}</span>` : `<span class="muted">${esc(t('noOffer'))}</span>`}</div>
       ${p.found ? `<div class="muted">${esc(storeName(p.store))} · ${esc(p.name)} · ${aed(p.price)} ${esc(t('each'))} ${p.old ? `<span class="old">${aed(p.old)}</span>` : ''}${p.until ? ' · ' + esc(t('until')) + ' ' + esc(p.until) : ''}</div>` : ''}</div>`).join('');
   }
   $('results').innerHTML = h;
@@ -544,7 +564,7 @@ function renderOffers(){
   if (!offers.length){ if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
   const by = {}; offers.forEach(o => (by[o.store] = by[o.store] || []).push(o));
   $('offerList').innerHTML = Object.keys(by).map(s => `<div class="store">${esc(storeName(s))} <span class="muted">(${by[s].length})</span></div>` +
-    by[s].sort((a, b) => offerText(a).localeCompare(offerText(b), 'ar')).map(o => `<div class="card item"><span class="name">${esc(offerText(o))}${o.source === 'demo' ? ` <span class="muted">· ${esc(t('demo'))}</span>` : ''}<br><span class="muted">${o.until ? esc(t('until')) + ' ' + esc(o.until) : ''}</span></span>
+    by[s].sort((a, b) => offerText(a).localeCompare(offerText(b), 'ar')).map(o => `<div class="card item">${thumb(o)}<span class="name">${esc(offerText(o))}${o.source === 'demo' ? ` <span class="muted">· ${esc(t('demo'))}</span>` : ''}<br><span class="muted">${o.until ? esc(t('until')) + ' ' + esc(o.until) : ''}</span></span>
       ${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}<span class="tag">${aed(o.price)}</span>
       ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`).join('')).join('');
 }
@@ -645,7 +665,8 @@ applyLang();
   db.collection('offers').onSnapshot(snap => {
     if (!snap.metadata.fromCache){ clearTimeout(timer); delete $('offerList').dataset.msg; }
     offers = snap.docs.map(d => { const x = d.data(); return { id: d.id, store: String(x.store || ''), name: String(x.name || ''), brand: x.brand || null, size: x.size || null,
-      price: +x.price || 0, oldPrice: +x.oldPrice || null, until: x.until || null, source: x.source || '' }; }).filter(o => o.price > 0 && o.store);
+      price: +x.price || 0, oldPrice: +x.oldPrice || null, until: x.until || null, source: x.source || '',
+      image: typeof x.image === 'string' ? x.image : null, box: Array.isArray(x.box) && x.box.length === 4 ? x.box.map(Number) : null }; }).filter(o => o.price > 0 && o.store);
     renderOffers();
   }, () => { clearTimeout(timer); offerMsg('loadFail'); });
   if (uid){

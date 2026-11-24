@@ -18,6 +18,10 @@ create table if not exists public.offers (
   created_at timestamptz not null default now()
 );
 
+-- Product photo: the flyer page image and the product's box on it (0-1000 scale), filled by the offers agent
+alter table public.offers add column if not exists image text;
+alter table public.offers add column if not exists box int[];
+
 -- Each user's saved shopping list
 create table if not exists public.lists (
   user_id    uuid primary key default auth.uid() references auth.users(id) on delete cascade,

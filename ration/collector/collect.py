@@ -29,6 +29,7 @@ SUPABASE_URL = "https://xhitpiewnqjiljnhyvit.supabase.co"
 CLICFLYER = "https://clicflyer.com/shoppers/en/oman/dubai"
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-sonnet-5-5")
 DRY_RUN = os.environ.get("DRY_RUN") == "1"
+FORCE = os.environ.get("FORCE") == "1"
 MAX_PAGES = int(os.environ.get("MAX_PAGES", "40"))
 MAX_FLYERS = int(os.environ.get("MAX_FLYERS", "1"))
 CONCURRENCY = int(os.environ.get("CONCURRENCY", "4"))
@@ -49,8 +50,10 @@ STORES = {
 
 PROMPT = """This is one page of a UAE supermarket promotional flyer. Extract every product that has a clear price.
 Return JSON only:
-{"offers":[{"name":"product name as printed (Arabic and/or English)","brand":"brand or null","size":"e.g. 2L, 1kg, 1L x 4, 30 pcs, or null","price":12.95,"original_price":15.5}]}
+{"offers":[{"name":"product name as printed (Arabic and/or English)","brand":"brand or null","size":"e.g. 2L, 1kg, 1L x 4, 30 pcs, or null","price":12.95,"original_price":15.5,"box":[x0,y0,x1,y1]}]}
 Rules:
+- box = the product's photo on the page (the picture only, not its price tag or text), as integers from 0 to 1000:
+  x0,y0 = top-left corner and x1,y1 = bottom-right corner, measured from the page's top-left (1000 = full width / height).
 - price = the promotional price the customer pays, in AED, as a number. A price printed as 12^95 or 12.95 is 12.95.
 - original_price = the crossed-out price before discount, or null.
 - Skip banners, logos, and anything without a clear price. Never invent products or prices.
@@ -162,7 +165,7 @@ def read_page(url: str) -> list[dict]:
         r.raise_for_status()
         text = "".join(b.get("text", "") for b in r.json().get("content", []) if b.get("type") == "text")
         try:
-            return parse_json(text).get("offers", [])
+            return [dict(o, _page=url) for o in parse_json(text).get("offers", [])]
         except Exception:
             log("  could not parse page", url)
             return []
@@ -184,8 +187,16 @@ def clean(o: dict, store: str, until: str | None, tag: str) -> dict | None:
     if old is not None and old <= price:
         old = None
     s = lambda v: (str(v).strip()[:60] or None) if v not in (None, "", "null") else None
+    box = None
+    try:
+        b = [int(round(float(v))) for v in (o.get("box") or [])]
+        if len(b) == 4 and 0 <= b[0] < b[2] <= 1000 and 0 <= b[1] < b[3] <= 1000 and (b[2] - b[0]) >= 20 and (b[3] - b[1]) >= 20:
+            box = b
+    except (TypeError, ValueError):
+        box = None
     return {"store": store, "name": name, "brand": s(o.get("brand")), "size": s(o.get("size")),
-            "price": price, "old_price": old, "until": until, "source": tag}
+            "price": price, "old_price": old, "until": until, "source": tag,
+            "image": o.get("_page") if box else None, "box": box}
 
 
 # ---------- Supabase ----------
@@ -230,7 +241,7 @@ def main() -> int:
             if fl["until"] and fl["until"] < today:
                 rec["skipped"] = "expired"; continue
             live_tags.add(tag)
-            if tag in have:
+            if tag in have and not FORCE:
                 rec["skipped"] = "already read"; continue
             try:
                 pages = flyer_pages(fl)
@@ -254,6 +265,8 @@ def main() -> int:
             log(f"  flyer {fl['id']} (until {fl['until']}): {len(pages)} pages -> {len(offers)} offers")
             (OUT / f"{tag.replace(':', '_')}.json").write_text(json.dumps(offers, ensure_ascii=False, indent=1))
             if not DRY_RUN and offers:
+                if tag in have:
+                    sb("DELETE", f"offers?source=eq.{tag}")
                 for i in range(0, len(offers), 200):
                     sb("POST", "offers", data=json.dumps(offers[i:i + 200]))
 

@@ -17,6 +17,9 @@ on:
       max_pages:
         description: "Max pages per flyer"
         default: "40"
+      force:
+        description: "Re-read flyers already read (1 = yes)"
+        default: "0"
 
 permissions:
   contents: write
@@ -42,6 +45,7 @@ jobs:
           DRY_RUN: ${{ github.event.inputs.dry_run || '0' }}
           STORES: ${{ github.event.inputs.stores || '' }}
           MAX_PAGES: ${{ github.event.inputs.max_pages || '40' }}
+          FORCE: ${{ github.event.inputs.force || '0' }}
         run: python ration/collector/collect.py
       - name: Save the run report to the wafrly-runs branch
         if: always()
