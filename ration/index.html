@@ -869,7 +869,7 @@ const TYPES = [
   ['hair','personal','💇','شامبو والعناية بالشعر','Hair care',/shampoo|conditioner|hair|creamsilk|cream silk|parachute|شامبو|بلسم|شعر/i],
   ['soap','personal','🧼','صابون وشاور','Soap & shower',/soap|body wash|shower|hand wash|صابون|شاور|غسول/i],
   ['oral','personal','🪥','العناية بالأسنان','Oral care',/tooth|mouthwash|colgate|signal|sensodyne|أسنان|اسنان|معجون اسنان/i],
-  ['skin','personal','🧴','العناية بالبشرة','Skin care',/beauty|lotion|vaseline|nivea|dove|skin|face|hand cream|body cream|sunscreen|لوشن|بشرة|كريم للوجه|واقي/i],
+  ['skin','personal','🧴','العناية بالبشرة','Skin care',/beauty|lotion|vaseline|nivea|dove|skin|face|serum|himalaya|hand cream|body cream|sunscreen|لوشن|بشرة|كريم للوجه|واقي/i],
   ['laundry','clean','🧺','غسيل الملابس','Laundry',/detergent|laundry|tide|ariel|persil|softener|downy|comfort|omo|غسيل|تايد|اريال|أريال|برسيل|منعم/i],
   ['dishes','clean','🍽️','غسيل الصحون','Dishwashing',/dish|fairy|pril|finish|صحون|فيري|بريل/i],
   ['cleaners','clean','🧽','منظفات','Cleaners',/clean|bleach|clorox|dettol|harpic|disinfect|منظف|كلوركس|ديتول|مطهر/i],
@@ -967,11 +967,9 @@ function renderOffers(){
   const tys = Object.keys(SECS).flatMap(sk => TYPES.filter(ty => ty[1] === sk && count[ty[0]]));
   const deals = offers.filter(o => o.oldPrice && o.oldPrice > o.price).sort((x, y) => (1 - y.price / y.oldPrice) - (1 - x.price / x.oldPrice)).slice(0, 15);
   $('catGrid').innerHTML = '';
-  const disc = o => o.oldPrice && o.oldPrice > o.price ? 1 - o.price / o.oldPrice : 0;
-  const secRows = Object.keys(SECS).map(sk => [sk, offers.filter(o => typeOf(o)[1] === sk).sort((x, y) => disc(y) - disc(x)).slice(0, 12)]).filter(x => x[1].length);
-  $('offerList').innerHTML = `<div class="h2b">${esc(t('shopByCat'))}</div><div class="dgrid">${tys.map(ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] && /sharjahcoop/.test(pic[ty[0]].image) ? photo(pic[ty[0]]) : ty[2]}</span>${esc(tl(ty))}<small>${count[ty[0]]} ${esc(t('offersN'))}</small></button>`).join('')}</div>` +
-    (deals.length ? `<div class="h2b">${esc(t('bigDeals'))}</div><div class="drow">${deals.map(o => dprod(o)).join('')}</div>` : '') +
-    secRows.map(([sk, list]) => `<div class="h2b">${SECS[sk][0]} ${esc(lang === 'ar' ? SECS[sk][1] : SECS[sk][2])}</div><div class="drow">${list.map(o => dprod(o)).join('')}</div>`).join('');
+  const card = ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] && /sharjahcoop/.test(pic[ty[0]].image) ? photo(pic[ty[0]]) : ty[2]}</span>${esc(tl(ty))}<small>${count[ty[0]]} ${esc(t('offersN'))}</small></button>`;
+  $('offerList').innerHTML = Object.keys(SECS).map(sk => [sk, tys.filter(ty => ty[1] === sk)]).filter(x => x[1].length)
+    .map(([sk, list]) => `<div class="h2b">${SECS[sk][0]} ${esc(lang === 'ar' ? SECS[sk][1] : SECS[sk][2])}</div><div class="dgrid">${list.map(card).join('')}</div>`).join('');
 }
 $('offQ').oninput = e => { offQ = e.target.value; offType = ''; renderOffers(); };
 document.addEventListener('click', e => {
