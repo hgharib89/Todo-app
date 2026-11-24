@@ -276,6 +276,14 @@ nav button.on{color:#FF7A59}
 .dprods{gap:8px}
 .dprod{border:1px solid light-dark(#E4E7EB,#2A2E37);border-radius:6px;box-shadow:none}
 .dprod .im{background:transparent}
+.dstrip{display:flex;gap:8px;overflow-x:auto;margin:6px -16px 0;padding:0 16px 4px;scrollbar-width:none}
+.dstrip::-webkit-scrollbar{display:none}
+.dstrip .dcat{flex:none;width:96px;height:144px;border:1px solid light-dark(#E4E7EB,#2A2E37);border-radius:6px;box-shadow:none;padding:10px 4px;gap:0;justify-content:flex-start;font-size:13.5px;font-weight:500;line-height:1.25}
+.dstrip .dcat .im{flex:1;width:100%;min-height:0;background:transparent;border-radius:0;display:grid;place-items:center}
+.dstrip .dcat .im img{max-height:100%;max-width:92%;object-fit:contain}
+.dstrip .dcat .em{font-size:48px;line-height:1}
+.dstrip .dcat .lb{min-height:2.5em;display:flex;align-items:center;justify-content:center;padding-top:4px}
+.dstrip .dcat[data-type="*"] .em{font-size:52px}
 </style>
 </head>
 <body data-v="list">
@@ -398,7 +406,7 @@ ar: {
   chatOff: 'المساعد غير متاح في هذا العرض.',
   addOffers: 'إضافة عروض من بروشور', addOffersHint: 'صوّر البروشور أو حمّل صوره، والمساعد يقرأ المنتجات والأسعار.',
   store: 'المحل', storePh: 'مثال: جمعية الشارقة التعاونية', validUntil: 'العرض ساري لين (اختياري)', pickFlyer: 'اختر صور البروشور',
-  savedOffers: 'العروض', cheapestTag: 'الأرخص', bigDeals: 'أكبر الخصومات', shopByCat: 'تسوّق حسب القسم', offersN: 'عرض', sortedCheap: 'مرتبة من الأرخص للأغلى، اضغط + عشان تضيفه لسلتك', addToList: 'أضف للسلة', offSearch: 'شو تبي؟ ماي، حليب، رز…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
+  savedOffers: 'العروض', cheapestTag: 'الأرخص', allCats: 'كل الأقسام', bigDeals: 'أكبر الخصومات', shopByCat: 'تسوّق حسب القسم', offersN: 'عرض', sortedCheap: 'مرتبة من الأرخص للأغلى، اضغط + عشان تضيفه لسلتك', addToList: 'أضف للسلة', offSearch: 'شو تبي؟ ماي، حليب، رز…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
   foundN: n => `لقيت ${n} عرض — راجعها قبل الحفظ`, saveN: n => `احفظ ${n} عرض`, savingN: n => `أحفظ... ${n}`, savedN: n => `انحفظ ${n} عرض ✓`,
   full: 'المساحة امتلت، احذف عروض قديمة.', saveFail: 'ما قدرت أحفظ كل العروض.', storeFirst: 'اكتب اسم المحل أول.',
   readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
@@ -434,7 +442,7 @@ en: {
   chatOff: 'The assistant is not available in this view.',
   addOffers: 'Add offers from a flyer', addOffersHint: 'Snap or upload the flyer pages and the assistant reads products and prices.',
   store: 'Store', storePh: 'e.g. Sharjah Co-op', validUntil: 'Offer valid until (optional)', pickFlyer: 'Choose flyer photos',
-  savedOffers: 'Offers', cheapestTag: 'Cheapest', bigDeals: 'Biggest discounts', shopByCat: 'Shop by category', offersN: 'offers', sortedCheap: 'Sorted cheapest first. Tap + to add it to your basket', addToList: 'Add to basket', offSearch: 'What do you need? Water, milk, rice…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
+  savedOffers: 'Offers', cheapestTag: 'Cheapest', allCats: 'All categories', bigDeals: 'Biggest discounts', shopByCat: 'Shop by category', offersN: 'offers', sortedCheap: 'Sorted cheapest first. Tap + to add it to your basket', addToList: 'Add to basket', offSearch: 'What do you need? Water, milk, rice…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
   foundN: n => `Found ${n} offers — review before saving`, saveN: n => `Save ${n} offers`, savingN: n => `Saving... ${n}`, savedN: n => `Saved ${n} offers ✓`,
   full: 'Storage is full, delete old offers.', saveFail: "Couldn't save all offers.", storeFirst: 'Enter the store name first.',
   readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
@@ -1021,7 +1029,7 @@ function renderOffers(){
   const byPrice = a => a.slice().sort((x, y) => x.price - y.price);
   const tl = ty => lang === 'ar' ? ty[3] : ty[4];
   const q = norm(offQ.trim());
-  if (q || offType){
+  if (q || (offType && offType !== '*')){
     $('catGrid').innerHTML = '';
     let list, head;
     if (offType){ const ty = TYPES.find(x => x[0] === offType); list = offers.filter(o => typeOf(o)[0] === offType); head = `${ty[2]} ${esc(tl(ty))}`; }
@@ -1039,7 +1047,13 @@ function renderOffers(){
   const deals = offers.filter(o => o.oldPrice && o.oldPrice > o.price).sort((x, y) => (1 - y.price / y.oldPrice) - (1 - x.price / x.oldPrice)).slice(0, 15);
   $('catGrid').innerHTML = '';
   const card = ty => `<button class="dcat" data-type="${ty[0]}"><span class="im">${pic[ty[0]] && /sharjahcoop/.test(pic[ty[0]].image) ? photo(pic[ty[0]]) : `<span class="em">${ty[2]}</span>`}</span><span class="lb">${esc(tl(ty))}</span></button>`;
-  $('offerList').innerHTML = `<div class="h2b">${esc(t('shopByCat'))}</div><div class="dgrid">${tys.map(card).join('')}</div>`;
+  if (offType === '*'){
+    $('offerList').innerHTML = `<div class="sechead"><b>${esc(t('shopByCat'))}</b><button data-type="">${esc(t('back'))}</button></div><div class="dgrid">${tys.map(card).join('')}</div>`;
+    return;
+  }
+  const allCard = `<button class="dcat" data-type="*"><span class="im"><span class="em">🛍️</span></span><span class="lb">${esc(t('allCats'))}</span></button>`;
+  $('offerList').innerHTML = `<div class="dstrip">${allCard}${tys.map(card).join('')}</div>` +
+    (deals.length ? `<div class="h2b">${esc(t('bigDeals'))}</div><div class="drow">${deals.map(o => dprod(o)).join('')}</div>` : '');
 }
 $('offQ').oninput = e => { offQ = e.target.value; offType = ''; renderOffers(); };
 document.addEventListener('click', e => {
