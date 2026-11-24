@@ -145,6 +145,19 @@ body[data-mode=food] main{padding-bottom:40px}
 .pcard .tag{font-size:14px;padding:2px 10px}
 .pcard .off{position:absolute;top:14px;inset-inline-start:14px;background:var(--coral);color:#fff;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:800;z-index:1}
 .pcard .x{position:absolute;top:14px;inset-inline-end:14px;background:rgba(255,255,255,.85);z-index:1}
+.cat small{font-size:11px;color:var(--muted);font-weight:700}
+.prw{display:flex;align-items:center;gap:12px;position:relative;padding:10px 12px}
+.prw .pimg{width:72px;height:72px;flex:none;border-radius:14px;background:#fff;display:grid;place-items:center;overflow:hidden;font-size:36px}
+.prw .pimg .thumb{width:72px;height:72px}
+.prw .pinfo{flex:1;min-width:0}
+.prw .pn{font-size:15px;font-weight:700;line-height:1.3}
+.prw .ps{font-size:13px;color:var(--muted);margin:2px 0 4px}
+.prw .pp{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prw .pct{color:var(--coral);font-weight:800;font-size:13px}
+.best{background:var(--good);color:#fff;border-radius:999px;padding:0 8px;font-size:12px;font-weight:800}
+.addp{width:40px;height:40px;flex:none;border-radius:50%;border:0;background:var(--coral);color:#fff;font-size:24px;font-weight:800;cursor:pointer}
+.addp.done{background:var(--good)}
+.prw .x{position:absolute;top:6px;inset-inline-start:6px;background:var(--card)}
 .dish h3{margin:0;font-size:19px;font-weight:800}
 .dish .emo{font-size:40px;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;flex:none}
 .cheap{background:var(--dark);color:#fff;border-radius:18px;padding:12px 14px;margin:12px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -229,7 +242,6 @@ body[data-mode=food] main{padding-bottom:40px}
     <h2 style="margin-top:20px"><span data-i="savedOffers"></span> <span class="muted" id="offerCount"></span></h2>
     <div class="row" id="demoTools" hidden><button class="btn" id="clearDemo" data-i="clearDemo"></button></div>
     <input id="offQ" data-ph="offSearch" autocomplete="off" style="margin-bottom:10px">
-    <div id="storeStrip" class="strip"></div>
     <div id="catGrid" class="catgrid"></div>
     <div id="offerList"></div>
   </section>
@@ -272,7 +284,7 @@ ar: {
   chatOff: 'المساعد غير متاح في هذا العرض.',
   addOffers: 'إضافة عروض من بروشور', addOffersHint: 'صوّر البروشور أو حمّل صوره، والمساعد يقرأ المنتجات والأسعار.',
   store: 'المحل', storePh: 'مثال: جمعية الشارقة التعاونية', validUntil: 'العرض ساري لين (اختياري)', pickFlyer: 'اختر صور البروشور',
-  savedOffers: 'العروض', offSearch: 'دوّر في العروض…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
+  savedOffers: 'العروض', cheapestTag: 'الأرخص', sortedCheap: 'مرتبة من الأرخص للأغلى، اضغط + عشان تضيفه لسلتك', addToList: 'أضف للسلة', offSearch: 'شو تبي؟ ماي، حليب، رز…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
   foundN: n => `لقيت ${n} عرض — راجعها قبل الحفظ`, saveN: n => `احفظ ${n} عرض`, savingN: n => `أحفظ... ${n}`, savedN: n => `انحفظ ${n} عرض ✓`,
   full: 'المساحة امتلت، احذف عروض قديمة.', saveFail: 'ما قدرت أحفظ كل العروض.', storeFirst: 'اكتب اسم المحل أول.',
   readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
@@ -308,7 +320,7 @@ en: {
   chatOff: 'The assistant is not available in this view.',
   addOffers: 'Add offers from a flyer', addOffersHint: 'Snap or upload the flyer pages and the assistant reads products and prices.',
   store: 'Store', storePh: 'e.g. Sharjah Co-op', validUntil: 'Offer valid until (optional)', pickFlyer: 'Choose flyer photos',
-  savedOffers: 'Offers', offSearch: 'Search offers…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
+  savedOffers: 'Offers', cheapestTag: 'Cheapest', sortedCheap: 'Sorted cheapest first. Tap + to add it to your basket', addToList: 'Add to basket', offSearch: 'What do you need? Water, milk, rice…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
   foundN: n => `Found ${n} offers — review before saving`, saveN: n => `Save ${n} offers`, savingN: n => `Saving... ${n}`, savedN: n => `Saved ${n} offers ✓`,
   full: 'Storage is full, delete old offers.', saveFail: "Couldn't save all offers.", storeFirst: 'Enter the store name first.',
   readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
@@ -523,7 +535,7 @@ function norm(s){
     .replace(/(\d)\s*(مل|ml)\b/g, '$1ml').replace(/(\d)\s*(جرام|غرام|غ|gm|g)\b/g, '$1g');
 }
 const toks = s => norm(s).split(/[^\p{L}\p{N}.]+/u).filter(x => x.length > 1 || /\d/.test(x));
-const offerText = o => [o.brand, o.name, o.size].filter(Boolean).join(' ');
+const offerText = o => [o.brand && !norm(o.name || '').includes(norm(o.brand)) ? o.brand : '', o.name, o.size && !norm(o.name || '').replace(/\s/g, '').includes(norm(o.size).replace(/\s/g, '')) ? o.size : ''].filter(Boolean).join(' ');
 function localScore(q, o){
   const a = toks(q), b = new Set(toks(offerText(o)));
   if (!a.length) return 0;
@@ -769,29 +781,75 @@ $('chatSend').onclick = sendChat;
 $('chatIn').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
 
 /* ---------- offers admin ---------- */
-const CATS = [
-  ['baby','👶','أطفال','Baby',/diaper|nappy|baby|wipes|formula|pampers|huggies|حفاض|حفاظ|أطفال|اطفال|بيبي|رضع/i],
-  ['personal','🧴','العناية الشخصية','Personal care',/shampoo|conditioner|soap|lotion|beauty|dove|nivea|tooth|deodorant|perfume|razor|sanitary|hair|skin|body wash|face|creamsilk|tresemme|vaseline|شامبو|صابون|أسنان|اسنان|مزيل|عطر|شعر|بشرة|لوشن|فوط/i],
-  ['cleaning','🧽','منظفات ومنزل','Cleaning & home',/detergent|clean|dish|tissue|toilet|bleach|clorox|tide|ariel|persil|fairy|pril|foil|garbage|bags|softener|freshener|kitchen roll|منظف|مناديل|كلوركس|تايد|اريال|أريال|برسيل|فيري|معطر|أكياس|اكياس|غسيل|ورق/i],
-  ['meat','🍗','لحوم ودواجن وأسماك','Meat, poultry & fish',/chicken|beef|mutton|lamb|meat|fish|shrimp|prawn|salmon|sausage|nugget|frank|mince|دجاج|دياي|لحم|غنم|سمك|روبيان|ربيان|سلمون|نقانق|ناجتس|مفروم/i],
-  ['dairy','🥛','ألبان وبيض','Dairy & eggs',/milk|laban|yog|youg|cheese|butter|cream|egg|labneh|ghee|حليب|لبن|زبادي|روب|جبن|زبدة|زبده|قشطة|بيض|لبنة|سمن/i],
-  ['pantry','🥫','مواد غذائية','Pantry',/paste|sauce|ketchup|mayo|canned|tin|tuna|beans|rice|oil|sugar|flour|pasta|spaghetti|macaroni|noodle|indomie|salt|spice|lentil|honey|jam|dates|cereal|oats|vinegar|molasses|صلصة|معجون|كاتشب|مايونيز|معلب|تونة|تونا|فول|رز|أرز|ارز|زيت|سكر|طحين|معكرونة|اندومي|ملح|بهار|عدس|عسل|مربى|تمر|حبوب|شوفان|خل|دبس/i],
-  ['drinks','🧃','مشروبات','Beverages',/water|juice|soda|cola|pepsi|7up|sprite|fanta|drink|tea|coffee|nescafe|ماء|ماي|مياه|عصير|مشروب|شاي|قهوة|كولا|بيبسي|سفن/i],
-  ['fruitveg','🥦','خضار وفواكه','Fruit & veg',/tomato|potato|onion|banana|apple|orange|fruit|veg|carrot|cucumber|lemon|grape|mango|lettuce|garlic|طماط|بطاط|بصل|موز|تفاح|برتقال|فواكه|فاكهة|خضار|جزر|خيار|ليمون|عنب|مانجو|خس|ثوم/i],
-  ['bakery','🍞','مخبوزات','Bakery',/bread|bun|croissant|cake|toast|tortilla|pita|خبز|صمون|كرواسون|كيك|توست|رقاق|بريد/i],
-  ['frozen','🧊','مجمدات','Frozen',/frozen|ice cream|مجمد|ايس كريم|آيس/i],
-  ['snacks','🍫','سناكس وحلويات','Snacks & sweets',/chip|crisp|chocolate|biscuit|cookie|candy|wafer|popcorn|nuts|kitkat|galaxy|oreo|snack|شيبس|شوكولا|بسكويت|حلويات|مكسرات|فشار|سناك/i],
-  ['other','🛍️','أخرى','Other',/./]];
-const catOf = o => o._cat || (o._cat = CATS.find(c => c[4].test([o.brand, o.name].filter(Boolean).join(' ')))[0]);
-let offCat = '', offStore = '', offQ = '';
-function pcard(o){
+// product types, most specific first; each belongs to a section
+const SECS = {dairy:['🥛','ألبان وبيض','Dairy & eggs'], meat:['🍗','لحوم ودواجن وأسماك','Meat, poultry & fish'], fv:['🥦','خضار وفواكه','Fruit & veg'],
+  bakery:['🍞','مخبوزات','Bakery'], pantry:['🥫','مواد غذائية','Pantry'], drinks:['🧃','مشروبات','Beverages'], snacks:['🍫','سناكس وحلويات','Snacks & sweets'],
+  frozen:['🧊','مجمدات','Frozen'], clean:['🧽','منظفات ومنزل','Cleaning & home'], personal:['🧴','العناية الشخصية','Personal care'], baby:['👶','أطفال','Baby'], other:['🛍️','أخرى','Other']};
+const TYPES = [
+  ['formula','baby','🍼','حليب وأغذية أطفال','Baby milk & food',/formula|baby food|cerelac|similac|aptamil|nan optipro|حليب أطفال|حليب اطفال|سيريلاك/i],
+  ['diapers','baby','👶','حفاضات','Diapers',/diaper|nappy|nappies|pampers|huggies|molfix|baby joy|حفاض|حفاظ/i],
+  ['wipes','baby','🧻','مناديل مبللة','Wet wipes',/wipes|مبلل/i],
+  ['perfume','personal','🌸','عطور ومزيلات','Perfume & deodorant',/perfume|edt|edp|eau de|deodorant|antiperspirant|body spray|عطر|مزيل|بخاخ جسم/i],
+  ['hair','personal','💇','شامبو والعناية بالشعر','Hair care',/shampoo|conditioner|hair|شامبو|بلسم|شعر/i],
+  ['soap','personal','🧼','صابون وشاور','Soap & shower',/soap|body wash|shower|hand wash|صابون|شاور|غسول/i],
+  ['oral','personal','🪥','العناية بالأسنان','Oral care',/tooth|mouthwash|colgate|signal|sensodyne|أسنان|اسنان|معجون اسنان/i],
+  ['skin','personal','🧴','العناية بالبشرة','Skin care',/beauty|lotion|vaseline|nivea|dove|skin|face|hand cream|body cream|sunscreen|لوشن|بشرة|كريم للوجه|واقي/i],
+  ['laundry','clean','🧺','غسيل الملابس','Laundry',/detergent|laundry|tide|ariel|persil|softener|downy|comfort|omo|غسيل|تايد|اريال|أريال|برسيل|منعم/i],
+  ['dishes','clean','🍽️','غسيل الصحون','Dishwashing',/dish|fairy|pril|finish|صحون|فيري|بريل/i],
+  ['cleaners','clean','🧽','منظفات','Cleaners',/clean|bleach|clorox|dettol|harpic|disinfect|منظف|كلوركس|ديتول|مطهر/i],
+  ['tissues','clean','🧻','مناديل وورق','Tissues & paper',/tissue|toilet roll|toilet paper|kitchen roll|napkin|fine|مناديل|ورق/i],
+  ['bags','clean','🛍️','أكياس وألمنيوم','Bags & foil',/garbage|bags|foil|cling|wrap|أكياس|اكياس|ألمنيوم|المنيوم|نايلون/i],
+  ['icecream','snacks','🍦','آيس كريم','Ice cream',/ice cream|icecream|ايس كريم|آيس كريم|آيسكريم/i],
+  ['chocolate','snacks','🍫','شوكولاتة','Chocolate',/chocolate|choco|kitkat|galaxy|snickers|mars|twix|cadbury|nutella|شوكولا|شكولا|جالكسي|كيت كات/i],
+  ['biscuits','snacks','🍪','بسكويت وويفر','Biscuits & wafers',/biscuit|cookie|wafer|oreo|digestive|بسكويت|ويفر|كوكيز/i],
+  ['chips','snacks','🥔','شيبس','Chips',/chip|crisp|pringles|lays|doritos|cheetos|شيبس|بطاطس مقلية/i],
+  ['nuts','snacks','🥜','مكسرات','Nuts',/nuts|almond|cashew|pistachio|peanut|مكسرات|لوز|كاجو|فستق|فول سوداني/i],
+  ['sweets','snacks','🍬','حلويات','Sweets & candy',/candy|gum|jelly|marshmallow|sweet|halawa|حلويات|حلاوة|علك|جيلي/i],
+  ['labneh','dairy','🥣','لبنة','Labneh',/labneh|labaneh|لبنة|لبنه/i],
+  ['laban','dairy','🥛','لبن','Laban',/laban|buttermilk|لبن/i],
+  ['yogurt','dairy','🥣','زبادي','Yoghurt',/yog|youg|زبادي|روب/i],
+  ['cheese','dairy','🧀','جبن','Cheese',/cheese|جبن|جبنة/i],
+  ['butter','dairy','🧈','زبدة وسمن','Butter & ghee',/butter|ghee|زبدة|زبده|سمن/i],
+  ['cream','dairy','🍶','قشطة وكريمة','Cream',/cream|قشطة|كريمة/i],
+  ['milk','dairy','🥛','حليب','Milk',/milk|حليب/i],
+  ['eggs','dairy','🥚','بيض','Eggs',/egg|بيض/i],
+  ['processed','meat','🌭','نقانق ومصنّعات','Sausages & deli',/sausage|frank|nugget|burger|mortadella|salami|luncheon|hot dog|نقانق|ناجتس|برجر|مرتديلا|لانشون/i],
+  ['chicken','meat','🍗','دجاج','Chicken',/chicken|poultry|breast|drumstick|wing|دجاج|دياي|صدور|أفخاذ|اجنحة|أجنحة/i],
+  ['redmeat','meat','🥩','لحوم','Meat',/beef|mutton|lamb|veal|meat|steak|mince|لحم|غنم|بقر|عجل|مفروم/i],
+  ['fish','meat','🐟','أسماك وروبيان','Fish & seafood',/fish|shrimp|prawn|salmon|hammour|seafood|سمك|روبيان|ربيان|سلمون|هامور/i],
+  ['sauces','pantry','🥫','صلصات ومعاجين','Sauces & pastes',/paste|sauce|ketchup|mayo|mustard|dressing|صلصة|صوص|معجون|كاتشب|مايونيز|خردل/i],
+  ['canned','pantry','🥫','معلبات','Canned food',/tuna|beans|canned|tin|corn|chickpea|foul|تونة|تونا|فول|معلب|ذرة|حمص/i],
+  ['juice','drinks','🧃','عصير','Juice',/juice|nectar|عصير/i],
+  ['water','drinks','💧','ماي','Water',/water|ماء|ماي|مياه/i],
+  ['soft','drinks','🥤','مشروبات غازية','Soft drinks',/cola|pepsi|7up|7 up|sprite|fanta|soda|mirinda|mountain dew|energy|red bull|غاز|كولا|بيبسي|سفن|ميرندا|طاقة/i],
+  ['tea','pantry','🍵','شاي','Tea',/\btea\b|شاي/i],
+  ['coffee','pantry','☕','قهوة','Coffee',/coffee|nescafe|قهوة|نسكافيه/i],
+  ['fruit','fv','🍎','فواكه','Fruit',/banana|apple|orange|grape|mango|fruit|melon|berry|kiwi|pear|موز|تفاح|برتقال|عنب|مانجو|فواكه|فاكهة|بطيخ|فراولة|كمثرى/i],
+  ['veg','fv','🥕','خضار','Vegetables',/tomato|potato|onion|carrot|cucumber|lettuce|garlic|veg|pepper|lemon|طماط|بطاط|بصل|جزر|خيار|خس|ثوم|خضار|فلفل|ليمون/i],
+  ['bread','bakery','🍞','خبز','Bread',/bread|bun|toast|tortilla|pita|arabic|خبز|صمون|توست|رقاق|تورتيلا/i],
+  ['cakes','bakery','🧁','كيك ومعجنات','Cakes & pastries',/cake|croissant|muffin|pastr|donut|كيك|كرواسون|معجنات|دونات/i],
+  ['rice','pantry','🍚','رز','Rice',/rice|basmati|رز|أرز|ارز|بسمتي/i],
+  ['oil','pantry','🫒','زيت','Oil',/\boil\b|زيت/i],
+  ['sugar','pantry','🍬','سكر','Sugar',/sugar|سكر/i],
+  ['flour','pantry','🌾','طحين','Flour',/flour|طحين|دقيق/i],
+  ['pasta','pantry','🍝','معكرونة ونودلز','Pasta & noodles',/pasta|spaghetti|macaroni|penne|noodle|indomie|vermicelli|معكرونة|مكرونة|اندومي|نودلز|شعيرية/i],
+  ['spices','pantry','🧂','بهارات وملح','Spices & salt',/spice|salt|pepper|masala|cumin|turmeric|بهار|ملح|كمون|كركم/i],
+  ['honey','pantry','🍯','عسل ومربى','Honey & jam',/honey|jam|عسل|مربى/i],
+  ['dates','pantry','🌴','تمر','Dates',/dates|تمر/i],
+  ['cereal','pantry','🥣','حبوب الإفطار','Cereal & oats',/cereal|oats|cornflakes|muesli|granola|شوفان|كورن فليكس|حبوب/i],
+  ['frozen','frozen','🧊','مجمدات','Frozen',/frozen|مجمد/i],
+  ['other','other','🛍️','أخرى','Other',/./]];
+const typeOf = o => o._ty || (o._ty = TYPES.find(c => c[5].test([o.brand, o.name].filter(Boolean).join(' '))));
+const catOf = o => typeOf(o)[1];
+let offType = '', offQ = '';
+function prow(o, cheapest){
   const pct = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
-  const c = CATS.find(x => x[0] === catOf(o));
-  return `<div class="pcard">${pct ? `<span class="off">-${pct}٪</span>` : ''}
-    <div class="pimg">${thumb(o) || c[1]}</div>
-    <div class="pn">${esc(offerText(o))}</div>
-    <div class="ps">${esc(storeName(o.store))}${o.source === 'demo' ? ' · ' + esc(t('demo')) : ''}</div>
-    <div class="pp"><span class="tag">${aed(o.price)}</span>${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}</div>
+  return `<div class="card prw">
+    <div class="pimg">${thumb(o) || typeOf(o)[2]}</div>
+    <div class="pinfo"><div class="pn">${esc(offerText(o))}</div>
+      <div class="ps">${esc(storeName(o.store))}${o.source === 'demo' ? ' · ' + esc(t('demo')) : ''}${cheapest ? ` <span class="best">${esc(t('cheapestTag'))}</span>` : ''}</div>
+      <div class="pp"><span class="tag">${aed(o.price)}</span>${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}${pct ? `<span class="pct">-${pct}٪</span>` : ''}</div></div>
+    <button class="addp" data-add="${esc(o.id)}" aria-label="${esc(t('addToList'))}">+</button>
     ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`;
 }
 function renderOffers(){
@@ -800,31 +858,36 @@ function renderOffers(){
   $('demoNote').hidden = !demo; $('demoTools').hidden = !(demo && canEdit);
   const stores = [...new Set([...DEFAULT_STORES, ...offers.map(o => o.store)])];
   $('storeList').innerHTML = stores.map(s => `<option value="${esc(s)}">`).join('');
-  if (!offers.length){ $('storeStrip').innerHTML = $('catGrid').innerHTML = ''; if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
-  const have = [...new Set(offers.map(o => o.store))];
-  $('storeStrip').innerHTML = [['', t('allStores')], ...have.map(s => [s, storeName(s)])].map(([v, l]) => `<button data-st="${esc(v)}" class="${offStore === v ? 'on' : ''}">${esc(l)}</button>`).join('');
+  if (!offers.length){ $('catGrid').innerHTML = ''; if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
+  const byPrice = a => a.slice().sort((x, y) => x.price - y.price);
+  const tl = ty => lang === 'ar' ? ty[3] : ty[4];
   const q = norm(offQ.trim());
-  const pool = offers.filter(o => (!offStore || o.store === offStore) && (!q || norm(offerText(o) + ' ' + o.store).includes(q)));
-  const by = {}; pool.forEach(o => (by[catOf(o)] = by[catOf(o)] || []).push(o));
-  const cats = CATS.filter(c => by[c[0]]);
-  $('catGrid').innerHTML = cats.map((c, i) => `<button class="cat${offCat === c[0] ? ' on' : ''}" data-cat="${c[0]}" style="background:var(${TINTS[i % 6]})"><i>${c[1]}</i>${esc(lang === 'ar' ? c[2] : c[3])}</button>`).join('');
-  const sortP = a => a.sort((x, y) => ((y.oldPrice ? 1 - y.price / y.oldPrice : 0) - (x.oldPrice ? 1 - x.price / x.oldPrice : 0)));
-  if (!pool.length){ $('offerList').innerHTML = `<div class="empty">${esc(t('noMatch'))}</div>`; return; }
-  if (offCat && by[offCat]){
-    const c = CATS.find(x => x[0] === offCat);
-    $('offerList').innerHTML = `<div class="sechead"><b>${c[1]} ${esc(lang === 'ar' ? c[2] : c[3])} <span class="muted">(${by[offCat].length})</span></b><button data-cat="">${esc(t('back'))}</button></div>
-      <div class="pgrid">${sortP(by[offCat]).map(pcard).join('')}</div>`;
+  if (q || offType){
+    $('catGrid').innerHTML = '';
+    let list, head;
+    if (offType){ const ty = TYPES.find(x => x[0] === offType); list = offers.filter(o => typeOf(o)[0] === offType); head = `${ty[2]} ${esc(tl(ty))}`; }
+    else { const hit = TYPES.filter(ty => ty[0] !== 'other' && (norm(ty[3]).includes(q) || norm(ty[4]).includes(q)));
+      list = offers.filter(o => hit.includes(typeOf(o)) || norm(offerText(o) + ' ' + o.store).includes(q)); head = `🔎 ${esc(offQ.trim())}`; }
+    list = byPrice(list);
+    $('offerList').innerHTML = `<div class="sechead"><b>${head} <span class="muted">(${list.length})</span></b><button data-type="">${esc(t('back'))}</button></div>` +
+      (list.length ? `<p class="muted" style="margin:0 4px 8px">${esc(t('sortedCheap'))}</p>` + list.map((o, i) => prow(o, i === 0)).join('') : `<div class="empty">${esc(t('noMatch'))}</div>`);
     return;
   }
-  $('offerList').innerHTML = cats.map(c => `<div class="sechead"><b>${c[1]} ${esc(lang === 'ar' ? c[2] : c[3])} <span class="muted">(${by[c[0]].length})</span></b><button data-cat="${c[0]}">${esc(t('seeAll'))}</button></div>
-    <div class="prow">${sortP(by[c[0]]).slice(0, 12).map(pcard).join('')}</div>`).join('');
+  const count = {}; offers.forEach(o => { const k = typeOf(o)[0]; count[k] = (count[k] || 0) + 1; });
+  const secs = Object.keys(SECS).map(sk => [sk, TYPES.filter(ty => ty[1] === sk && count[ty[0]])]).filter(x => x[1].length);
+  $('catGrid').innerHTML = '';
+  $('offerList').innerHTML = secs.map(([sk, tys], si) => `<div class="sechead"><b>${SECS[sk][0]} ${esc(lang === 'ar' ? SECS[sk][1] : SECS[sk][2])}</b></div>
+    <div class="catgrid">${tys.map(ty => `<button class="cat" data-type="${ty[0]}" style="background:var(${TINTS[si % 6]})"><i>${ty[2]}</i>${esc(tl(ty))}<small>${count[ty[0]]}</small></button>`).join('')}</div>`).join('');
 }
-$('offQ').oninput = e => { offQ = e.target.value; renderOffers(); };
-$('storeStrip').onclick = e => { const b = e.target.closest('[data-st]'); if (b) { offStore = b.dataset.st; renderOffers(); } };
+$('offQ').oninput = e => { offQ = e.target.value; offType = ''; renderOffers(); };
 document.addEventListener('click', e => {
-  const b = e.target.closest('#catGrid [data-cat], #offerList [data-cat]'); if (!b) return;
-  offCat = offCat === b.dataset.cat ? '' : b.dataset.cat; renderOffers();
-  $('catGrid').scrollIntoView({block: 'start', behavior: 'smooth'});
+  const b = e.target.closest('#offerList [data-type]');
+  if (b){ offType = b.dataset.type; if (!offType){ offQ = ''; $('offQ').value = ''; } renderOffers(); $('offQ').scrollIntoView({block: 'start', behavior: 'smooth'}); return; }
+  const a = e.target.closest('#offerList [data-add]');
+  if (a){ const o = offers.find(x => String(x.id) === a.dataset.add); if (!o) return;
+    const txt = offerText(o) + ' · ' + storeName(o.store); const ex = items.find(i => i.text === txt);
+    if (ex) ex.quantity++; else items.push({text: txt, quantity: 1});
+    renderList(); saveList(); a.textContent = '✓'; a.classList.add('done'); }
 });
 function offerMsg(k){ $('offerList').dataset.msg = k; $('offerList').innerHTML = `<div class="empty">${esc(t(k))}</div>`; }
 $('offerList').onclick = async e => {
