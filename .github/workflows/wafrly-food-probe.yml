@@ -1,5 +1,9 @@
 name: Wafrly food probe
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      script:
+        default: food_probe.py
 permissions:
   contents: write
 jobs:
@@ -11,7 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: pip install playwright==1.48.0 && python -m playwright install --with-deps chromium
-      - run: python ration/collector/food_probe.py
+      - run: python ration/collector/${{ inputs.script }}
       - name: Push results
         if: always()
         run: |
