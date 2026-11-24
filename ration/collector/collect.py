@@ -216,6 +216,30 @@ def existing_tags() -> set[str]:
     return {r["source"] for r in rows or []}
 
 
+# ---------- check product photos (no Claude cost) ----------
+def sample_crops(n: int = 12) -> None:
+    """Save a contact sheet of product crops from saved offers, to check the boxes."""
+    rows = sb("GET", "offers?select=name,image,box&source=like.auto:*&box=not.is.null&limit=200")
+    import random
+    random.seed(1)
+    rows = random.sample(rows, min(n, len(rows)))
+    sheet = Image.new("RGB", (4 * 220, ((len(rows) + 3) // 4) * 250), "white")
+    pages = {}
+    for i, r in enumerate(rows):
+        if r["image"] not in pages:
+            pages[r["image"]] = Image.open(io.BytesIO(http.get(r["image"], timeout=60).content)).convert("RGB")
+        im = pages[r["image"]]
+        W, H = im.size
+        x0, y0, x1, y1 = r["box"]
+        c = im.crop((x0 * W // 1000, y0 * H // 1000, x1 * W // 1000, y1 * H // 1000))
+        c.thumbnail((210, 210))
+        sheet.paste(c, ((i % 4) * 220 + 5, (i // 4) * 250 + 5))
+    OUT.mkdir(exist_ok=True)
+    sheet.save(OUT / "crops.png")
+    (OUT / "crops.json").write_text(json.dumps([r["name"] for r in rows], ensure_ascii=False, indent=1))
+    log("saved crops for", len(rows), "offers")
+
+
 # ---------- main ----------
 def main() -> int:
     OUT.mkdir(exist_ok=True)
@@ -294,4 +318,7 @@ def _safe(fn, *a):
 
 
 if __name__ == "__main__":
+    if os.environ.get("CROPS_ONLY") == "1":
+        sample_crops()
+        sys.exit(0)
     sys.exit(main())

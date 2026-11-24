@@ -20,6 +20,9 @@ on:
       force:
         description: "Re-read flyers already read (1 = yes)"
         default: "0"
+      crops_only:
+        description: "Only save sample product photos to check them (1 = yes)"
+        default: "0"
 
 permissions:
   contents: write
@@ -46,6 +49,7 @@ jobs:
           STORES: ${{ github.event.inputs.stores || '' }}
           MAX_PAGES: ${{ github.event.inputs.max_pages || '40' }}
           FORCE: ${{ github.event.inputs.force || '0' }}
+          CROPS_ONLY: ${{ github.event.inputs.crops_only || '0' }}
         run: python ration/collector/collect.py
       - name: Save the run report to the wafrly-runs branch
         if: always()
