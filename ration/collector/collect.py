@@ -48,6 +48,66 @@ STORES = {
     "adcoop-1059": "تعاونية أبوظبي",
 }
 
+# Stores whose own website lists offers with prices (read directly, no Claude cost)
+DIRECT = {"sharjah-coop": "جمعية الشارقة التعاونية"}
+SHJ = "https://www.sharjahcoop.ae"
+SHJ_JS = """() => [...document.querySelectorAll('.product-item-container')].map(c => {
+  const a = c.querySelector('a[data-product-code]');
+  const img = c.querySelector('.product-item-image img');
+  const size = c.querySelector('.cont-ellip');
+  const badge = c.querySelector('.product-item-badge');
+  return a && {code: a.dataset.productCode, name: a.dataset.productName, price: a.dataset.productPrice,
+    img: img && (img.getAttribute('src') || img.dataset.src || ''), size: size && size.textContent.trim(),
+    badge: badge && badge.textContent.trim(), text: c.innerText};
+}).filter(Boolean)"""
+
+
+def sharjah_coop(store: str, until: str) -> list[dict]:
+    """Promotions from sharjahcoop.ae: the in-store promotion pages plus the home page carousels."""
+    get_html(SHJ + "/en/")  # starts the shared browser
+    rows, seen = [], set()
+    urls = [SHJ + "/en/"] + [f"{SHJ}/en/c/instorepromotion?page={i}" for i in range(int(os.environ.get("SHJ_PAGES", "40")))]
+    for url in urls:
+        pg = _browser.new_page()
+        try:
+            pg.goto(url, wait_until="domcontentloaded", timeout=60000)
+            pg.wait_for_timeout(3000)
+            items = pg.evaluate(SHJ_JS)
+        except Exception as e:
+            log("  shj page failed:", url, str(e)[:150]); items = []
+        finally:
+            pg.close()
+        new = 0
+        for it in items:
+            if it["code"] in seen:
+                continue
+            seen.add(it["code"])
+            tail = (it.get("text") or "").split(it.get("name") or "\u0000")[-1]
+            tail = re.sub(r"\([^)]*\)", " ", tail)  # drop unit prices like (35.00 / L)
+            prices = [float(x) for x in re.findall(r"(\d+\.\d{2})", tail)]
+            try:
+                price = float(it["price"])
+            except (TypeError, ValueError):
+                continue
+            old = next((x for x in prices if x > price), None)
+            if not old and not it.get("badge"):
+                continue  # not on offer
+            img = it.get("img") or ""
+            if img.startswith("/"):
+                img = SHJ + img
+            name = re.sub(r"\s+offer$", "", (it.get("name") or "").strip(), flags=re.I)
+            if not name or price <= 0:
+                continue
+            rows.append({"store": store, "name": name[:200], "brand": None, "size": (it.get("size") or None),
+                         "price": price, "old_price": old, "until": until, "source": "auto:shj",
+                         "image": img if img.startswith(SHJ + "/medias/") else None, "box": None})
+            new += 1
+        log(f"  {url}: {len(items)} products, {new} new offers")
+        if "instorepromotion" in url and not items:
+            break
+    return rows
+
+
 PROMPT = """This is one page of a UAE supermarket promotional flyer. Extract every product that has a clear price.
 Return JSON only:
 {"offers":[{"name":"product name as printed (Arabic and/or English)","brand":"brand or null","size":"e.g. 2L, 1kg, 1L x 4, 30 pcs, or null","price":12.95,"original_price":15.5,"box":[x0,y0,x1,y1]}]}
@@ -294,6 +354,26 @@ def main() -> int:
                 for i in range(0, len(offers), 200):
                     sb("POST", "offers", data=json.dumps(offers[i:i + 200]))
 
+    for slug, store in DIRECT.items():
+        if only and slug not in only:
+            continue
+        info = summary["stores"][slug] = {"store": store, "site": SHJ}
+        try:
+            until = (dt.date.today() + dt.timedelta(days=7)).isoformat()
+            offers = sharjah_coop(store, until)
+            info["offers"] = len(offers)
+            log(f"{store}: {len(offers)} offers from the website")
+            (OUT / "auto_shj.json").write_text(json.dumps(offers, ensure_ascii=False, indent=1))
+            if offers:
+                live_tags.add("auto:shj")
+                if not DRY_RUN:
+                    sb("DELETE", "offers?source=eq.auto:shj")
+                    for i in range(0, len(offers), 200):
+                        sb("POST", "offers", data=json.dumps(offers[i:i + 200]))
+        except Exception as e:
+            info["error"] = str(e)[:300]; failed += 1; log("!", slug, e)
+            live_tags.add("auto:shj")  # keep last week's rows if the site failed
+
     if not DRY_RUN:
         # remove auto offers that expired or whose flyer is no longer listed for a store we checked
         sb("DELETE", f"offers?source=like.auto:*&until=lt.{today}")
@@ -306,7 +386,7 @@ def main() -> int:
     summary["finished"] = dt.datetime.utcnow().isoformat() + "Z"
     (OUT / "summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=1))
     log(json.dumps(summary, ensure_ascii=False, indent=1))
-    return 1 if failed and failed == len(stores) else 0
+    return 1 if failed and failed == len(stores) + len(DIRECT) else 0
 
 
 def _safe(fn, *a):

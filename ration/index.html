@@ -542,7 +542,9 @@ function buildReport(basket){
 
 /* ---------- product images: a crop of the flyer page ---------- */
 const thumb = o => (o && o.image && /^https:\/\/cdn\.clicflyer\.net\//.test(o.image) && o.box)
-  ? `<span class="thumb"><img class="crop" src="${esc(o.image)}" data-box="${o.box.map(n => +n).join(',')}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>` : '';
+  ? `<span class="thumb"><img class="crop" src="${esc(o.image)}" data-box="${o.box.map(n => +n).join(',')}" alt="" loading="lazy" referrerpolicy="no-referrer"></span>`
+  : (o && o.image && /^https:\/\/www\.sharjahcoop\.ae\/medias\//.test(o.image))
+  ? `<span class="thumb"><img class="ok" src="${esc(o.image)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="position:static;width:100%;height:100%;object-fit:contain"></span>` : '';
 document.addEventListener('load', e => {
   const img = e.target;
   if (!(img instanceof HTMLImageElement) || !img.classList.contains('crop')) return;
