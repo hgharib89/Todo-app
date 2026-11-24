@@ -125,6 +125,26 @@ body[data-mode=food] main{padding-bottom:40px}
 .strip::-webkit-scrollbar{display:none}
 .strip button{flex:none;min-height:42px;border:0;border-radius:999px;padding:0 16px;font-weight:800;font-size:15px;background:var(--card);box-shadow:0 2px 0 var(--line);cursor:pointer;white-space:nowrap}
 .strip button.on{background:var(--coral);color:#fff}
+.catgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:4px 0 8px}
+.cat{border:0;border-radius:20px;padding:10px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--ink);font-weight:700;font-size:12px;line-height:1.2;text-align:center;min-height:92px}
+.cat i{font-style:normal;font-size:30px;line-height:1}
+.cat.on{outline:3px solid var(--coral);outline-offset:-3px}
+.sechead{display:flex;align-items:baseline;justify-content:space-between;margin:18px 4px 8px}
+.sechead b{font-size:18px;font-weight:800}
+.sechead button{border:0;background:none;color:var(--coral);font-weight:800;font-size:14px;cursor:pointer}
+.prow{display:flex;gap:10px;overflow-x:auto;margin:0 -16px;padding:2px 16px 8px;scrollbar-width:none}
+.prow::-webkit-scrollbar{display:none}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pcard{background:var(--card);border-radius:20px;padding:10px;box-shadow:0 2px 0 var(--line);display:flex;flex-direction:column;gap:6px;position:relative}
+.prow .pcard{flex:none;width:156px}
+.pcard .pimg{height:112px;border-radius:14px;background:#fff;display:grid;place-items:center;overflow:hidden;font-size:44px}
+.pcard .pimg .thumb{width:100%;height:112px;border-radius:14px}
+.pcard .pn{font-size:14px;font-weight:700;line-height:1.3;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:36px}
+.pcard .ps{font-size:12px;color:var(--muted)}
+.pcard .pp{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pcard .tag{font-size:14px;padding:2px 10px}
+.pcard .off{position:absolute;top:14px;inset-inline-start:14px;background:var(--coral);color:#fff;border-radius:999px;padding:1px 8px;font-size:12px;font-weight:800;z-index:1}
+.pcard .x{position:absolute;top:14px;inset-inline-end:14px;background:rgba(255,255,255,.85);z-index:1}
 .dish h3{margin:0;font-size:19px;font-weight:800}
 .dish .emo{font-size:40px;width:64px;height:64px;border-radius:20px;display:grid;place-items:center;flex:none}
 .cheap{background:var(--dark);color:#fff;border-radius:18px;padding:12px 14px;margin:12px 0 4px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -208,6 +228,9 @@ body[data-mode=food] main{padding-bottom:40px}
     <div id="logoutRow" class="row" hidden style="margin-top:10px"><span class="muted grow" id="whoAmI"></span><button class="btn" id="logoutBtn" data-i="logout"></button></div>
     <h2 style="margin-top:20px"><span data-i="savedOffers"></span> <span class="muted" id="offerCount"></span></h2>
     <div class="row" id="demoTools" hidden><button class="btn" id="clearDemo" data-i="clearDemo"></button></div>
+    <input id="offQ" data-ph="offSearch" autocomplete="off" style="margin-bottom:10px">
+    <div id="storeStrip" class="strip"></div>
+    <div id="catGrid" class="catgrid"></div>
     <div id="offerList"></div>
   </section>
 </main>
@@ -249,7 +272,7 @@ ar: {
   chatOff: 'المساعد غير متاح في هذا العرض.',
   addOffers: 'إضافة عروض من بروشور', addOffersHint: 'صوّر البروشور أو حمّل صوره، والمساعد يقرأ المنتجات والأسعار.',
   store: 'المحل', storePh: 'مثال: جمعية الشارقة التعاونية', validUntil: 'العرض ساري لين (اختياري)', pickFlyer: 'اختر صور البروشور',
-  savedOffers: 'العروض المحفوظة', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
+  savedOffers: 'العروض', offSearch: 'دوّر في العروض…', allStores: 'كل المحلات', seeAll: 'الكل ←', back: 'رجوع', noMatch: 'ما في عروض تطابق بحثك', clearDemo: 'حذف الأسعار التجريبية', deleting: 'أحذف...', noSaved: 'ما في عروض محفوظة بعد',
   foundN: n => `لقيت ${n} عرض — راجعها قبل الحفظ`, saveN: n => `احفظ ${n} عرض`, savingN: n => `أحفظ... ${n}`, savedN: n => `انحفظ ${n} عرض ✓`,
   full: 'المساحة امتلت، احذف عروض قديمة.', saveFail: 'ما قدرت أحفظ كل العروض.', storeFirst: 'اكتب اسم المحل أول.',
   readingPage: (i, n) => `أقرأ الصفحة ${i} من ${n}...`, pageFail: i => `ما قدرت أقرأ الصفحة ${i}.`,
@@ -285,7 +308,7 @@ en: {
   chatOff: 'The assistant is not available in this view.',
   addOffers: 'Add offers from a flyer', addOffersHint: 'Snap or upload the flyer pages and the assistant reads products and prices.',
   store: 'Store', storePh: 'e.g. Sharjah Co-op', validUntil: 'Offer valid until (optional)', pickFlyer: 'Choose flyer photos',
-  savedOffers: 'Saved offers', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
+  savedOffers: 'Offers', offSearch: 'Search offers…', allStores: 'All stores', seeAll: 'See all →', back: 'Back', noMatch: 'No offers match', clearDemo: 'Delete demo prices', deleting: 'Deleting...', noSaved: 'No saved offers yet',
   foundN: n => `Found ${n} offers — review before saving`, saveN: n => `Save ${n} offers`, savingN: n => `Saving... ${n}`, savedN: n => `Saved ${n} offers ✓`,
   full: 'Storage is full, delete old offers.', saveFail: "Couldn't save all offers.", storeFirst: 'Enter the store name first.',
   readingPage: (i, n) => `Reading page ${i} of ${n}...`, pageFail: i => `Couldn't read page ${i}.`,
@@ -746,19 +769,63 @@ $('chatSend').onclick = sendChat;
 $('chatIn').onkeydown = e => { if (e.key === 'Enter') sendChat(); };
 
 /* ---------- offers admin ---------- */
+const CATS = [
+  ['baby','👶','أطفال','Baby',/diaper|nappy|baby|wipes|formula|pampers|huggies|حفاض|حفاظ|أطفال|اطفال|بيبي|رضع/i],
+  ['personal','🧴','العناية الشخصية','Personal care',/shampoo|conditioner|soap|lotion|beauty|dove|nivea|tooth|deodorant|perfume|razor|sanitary|hair|skin|body wash|face|creamsilk|tresemme|vaseline|شامبو|صابون|أسنان|اسنان|مزيل|عطر|شعر|بشرة|لوشن|فوط/i],
+  ['cleaning','🧽','منظفات ومنزل','Cleaning & home',/detergent|clean|dish|tissue|toilet|bleach|clorox|tide|ariel|persil|fairy|pril|foil|garbage|bags|softener|freshener|kitchen roll|منظف|مناديل|كلوركس|تايد|اريال|أريال|برسيل|فيري|معطر|أكياس|اكياس|غسيل|ورق/i],
+  ['meat','🍗','لحوم ودواجن وأسماك','Meat, poultry & fish',/chicken|beef|mutton|lamb|meat|fish|shrimp|prawn|salmon|sausage|nugget|frank|mince|دجاج|دياي|لحم|غنم|سمك|روبيان|ربيان|سلمون|نقانق|ناجتس|مفروم/i],
+  ['dairy','🥛','ألبان وبيض','Dairy & eggs',/milk|laban|yog|youg|cheese|butter|cream|egg|labneh|ghee|حليب|لبن|زبادي|روب|جبن|زبدة|زبده|قشطة|بيض|لبنة|سمن/i],
+  ['pantry','🥫','مواد غذائية','Pantry',/paste|sauce|ketchup|mayo|canned|tin|tuna|beans|rice|oil|sugar|flour|pasta|spaghetti|macaroni|noodle|indomie|salt|spice|lentil|honey|jam|dates|cereal|oats|vinegar|molasses|صلصة|معجون|كاتشب|مايونيز|معلب|تونة|تونا|فول|رز|أرز|ارز|زيت|سكر|طحين|معكرونة|اندومي|ملح|بهار|عدس|عسل|مربى|تمر|حبوب|شوفان|خل|دبس/i],
+  ['drinks','🧃','مشروبات','Beverages',/water|juice|soda|cola|pepsi|7up|sprite|fanta|drink|tea|coffee|nescafe|ماء|ماي|مياه|عصير|مشروب|شاي|قهوة|كولا|بيبسي|سفن/i],
+  ['fruitveg','🥦','خضار وفواكه','Fruit & veg',/tomato|potato|onion|banana|apple|orange|fruit|veg|carrot|cucumber|lemon|grape|mango|lettuce|garlic|طماط|بطاط|بصل|موز|تفاح|برتقال|فواكه|فاكهة|خضار|جزر|خيار|ليمون|عنب|مانجو|خس|ثوم/i],
+  ['bakery','🍞','مخبوزات','Bakery',/bread|bun|croissant|cake|toast|tortilla|pita|خبز|صمون|كرواسون|كيك|توست|رقاق|بريد/i],
+  ['frozen','🧊','مجمدات','Frozen',/frozen|ice cream|مجمد|ايس كريم|آيس/i],
+  ['snacks','🍫','سناكس وحلويات','Snacks & sweets',/chip|crisp|chocolate|biscuit|cookie|candy|wafer|popcorn|nuts|kitkat|galaxy|oreo|snack|شيبس|شوكولا|بسكويت|حلويات|مكسرات|فشار|سناك/i],
+  ['other','🛍️','أخرى','Other',/./]];
+const catOf = o => o._cat || (o._cat = CATS.find(c => c[4].test([o.brand, o.name].filter(Boolean).join(' ')))[0]);
+let offCat = '', offStore = '', offQ = '';
+function pcard(o){
+  const pct = o.oldPrice && o.oldPrice > o.price ? Math.round((1 - o.price / o.oldPrice) * 100) : 0;
+  const c = CATS.find(x => x[0] === catOf(o));
+  return `<div class="pcard">${pct ? `<span class="off">-${pct}٪</span>` : ''}
+    <div class="pimg">${thumb(o) || c[1]}</div>
+    <div class="pn">${esc(offerText(o))}</div>
+    <div class="ps">${esc(storeName(o.store))}${o.source === 'demo' ? ' · ' + esc(t('demo')) : ''}</div>
+    <div class="pp"><span class="tag">${aed(o.price)}</span>${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}</div>
+    ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`;
+}
 function renderOffers(){
   $('offerCount').textContent = offers.length ? `(${offers.length})` : '';
   const demo = offers.some(o => o.source === 'demo');
   $('demoNote').hidden = !demo; $('demoTools').hidden = !(demo && canEdit);
   const stores = [...new Set([...DEFAULT_STORES, ...offers.map(o => o.store)])];
   $('storeList').innerHTML = stores.map(s => `<option value="${esc(s)}">`).join('');
-  if (!offers.length){ if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
-  const by = {}; offers.forEach(o => (by[o.store] = by[o.store] || []).push(o));
-  $('offerList').innerHTML = Object.keys(by).map(s => `<div class="store">${esc(storeName(s))} <span class="muted">(${by[s].length})</span></div>` +
-    by[s].sort((a, b) => offerText(a).localeCompare(offerText(b), 'ar')).map(o => `<div class="card item">${thumb(o)}<span class="name">${esc(offerText(o))}${o.source === 'demo' ? ` <span class="muted">· ${esc(t('demo'))}</span>` : ''}<br><span class="muted">${o.until ? esc(t('until')) + ' ' + esc(o.until) : ''}</span></span>
-      ${o.oldPrice ? `<span class="old">${aed(o.oldPrice)}</span>` : ''}<span class="tag">${aed(o.price)}</span>
-      ${canEdit ? `<button class="x" data-off="${esc(o.id)}" aria-label="${t('del')}">✕</button>` : ''}</div>`).join('')).join('');
+  if (!offers.length){ $('storeStrip').innerHTML = $('catGrid').innerHTML = ''; if (!$('offerList').dataset.msg) $('offerList').innerHTML = `<div class="empty">${esc(t('noSaved'))}</div>`; return; }
+  const have = [...new Set(offers.map(o => o.store))];
+  $('storeStrip').innerHTML = [['', t('allStores')], ...have.map(s => [s, storeName(s)])].map(([v, l]) => `<button data-st="${esc(v)}" class="${offStore === v ? 'on' : ''}">${esc(l)}</button>`).join('');
+  const q = norm(offQ.trim());
+  const pool = offers.filter(o => (!offStore || o.store === offStore) && (!q || norm(offerText(o) + ' ' + o.store).includes(q)));
+  const by = {}; pool.forEach(o => (by[catOf(o)] = by[catOf(o)] || []).push(o));
+  const cats = CATS.filter(c => by[c[0]]);
+  $('catGrid').innerHTML = cats.map((c, i) => `<button class="cat${offCat === c[0] ? ' on' : ''}" data-cat="${c[0]}" style="background:var(${TINTS[i % 6]})"><i>${c[1]}</i>${esc(lang === 'ar' ? c[2] : c[3])}</button>`).join('');
+  const sortP = a => a.sort((x, y) => ((y.oldPrice ? 1 - y.price / y.oldPrice : 0) - (x.oldPrice ? 1 - x.price / x.oldPrice : 0)));
+  if (!pool.length){ $('offerList').innerHTML = `<div class="empty">${esc(t('noMatch'))}</div>`; return; }
+  if (offCat && by[offCat]){
+    const c = CATS.find(x => x[0] === offCat);
+    $('offerList').innerHTML = `<div class="sechead"><b>${c[1]} ${esc(lang === 'ar' ? c[2] : c[3])} <span class="muted">(${by[offCat].length})</span></b><button data-cat="">${esc(t('back'))}</button></div>
+      <div class="pgrid">${sortP(by[offCat]).map(pcard).join('')}</div>`;
+    return;
+  }
+  $('offerList').innerHTML = cats.map(c => `<div class="sechead"><b>${c[1]} ${esc(lang === 'ar' ? c[2] : c[3])} <span class="muted">(${by[c[0]].length})</span></b><button data-cat="${c[0]}">${esc(t('seeAll'))}</button></div>
+    <div class="prow">${sortP(by[c[0]]).slice(0, 12).map(pcard).join('')}</div>`).join('');
 }
+$('offQ').oninput = e => { offQ = e.target.value; renderOffers(); };
+$('storeStrip').onclick = e => { const b = e.target.closest('[data-st]'); if (b) { offStore = b.dataset.st; renderOffers(); } };
+document.addEventListener('click', e => {
+  const b = e.target.closest('#catGrid [data-cat], #offerList [data-cat]'); if (!b) return;
+  offCat = offCat === b.dataset.cat ? '' : b.dataset.cat; renderOffers();
+  $('catGrid').scrollIntoView({block: 'start', behavior: 'smooth'});
+});
 function offerMsg(k){ $('offerList').dataset.msg = k; $('offerList').innerHTML = `<div class="empty">${esc(t(k))}</div>`; }
 $('offerList').onclick = async e => {
   const b = e.target.closest('[data-off]'); if (!b || !db) return;
