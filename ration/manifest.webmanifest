@@ -9,8 +9,8 @@
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "ar",
-  "background_color": "#F2F2F7",
-  "theme_color": "#F2F2F7",
+  "background_color": "#FFF8EE",
+  "theme_color": "#FFF8EE",
   "categories": [
     "shopping",
     "food",
