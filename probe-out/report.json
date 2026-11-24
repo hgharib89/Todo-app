@@ -1,0 +1,50 @@
+{
+ "deliveroo_area": {
+  "status": 404,
+  "final": "https://deliveroo.ae/en/restaurants/dubai/al-barsha?collection=all-restaurants",
+  "len": 367845,
+  "next_data": 164704,
+  "aed_hits": 0,
+  "title": "Takeaway delivery in Al Barsha - Order with Deliveroo"
+ },
+ "deliveroo_menu": {
+  "status": 403,
+  "final": "https://deliveroo.ae/en/menu/Dubai/al-barsha-2/noor-al-mandi-al-barsha",
+  "len": 45130,
+  "next_data": 0,
+  "aed_hits": 0,
+  "title": "Just a moment..."
+ },
+ "deliveroo_mcd": {
+  "status": 404,
+  "final": "https://deliveroo.ae/en/restaurants/dubai/al-barsha?query=mcdonalds",
+  "len": 386115,
+  "next_data": 174194,
+  "aed_hits": 0,
+  "title": "Takeaway delivery in Al Barsha - Order with Deliveroo"
+ },
+ "talabat_area": {
+  "status": 403,
+  "final": "https://www.talabat.com/uae/restaurants/1308/al-barsha-1",
+  "len": 5913,
+  "next_data": 0,
+  "aed_hits": 0,
+  "title": "Attention Required! | Cloudflare"
+ },
+ "talabat_mcd": {
+  "status": 200,
+  "final": "https://www.talabat.com/uae/mcdonalds",
+  "len": 135023,
+  "next_data": 66216,
+  "aed_hits": 0,
+  "title": "McDonald's delivery service in UAE | Talabat"
+ },
+ "talabat_search": {
+  "status": 200,
+  "final": "https://www.talabat.com/uae/restaurants?search=mcdonalds",
+  "len": 149170,
+  "next_data": 70204,
+  "aed_hits": 0,
+  "title": "All restaurants and groceries in UAE | Talabat"
+ }
+}

@@ -1,0 +1,8 @@
+deliveroo.ae
+Performing security verification
+
+This website uses a security service to protect against malicious bots. This page is displayed while the website verifies you are not a bot.
+
+Ray ID: a5f5da2f1a5e4a5c
+Performance and Security by Cloudflare
+Privacy
