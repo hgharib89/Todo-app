@@ -1,14 +1,7 @@
 import json, re, os, sys
 from playwright.sync_api import sync_playwright
 OUT = "probe-out"; os.makedirs(OUT, exist_ok=True)
-URLS = {
- "deliveroo_area": "https://deliveroo.ae/en/restaurants/dubai/al-barsha?collection=all-restaurants",
- "deliveroo_menu": "https://deliveroo.ae/en/menu/Dubai/al-barsha-2/noor-al-mandi-al-barsha",
- "deliveroo_mcd": "https://deliveroo.ae/en/restaurants/dubai/al-barsha?query=mcdonalds",
- "talabat_area": "https://www.talabat.com/uae/restaurants/1308/al-barsha-1",
- "talabat_mcd": "https://www.talabat.com/uae/mcdonalds",
- "talabat_search": "https://www.talabat.com/uae/restaurants?search=mcdonalds",
-}
+URLS = json.load(open(os.environ.get("PROBE_URLS","ration/collector/probe_urls.json")))
 rep = {}
 with sync_playwright() as p:
     b = p.chromium.launch()
@@ -21,7 +14,7 @@ with sync_playwright() as p:
             m = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.S)
             r["next_data"] = len(m.group(1)) if m else 0
             if m: open(f"{OUT}/{k}.next.json","w").write(m.group(1))
-            r["aed_hits"] = len(re.findall(r"AED\s?\d", html))
+            r["aed_hits"] = len(re.findall(r"(AED|Dhs?|د\.إ|درهم)\s?\d", html)) + len(re.findall(r"\d\s?(AED|د\.إ|درهم)", html))
             r["title"] = pg.title()
             open(f"{OUT}/{k}.txt","w").write(pg.inner_text("body")[:20000])
             pg.screenshot(path=f"{OUT}/{k}.jpg", type="jpeg", quality=60)

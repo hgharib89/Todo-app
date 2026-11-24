@@ -17,4 +17,4 @@ jobs:
         run: |
           mkdir /tmp/r && cp -r probe-out/* /tmp/r/ || true
           git config user.name "wafrly-bot"; git config user.email "bot@users.noreply.github.com"
-          git checkout --orphan food-probe && git rm -rfq . && cp -r /tmp/r/* . && git add -A && git commit -qm "food probe" && git push -f origin food-probe
+          git checkout --orphan store-probe && git rm -rfq . && cp -r /tmp/r/* . && git add -A && git commit -qm "food probe" && git push -f origin store-probe
