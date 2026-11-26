@@ -1,0 +1,70 @@
+{
+ "started": "2026-11-26T02:50:35.439013Z",
+ "dry_run": false,
+ "stores": {
+  "union-coop-1071": {
+   "store": "تعاونية الاتحاد",
+   "flyers": []
+  },
+  "carrefour-hyper-1049": {
+   "store": "كارفور",
+   "flyers": []
+  },
+  "lulu-1047": {
+   "store": "لولو هايبرماركت",
+   "flyers": [
+    {
+     "id": "495433",
+     "url": "https://clicflyer.com/shoppers/en/oman/dubai/flyers/lulu-wow-world-of-wellness-offers--495433",
+     "until": "2026-12-05",
+     "skipped": "already read"
+    }
+   ]
+  },
+  "nesto-1100": {
+   "store": "نستو",
+   "flyers": [
+    {
+     "id": "495959",
+     "url": "https://clicflyer.com/shoppers/en/oman/dubai/flyers/nesto-mom-baby-offers--495959",
+     "until": "2026-11-30",
+     "skipped": "already read"
+    }
+   ]
+  },
+  "choithrams-1046": {
+   "store": "تشويترامز",
+   "flyers": []
+  },
+  "emirates-co-op-1056": {
+   "store": "جمعية الإمارات التعاونية",
+   "flyers": []
+  },
+  "grandiose-supermarket-1354": {
+   "store": "جرانديوز",
+   "flyers": []
+  },
+  "adcoop-1059": {
+   "store": "تعاونية أبوظبي",
+   "flyers": [
+    {
+     "id": "494238",
+     "url": "https://clicflyer.com/shoppers/en/oman/dubai/flyers/adcoop-lets-go-camping-offers--494238",
+     "until": "2026-11-29",
+     "pages": 35,
+     "offers": 301,
+     "page_errors": 0
+    }
+   ]
+  },
+  "sharjah-coop": {
+   "store": "جمعية الشارقة التعاونية",
+   "site": "https://www.sharjahcoop.ae",
+   "offers": 555
+  }
+ },
+ "removed_flyers": [
+  "auto:cf491220"
+ ],
+ "finished": "2026-11-26T02:53:56.149646Z"
+}
